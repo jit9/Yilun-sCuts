@@ -1,0 +1,20 @@
+array = 'PA4_150'
+season = 's17'
+
+depot = '/data/actpol/depot_yguan'
+tag = 'pa4_f150_s17_c11_v3'
+#tag_selected = 'pa4_f150_s17_c11_v0'
+#tag_calib = 'pa4_s17_BS'
+#flatfield = '/data/actpol/actpol_data_shared/FlatFields/2017/ff_pa4_f150_s17_c10_v3.dict'
+
+ctime_start = 1471280400
+
+#solid_angle = True
+
+todlist = '/home/yguan/TODLists/2017_ar4_uranus_nohwp.txt'
+
+planet_path = '/data/actpol/depot/fp_fit_results/181022/'
+live_min = 300
+#y_lim = 0.1
+loading_max = 2.7
+gauss_test = 10

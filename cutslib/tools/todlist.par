@@ -1,0 +1,10 @@
+output = '{season}_{array}_uranus_nohwp.txt'
+season = '2017'
+array = 'ar4'
+obs_detail = ['uranus']
+# obs_type = "scan"
+hwp_epoch = False
+
+# update
+do_random = False
+nsamples = 1000

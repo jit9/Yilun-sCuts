@@ -1,0 +1,15 @@
+cutparams = 'cutparams_v2.par'
+outDir = "/data/actpol/depot_yguan/SelectedTODs/pa4_f150_s17_c11_v2"
+array = "ar4"
+season = 2017
+obs_details = [ "deep5", "deep56", "deep56_A", "deep56_B", "deep6", "deep8", "deep9",
+	      	"boss_north_A", "boss_north_B", "boss_north",
+                "neptune", "saturn", "jupiter","mars", "uranus",
+		 "tau_a", "cen_a", "orion",
+                 "wide7"]
+include_time = '/home/lmaurin/actpol_data_shared/ObsTimes/actpol_obs_2017_180404.txt'
+selParams = {
+    "liveDets": {"gt": 150},
+    "PWV": {"lt": 3},
+    }
+

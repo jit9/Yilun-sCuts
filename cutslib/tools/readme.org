@@ -1,0 +1,36 @@
+* Cuts Utility Scripts Collection
+** get_todList
+Written by Loïc. It takes a catalog fits file and generate a list of
+TOD that matches certain predefined criteria in a parameter file. An
+example criteria file is attached: ~todlist.par~. The parameter file
+acts simply as a filter for different columns. 
+** generateFlatField
+Written by Loïc. It takes the pickle file generated from the cuts
+pipeline (after the seasonCrit script) and takes the gains calculated
+to re-estimate the flatfield which is defined as the median of
+1/gain. This script comes with moby2 (under the bin directory). It
+takes the same parameter file as the cuts pipeline.
+** test_calib
+Written by Loïc. It tests the generated calibrations by looking at 
+the planet observations. It generates a responsitivity vs. loading plot.
+It should look like a straight line and should be similar to what 
+Matthew is getting from his calibration codes. It takes a parameter file
+that is also attached here: ~abscal_pa4_f150_s17.par~. 
+** pathologyReport
+Written by Loïc. It contains useful diagnostic plotting tools by looking
+at the resulting .db file from ~get_cuts~. For instance, the ~killedbyplot~
+method produces a violin plot that shows how many detectors are killed by
+each of the criteria. 
+
+*** killbyplot
+Here is an example of producing a killedbyplot
+#+BEGIN_SRC python
+from pathologyReport import pathoReport
+pl = pathoReport('pa4_f150_s17_c11_v0.db')
+pl.killedbyplot()
+#+END_SRC
+** arplot
+This script produces an array plot for a given pathological parameters
+
+** xtod
+Similar to arplot, but it produces plot on a time domain. 
