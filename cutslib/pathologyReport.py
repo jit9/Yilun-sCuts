@@ -22,8 +22,8 @@ class pathoReport(object):
 
     def addPWV(self):
         self.data['PWV'] = get_pwv(self.data.ctime)
-    
-        
+
+
     def select_time(self, time):
         """Select a subset of the data by time. The subset can be chosen as:
            - a year: 'YYYY'
@@ -41,7 +41,7 @@ class pathoReport(object):
                                                          self.data.shape[0])
         self.ndata = self.data.shape[0]
 
-    
+
     def select_hours(self,hour_min, hour_max):
         """Select a subset of the data by hour of the day.
         """
@@ -59,10 +59,10 @@ class pathoReport(object):
         sel = self.data.todName.isin(todlist)
         self.data = self.data[sel]
         self.ndata = self.data.shape[0]
-    
+
     def select_condition(self,seldict):
         """Select TODs based on criteria
-        
+
         Argument should be passed as a dictionnary of the form { crit: ('lt',val) }
         (use 'lt' for < and 'gt' for >)"""
         crit = seldict.keys()
@@ -91,7 +91,7 @@ class pathoReport(object):
         """Remove duplicates"""
         pl.data.drop_duplicates(inplace=True)
         pl.ndata = pl.data.shape[0]
-            
+
     def seasonplot(self, crit,
                    time_range = None,
                    dets_lim = (0,1056), pwv_lim = (0,5), pwv_max = 3.,
@@ -138,7 +138,7 @@ class pathoReport(object):
 
 
 
-        
+
     def scatter_plot(self, crit1, crit2, x_lim=None, y_lim=None,filename=None):
         # self.data.plot(x=crit1,y=crit2,
         #                kind='hexbin',gridsize=50,
@@ -155,7 +155,7 @@ class pathoReport(object):
         else:
             plt.savefig(filename)
             plt.close('all')
-            
+
 
 
     def gridlive(self):
@@ -171,4 +171,3 @@ class pathoReport(object):
             g.map_upper(plt.scatter, marker='.', alpha=0.1)
         plt.savefig('toto.png')
         plt.close()
-        

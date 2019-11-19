@@ -1,0 +1,41 @@
+#!/bin/env python
+
+"""This script is the driver script that takes in a parameter file
+and parse the fields to generate a pipeline and excute it"""
+
+import configparser
+import sys
+from cutslib import proj
+import importlib
+
+# parse config file
+config = configparser.ConfigParser()
+print("Reading parameter file: %s" % sys.argv[1])
+config.read(sys.argv[1])
+
+# first read the pipeline section which defines the entire program
+pconfig = config['pipeline']
+cutparam = pconfig.get("cutparam")
+output_dir = pconfig.get("output_dir", None)
+modules = pconfig.get("pipeline").split()
+
+# initialize the project file structure
+p = proj.init(cutparam, output_dir)
+
+# create pipeline
+init_func = {}
+run_func = {}
+for m in modules:
+    mod = importlib.import_module("cutslib.modules.{}".format(m))
+    init_func[m] = mod.init
+    run_func[m] = mod.run
+
+# initialize pipeline
+for m in modules:
+    print("Initializing module: %s" % m)
+    init_func[m](config[m])
+
+# run pipeline
+for m in modules:
+    print("Running module: %s" % m)
+    run_func[m](p)
