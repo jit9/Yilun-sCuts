@@ -1,0 +1,46 @@
+#!/home/r/rbond/yguan/.conda/envs/myenv/bin/python
+
+from moby2.util import MobyDict
+from moby2.util.database import TODList
+import sys, os, time
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("param", help="cutparam")
+args = parser.parse_args()
+
+# load base parameters
+par = MobyDict.from_file(args.param)
+
+# runtime parameters
+tpn = 40  # task per node
+nproc = par.get("nproc", 40)
+# FIXME: for now assume nproc is a multiple of tpn
+if nproc % tpn != 0:
+    raise Exception("nproc needs to be a multiple of tpn")
+nnode = int(nproc / tpn)
+
+# output parameters
+outdir = par["outdir"]
+runtime = par.get("runtime")
+partition = par.get("partition")
+basedir = os.path.dirname(args.param)
+
+# find list of tods to process
+if not(os.path.isdir(outdir)): os.makedirs(outdir)
+
+f = open( '%s/submitjob.sh' % outdir, 'w' )
+f.write( '#!/bin/sh\n' )
+f.write( '#SBATCH -N %s\n' % nnode)
+f.write( '#SBATCH --ntasks-per-node=%d\n' % tpn)
+f.write( '#SBATCH -J get_cuts\n')
+f.write( '#SBATCH -t %s\n' % runtime )
+f.write( '#SBATCH --partition %s\n' % partition )
+f.write( '#SBATCH --output=%s/slurmjob.log\n' % outdir)
+f.write( 'module load gcc\n' )
+f.write( 'module load openmpi\n' )
+f.write( 'source activate myenv\n' )
+#f.write( 'cd %s\n' % basedir)
+f.write( 'mpirun -n %d run_cuts -n %d -m %s\n' % (nproc, nproc, args.param))
+f.close()
+os.system("sbatch %s/submitjob.sh\n" %outdir )
