@@ -21,7 +21,11 @@ parser.add_argument("-s", "--start", help="start", type=int, default=0)
 parser.add_argument("-e", "--end", help="end", type=int, default=None)
 parser.add_argument("-n", "--nworkers", help="number of workers",
                     type=int, default=1)
+parser.add_argument("-i", "--index", help="index for fake mpi",
+                    type=int, default=0)
 parser.add_argument("-m", "--mpi", help="use mpi",
+                    action="store_true")
+parser.add_argument("-f", "--fmpi", help="use fake mpi",
                     action="store_true")
 args = parser.parse_args()
 
@@ -176,6 +180,8 @@ loop.add_routine(PathologyReport(**config))
 
 # run loop
 if args.mpi:
-    loop.run_parallel(args.start,args.end,n_workers=args.nworkers)
+    loop.run_parallel(args.start,args.end,args.nworkers)
+elif args.fmpi:
+    loop.run_fparallel(args.start,args.end,args.nworkers,args.index)
 else:
     loop.run(args.start, args.end)

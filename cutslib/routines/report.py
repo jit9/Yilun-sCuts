@@ -17,10 +17,8 @@ class PathologyReport(Routine):
         self.report = pathologies_tools.reportPathologies(self.cutparam)
         # update the depot file name with rank if needed
         # if mpi, label depot file with the rank to avoid racing condition
-        if self.get_comm():
-            self.report.depot_file += '.%d' % self.get_rank()
+        self.report.depot_file += '.%d' % self.get_rank()
 
-    @profile
     def execute(self, store):
         # get obs name
         obs = self.get_name()
