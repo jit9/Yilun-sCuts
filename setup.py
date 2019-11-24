@@ -10,5 +10,13 @@ setup(
              'bin/submit_cuts'],
     install_requires=['dotmap',
                       'configparser',
-                      'pycook']
+                      'pycook',
+                      'future', # from here onwards will be moby2 deps
+                      'numpy',
+                      'matplotlib',
+                      'scipy',
+                      'astropy',
+                      'pyfits',
+                      'ephem',
+                      'pytz']
 )
