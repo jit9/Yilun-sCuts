@@ -3,7 +3,7 @@ import cPickle, h5py, os
 import numpy as np
 import copy
 from moby2.scripting import  pathologies_tools
-
+from profilehooks import profile
 
 class PathologyReport(Routine):
     def __init__(self, **params):
@@ -20,6 +20,7 @@ class PathologyReport(Routine):
         if self.get_comm():
             self.report.depot_file += '.%d' % self.get_rank()
 
+    @profile
     def execute(self, store):
         # get obs name
         obs = self.get_name()

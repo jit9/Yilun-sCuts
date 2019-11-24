@@ -1,6 +1,5 @@
 import numpy as np
 
-
 def nextregular(n):
     while not checksize(n): n+=1
     return n
@@ -23,7 +22,7 @@ def presel_by_median(cc, sel=None, **kwargs):
     superMinCorr: minimum correlation requiered in case minCorr produces less than
         max(<<minSel>>,numberOfDetectors/<<minFrac>> detectors
     minSel: minimum number of detectors preselected
-    minFrac: determines the minimum number of detectors preselected by determining a 
+    minFrac: determines the minimum number of detectors preselected by determining a
         fraction of the number of detectors available.
     Note: to go back to c9 you can set:
         superMinCorr = 0.5
@@ -32,7 +31,7 @@ def presel_by_median(cc, sel=None, **kwargs):
     """
     if sel is None:
         sel = np.ones(cc.shape[0],dtype=bool)
-        
+
     minCorr = kwargs.get("minCorr", 0.6)
     superMinCorr = kwargs.get("superMinCorr", 0.3)
     minSel = kwargs.get("minSel", 10)
@@ -40,10 +39,10 @@ def presel_by_median(cc, sel=None, **kwargs):
 
     # select those detectors whose medium are above a specified threshold
     sl = (np.median(abs(cc),axis=0) > minCorr)*sel
-    
+
     if kwargs.get("forceSel") is not None:
         sl *= kwargs.get("forceSel") # NOT PRETTY
-        
+
     if sl.sum() < np.max([cc.shape[0]/minFrac,minSel]):
         print "ERROR: did not find any valid detectors for low frequency analysis."
         sl = (np.median(abs(cc),axis=0) > superMinCorr)*sel
@@ -80,26 +79,26 @@ def group_detectors(cc, sel = None, **kwargs):
     ss = np.zeros(scc.shape[0],dtype=bool)
     thr = thr0
     while ss.sum() < len(allind):
-        if np.sum(~ss) <= Nmin or len(G) >= Gmax: 
+        if np.sum(~ss) <= Nmin or len(G) >= Gmax:
             G.append(smap[np.where(~ss)[0]])
             break
- 
+
         ind = allind[~ss]
         N = np.sum(~ss)
         cco = scc[~ss][:,~ss]
- 
+
         # Find reference mode
         n0 = np.sum(np.abs(cco)>thr,axis=0)
         imax = np.argmax(n0)
         if n0[imax] < np.min([Nmin,N/2]):
             thr -= dthr
             continue
- 
+
         # Find initial set of strongly correlated modes
         gg = np.where(np.abs(cco[imax])>thr)[0]
         s = np.argsort(cco[imax][gg])
         g = ind[gg[s]].tolist()
- 
+
         # Extend set until thr1
         while thr > thr1:
             thr -= dthr
@@ -107,15 +106,15 @@ def group_detectors(cc, sel = None, **kwargs):
             sg[g] = False
             sg[ss] = False
             ind = np.where(sg)[0]
-  
+
             if np.sum(sg) <= Nmin:
                 g0.extend(np.where(sg)[0])
                 break
-  
+
             cci = scc[g][:,sg]
             g0 = np.where(~np.any(np.abs(cci)<thr,axis=0))[0].tolist()
             g.extend(ind[g0])
- 
+
         # Append new group result
         G.append(smap[g])
         ss[g] = True
@@ -131,7 +130,7 @@ def group_detectors(cc, sel = None, **kwargs):
         else:
             break
 
-    return G, ind, ld, smap    
+    return G, ind, ld, smap
 
 
 def get_sine2_taper(frange, edge_factor = 6):
@@ -165,7 +164,7 @@ def get_time_domain_modes(fmodes, n_l, nsamps, df=1.,):
         fmodes = fmodes[np.newaxis,:]
     fcm = np.hstack([np.zeros((len(fmodes),n_l)),
                         fmodes[:,:-1],
-                        np.expand_dims(np.real(fmodes[:,-1]),1)]) 
+                        np.expand_dims(np.real(fmodes[:,-1]),1)])
     modes = np.fft.irfft(fcm)
     modes_dt = 1./modes.shape[1]/df
     modes *= np.sqrt(2.*fmodes.shape[1]/nsamps)

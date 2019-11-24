@@ -9,6 +9,7 @@ from moby2.analysis.tod_ana import pathologies
 
 from todloop import Routine
 from utils import *
+from profilehooks import profile
 
 
 class CutMCE(Routine):
@@ -22,6 +23,7 @@ class CutMCE(Routine):
         Routine.__init__(self)
         self._no_noise = params.get('no_noise', True)
 
+    @profile
     def execute(self, store):
         # get tod
         tod = store.get("tod")
@@ -56,6 +58,7 @@ class CutSources(Routine):
         # get the depot
         self._depot = moby2.util.Depot(self._depot_path)
 
+    @profile
     def execute(self, store):
         # retrieve tod
         tod = store.get(self.inputs.get('tod'))
@@ -149,6 +152,7 @@ class CutPlanets(Routine):
     def initialize(self):
         self._depot = moby2.util.Depot(self._depot_path)
 
+    @profile
     def execute(self, store):
         # get tod
         tod = store.get(self.inputs.get('tod'))
@@ -166,6 +170,8 @@ class CutPlanets(Routine):
 
         # if planetCuts do not exist generate it on the run
         else:
+            import pdb;pdb.set_trace()
+
             self.logger.info("Finding new planet cuts")
             if not hasattr(tod, 'fplane'):
                 tod.fplane = products.get_focal_plane(self._pointing_par,
@@ -294,6 +300,7 @@ class CutPartial(Routine):
     def initialize(self):
         self._depot = moby2.util.Depot(self._depot_path)
 
+    @profile
     def execute(self, store):
         # retrieve tod
         tod = store.get(self.inputs.get('tod'))
@@ -421,6 +428,7 @@ class FindPathologies(Routine):
         # get the depot
         self._depot = moby2.util.Depot(self._depot_path)
 
+    @profile
     def execute(self, store):
         tod = store.get("tod")
         pathoResult = os.path.exists(

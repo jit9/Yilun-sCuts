@@ -5,7 +5,7 @@ from moby2.scripting import products
 from todloop import Routine
 
 from utils import *
-
+from profilehooks import profile
 
 class LoadTOD(Routine):
     def __init__(self, sample_end=None, load_params={}):
@@ -28,6 +28,7 @@ class LoadTOD(Routine):
         user_config = moby2.util.get_user_config()
         moby2.pointing.set_bulletin_A(params=user_config.get('bulletin_A_settings'))
 
+    @profile
     def execute(self, store):
         # get obs name
         obs = self.get_name()
@@ -62,6 +63,7 @@ class CheckTODLength(Routine):
         self._fmin = fmin
         self._min_periods = min_periods
 
+    @profile
     def execute(self, store):
         # get tod
         tod = store.get("tod")
@@ -122,6 +124,7 @@ class TransformTOD(Routine):
         self._remove_filter_gain = params.get('remove_filter_gain', False)
         self._n_downsample = params.get('n_downsample', None)
 
+    @profile
     def execute(self, store):
         # retrieve tod
         tod = store.get(self.inputs.get('tod'))
