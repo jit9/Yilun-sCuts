@@ -1,0 +1,331 @@
+# [Yilun] Probably you won't touch that ever (I tuned it once in 5 years)
+# Glitch cut params
+# Cut glitches ( = spikes; e.g., cosmic rays ) and filter out glitches if applyGlitch = True.
+# Cut a detector with more glitches than maxGlitch.
+glitchParams ={ 'nSig': 10., 'tGlitch' : 0.007, 'minSeparation': 30, \
+                'maxGlitch': 50000, 'highPassFc': 6.0, 'buffer': 200 }
+
+# [Yilun] This is to fill the partial cuts (glitches, planets, etc) with either noise or a straight line.
+# You probably don't need to touch it.
+# Fill cuts parameter
+fillWithNoise = False
+remove_median = True
+
+# [Yilun] This is not used since MBAC.
+# Slow detector cut (cuts all detectors with response critical frequency, f3dB, lower than slowLevel)
+cutSlow = False
+slowLevel = 15
+# time_constants = {'source': 'columns_file',
+#                   'filename': '/data/actpol/actpol_data_shared/TimeConstants/2014/time_const_2014_ar2_20141027.txt'
+#                 }
+
+# [Yilun] I never touched it
+# Maximum fraction of samples cut in a detector TOD before cutting the whole detector
+maxFraction = 0.4
+
+# [Yilun] This is useful and needs to be updated every once in a while with new pointing inputs.
+# Check the wiki "Inputs for mapping" to know which version you should use.
+# Planet cuts params
+pointing = {'source': 'fp_file', \
+            'filename': "/project/r/rbond/yguan/actpol_data_shared/RelativeOffsets/template_ar4_170519.txt"}
+
+planet_cuts = {
+    'source_list': None,
+    'mask_params': {
+        'radius': (8./60)  #degrees
+        },
+    'mask_shift_generator': {\
+        'source':'file',\
+        'filename':'/project/r/rbond/yguan/actpol_data_shared/TODOffsets/tod_offsets_190515.txt',
+        'columns': [0,3,4],
+        'rescale_degrees': 1./60}
+    }
+source_cuts = {
+    'source_list': '/project/r/rbond/yguan/actpol_data_shared/BrightSources/mr3c_merged_reformatted.txt',
+    'mask_params': {
+        'radius': (3./60)  #degrees
+        },
+    'mask_shift_generator': {\
+        'source':'file',\
+        'filename':'/project/r/rbond/yguan/actpol_data_shared/TODOffsets/tod_offsets_190515.txt',
+        'columns': [0,3,4],
+        'rescale_degrees': 1./60}
+    }
+
+# [Yilun] Lots of parameters here, I guess you'll learn about them along the way...
+# I guess for the first run you could start with that and tune them according to the results.
+# Don't hesitate to ask about any of these parameters, some are important
+# (a good way to see which ones are relevant is to check the ones that are different for different arrays)
+#Default parameters for the pathologies object
+# "findPathoParams": these parameters are used when the pathology statistics are first
+#                    obtained from the data, and determine with statistics can be used
+#                    later on to select cuts.
+# "makeSelParams": these parameters are used to produce selections of live and dark&dead
+#                  detectors which are later on combined to produce the final selections.
+# "partialCuts": define which kind of partial cuts (scan unit based) are done and the
+#                criterion used to cut a whole detector based on this.
+# "liveSelParams": these parameters are used in the final selection of live and dark
+#                  &dead detectors based on previos selections under different criteria.
+#                  This step is the most flexibe one, as it allowes for comparing
+#                  combinations of results.
+# "darkSelParams": the same as the previous but for dark&dead detectors.
+pathologyParams = {
+     'findPathoParams': {
+          # 'cancelSync'      :                                     True,
+          'DEModes'             :                                        3,
+          'MFEModes'            :                                        8,
+          'HFLiveModes'         :                                       10,
+          'HFDarkModes'         :                                        3,
+          'driftFilter'         :                                    0.036,
+          # 'lowFreqFilter'     :                           [0.017, 0.088],
+          'midFreqFilter'       :                               [0.3, 1.0],
+          'highFreqFilter'	:                              [9.0, 19.0],
+          'getPartial'          :                                     True,
+          'thermParams'         : {
+                                'channel' :                       None,
+                                'autoTmax':                      False,
+                                'T_max'   :                       0.10,
+                                'dT_max'  :                     0.0015,
+                                  },
+          'darkModesParams' : {
+                                'useDarks' :                         False,
+                                'useSVD'   :                      True,
+                                'Nmodes'   :                         1,
+                                'useTherm' :                     False,
+                              },
+          'jumpParams'      : {
+                                'dsStep'  :                          4,
+                                'window'  :                          1,
+                              },
+          'darkCorrPar'     : {
+                                'presel': {
+                                            'method':         'median',
+                                            'Nmin':                  2,
+                                            'minSel':                2,
+                                            'initCorr':            0.9,
+                                          },
+                                'useTaper':                      False,
+                                'cancelSync':                    False,
+                                'doubleMode':                     True,
+                                'freqRange' : {
+                                            'fmin':              0.017,
+                                            'fshift':            0.009,
+                                            'band':              0.071,
+                                            'Nwin':                 1,
+                                            },
+                              },
+          'liveCorrPar'     : {
+                                'presel': {
+                                            'method':         'median',
+                                            'Nmin':                 10,
+                                            'initCorr':           0.98,
+                                            'minCorr':            0.90,
+                                            'groupCorr':          0.93,
+                                            'normLimit':           1e9,
+                                          },
+                                'useTaper'  :                    False,
+                                'cancelSync':                     True,
+                                'doubleMode':                    False,
+                                'removeDark':                    False,
+                                'freqRange' : {
+                                            'fmin':              0.017,
+                                            'fshift':            0.009,
+                                            'band':              0.071,
+                                            'Nwin':                 10,
+                                            },
+                                'separateFreqs':                 False,
+                              },
+         },
+     'liveSelParams'  : {
+          'darkRatio'                : {
+                'selType'            :                      'absolute',
+                'relSigma'           :                             5.0,
+                'absCrit'            :                       [0.5, 1.],
+                'normalize'          :                           False,
+                'apply'              :                           False
+                                  },
+          'corr'                : {
+                'selType'            :                      'absolute',
+                'relSigma'           :                             5.0,
+                'absCrit'            :                     [0.95, 1.1],
+                'normalize'          :                           False,
+                'apply'              :                            True
+                                  },
+          'norm'                : {
+                'selType'            :                     'absolute',
+                'relSigma'           :                            5.0,
+                'absCrit'            :                    [2e2,  2e5],
+                'normalize'          :                          False,
+                'calibrate'          :				False,
+                'apply'              :                           True
+                                   },
+          'gain'                : {
+                'selType'            :                     'absolute',
+                'relSigma'           :                            3.0,
+                'absCrit'            :                    [0.2,  1.8],
+                'normalize'          :                          False,
+                'apply'              :                           True
+                                  },
+          'jump'                : {
+                'selType'            :                     'absolute',
+                'relSigma'           :                            6.0,
+                'absCrit'            :                 [1e-17, 1e-12],
+                'normalize'          :                          False,
+                'apply'              :                          False,
+                                  },
+          'DE'                  : {
+                'selType'            :                     'absolute',
+                'relSigma'           :                            4.0,
+                'absCrit'            :                      [2., 1e4],
+                'calibrate'          :                          False,
+                'normalize'          :                          False,
+                'apply'              :                           True
+                                  },
+          'MFE'                 : {
+                'selType'            :                     'absolute',
+                'relSigma'           :                            5.0,
+                'absCrit'            :                   [1e-1,  1e3],
+                'calibrate'          :                          False,
+                'normalize'          :                          False,
+                'apply'              :                           True
+                                  },
+          'rms'                 : {
+                'selType'            :                     'absolute',
+                'relSigma'           :                            3.5,
+                'absCrit'            :                       [1., 20],
+                'normalize'          :                          False,
+                'calibrate'          :				False,
+                'apply'              :                           True
+                                  },
+          'skew'                : {
+                'selType'            :                     'absolute',
+                'relSigma'           :                            5.0,
+                'absCrit'            :                    [-5.0, 5.0],
+                'normalize'          :                          False,
+                'apply'              :                           True
+                                  },
+          'kurt'                : {
+                'selType'            :                     'absolute',
+                'relSigma'           :                            5.0,
+                'absCrit'            :                  [-05.0, 20.0],
+                'normalize'          :                          False,
+                'apply'              :                           True
+                                  },
+          'skewp'               : {
+                'selType'            :                     'absolute',
+                'relSigma'           :                            5.0,
+                'absCrit'            :                   [0.005, 1.1],
+                'normalize'          :                          False,
+                'apply'              :                          False
+                                  },
+          'kurtp'               : {
+                'selType'            :                     'absolute',
+                'relSigma'           :                            5.0,
+                'absCrit'            :                    [0.005,1.1],
+                'normalize'          :                          False,
+                'apply'              :                          False
+                                  },
+          'partialRMS'          : {
+                'selType'            :                     'absolute',
+                'relSigma'           :                            5.0,
+                'absCrit'            :                      [1.5, 20],
+                'normalize'          :                          False,
+                'calibrate'          :				False,
+                'apply'              :                           True
+                                  },
+          'partialSKEW'         : {
+                'selType'            :                     'absolute',
+                'relSigma'           :                           5.0 ,
+                'absCrit'            :                  [-05.0, 05.0],
+                'normalize'          :                         False ,
+                'apply'              :                          True
+                                  },
+          'partialKURT'         : {
+                'selType'            :                     'absolute',
+                'relSigma'           :                           5.0 ,
+                'absCrit'            :                  [-05.0, 20.0],
+                'normalize'          :                         False ,
+                'apply'              :                          True
+                                  },
+          'partialSKEWP'        : {
+                'selType'            :                    'absolute',
+                'relSigma'           :                          5.0 ,
+                'absCrit'            :                  [0.005, 1.1],
+                'normalize'          :                        False ,
+                'apply'              :                        False
+                                  },
+          'partialKURTP'        : {
+                'selType'            :                    'absolute',
+                'relSigma'           :                          5.0 ,
+                'absCrit'            :                  [0.005, 1.1],
+                'normalize'          :                        False ,
+                'apply'              :                       False
+                                  }
+          },
+     'darkSelParams'    : {
+          'corr'                : {
+                'selType'            :                         'or',
+                'relSigma'           :                         5.0 ,
+                'absCrit'            :                   [0.7, 1.1],
+                'normalize'          :                       False ,
+                'apply'              :                       True
+                                  },
+         'norm'                 : {
+                'selType'            :                        'and',
+                'relSigma'           :                         5.0 ,
+                'absCrit'            :                  [0.4,  2.5],
+                'normalize'          :                       True  ,
+                'apply'              :                       False
+                                  },
+         'gain'                : {
+                'selType'            :                        'and',
+                'relSigma'           :                         5.0 ,
+                'absCrit'            :                  [0.2,  5.0],
+                'normalize'          :                       False ,
+                'apply'              :                        False
+                                 },
+         'jump'                : {
+                'selType'            :                   'absolute',
+                'relSigma'           :                         6.0 ,
+                'absCrit'            :                 [0.0, 50000],
+                'normalize'          :                       False ,
+                'apply'              :                        True
+                                  },
+         'DE'                   : {
+                'selType'            :                        'and',
+                'relSigma'           :                         5.0 ,
+                'absCrit'            :                   [0.0, 0.3],
+                'normalize'          :                       False ,
+                'apply'              :                       False
+                                  },
+         'rms'                  : {
+                'selType'            :                   'absolute',
+                'relSigma'           :                         5.0 ,
+                'absCrit'            :                   [1e-3, 1e1],
+                'normalize'          :                       False ,
+                'apply'              :                       True
+                                  }
+        },
+    'otherParams'      : {
+         'gainCrit'      :              0.1,
+         'forceDark'     :             True,
+         'maxFracCut'    :              0.4,
+         'forceCalib'    :            False
+         },
+    'detectorLists'    : {   'source'   : 'individual',
+                               'live'   : '/project/r/rbond/yguan/actpol_data_shared/ArrayData/2017/ar5/live_f150_pa5_s17_c10_v4.dict',
+                               'dark'   : '/project/r/rbond/yguan/actpol_data_shared/ArrayData/2017/ar5/dark_v0.dict',
+                               'exclude': '/project/r/rbond/yguan/actpol_data_shared/ArrayData/2017/ar5/exclude_f150_pa5_s17_c10_v4.dict'
+                         },
+    'calibration'      : { 'flatfield':"/project/r/rbond/yguan/actpol_data_shared/FlatFields/ff_null.dict",
+                           'config'   : [
+                               {"type":"iv",
+                                "source":"data"},
+                               {"type": "constant",
+                                "value": 1e9,
+                                "name":"IV"}],
+                            'forceNoResp': True,
+                            "level_type": "stable",
+                            "noATMfreq": [90.],
+                        },
+}
