@@ -18,5 +18,7 @@ setup(
                       'astropy',
                       'pyfits',
                       'ephem',
-                      'pytz']
+                      'pytz',
+                      'h5py',
+                      'profilehooks']
 )

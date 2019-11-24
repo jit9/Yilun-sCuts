@@ -8,8 +8,9 @@ from moby2.analysis import hwp
 from moby2.analysis.tod_ana import pathologies
 
 from todloop import Routine
-from utils import *
 from profilehooks import profile
+
+from .utils import *
 
 
 class CutMCE(Routine):

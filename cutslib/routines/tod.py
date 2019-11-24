@@ -4,7 +4,7 @@ import moby2
 from moby2.scripting import products
 from todloop import Routine
 
-from utils import *
+from .utils import *
 
 
 class LoadTOD(Routine):
