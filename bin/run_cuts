@@ -41,8 +41,10 @@ cutParam = moby2.util.MobyDict.from_file(cutParam_file)
 pathop = cutParam['pathologyParams']
 no_noise = not(cutParam.get("fillWithNoise", True))
 depot = cutparam['depot']
-mask_params = cutParam.get_deep(('source_cuts','mask_params'),{})
-shift_params = cutParam.get_deep(('source_cuts', 'mask_shift_generator'))
+src_mask_params = cutParam.get_deep(('source_cuts','mask_params'),{})
+src_shift_params = cutParam.get_deep(('source_cuts', 'mask_shift_generator'))
+planet_mask_params = cutParam.get_deep(('planet_cuts','mask_params'),{})
+planet_shift_params = cutParam.get_deep(('planet_cuts', 'mask_shift_generator'))
 
 # initialize loop
 loop = TODLoop()
@@ -87,8 +89,8 @@ config = {
     'hdf_source_cuts': cutparam.get('hdf_source_cuts', None),
     'no_noise': no_noise,
     'pointing_par': cutParam['pointing'],
-    'mask_params': mask_params,
-    'mask_shift_generator': shift_params,
+    'mask_params': src_mask_params,
+    'mask_shift_generator': src_shift_params,
     'write_depot': True,
 }
 loop.add_routine(CutSources(**config))
@@ -105,8 +107,8 @@ config = {
     'tag_planet': cutparam.get('tag_planet'),
     'no_noise': no_noise,
     'pointing_par': cutParam['pointing'],
-    'mask_params': mask_params,
-    'mask_shift_generator': shift_params,
+    'mask_params': planet_mask_params,
+    'mask_shift_generator': planet_shift_params,
     'write_depot': True,
 }
 loop.add_routine(CutPlanets(**config))
@@ -153,8 +155,7 @@ config = {
     'outputs': {
         'tod': 'tod'
     },
-    'remove_mean': False,
-    'remove_median': True,
+    'remove_median': cutParam.get('remove_median', True),
     'detrend': cutparam.get('detrend', False),
     'remove_filter_gain': cutparam.get('remove_filter_gain', True),
     'n_downsample': cutparam.get('n_downsample', 1)

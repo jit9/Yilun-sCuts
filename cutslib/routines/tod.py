@@ -127,10 +127,10 @@ class TransformTOD(Routine):
         tod = store.get(self.inputs.get('tod'))
 
         # remove mean or remove median
-        if self._remove_mean:
-            moby2.tod.remove_mean(tod)
-        elif self._remove_median:
+        if self._remove_median:
             moby2.tod.remove_median(tod)
+        else:
+            moby2.tod.remove_mean(tod)
 
         # detrend
         if self._detrend:
