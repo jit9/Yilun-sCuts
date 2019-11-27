@@ -3,6 +3,7 @@
 """This script aims to implement the cuts in the moby2 framework
 without removing the pre-selection. """
 
+import os
 import moby2
 from todloop import TODLoop
 
@@ -51,7 +52,10 @@ loop = TODLoop()
 
 # add list of tod
 loop.add_tod_list(cutparam.get('source_scans'))
-loop.set_output_dir(cutparam.get('dirstats'))
+outdir = cutparam.get('outdir')
+loop.set_output_dir(outdir)
+loop.add_done_list(os.path.join(outdir, cutparam.get('report')+".db"))
+loop.add_reject_list(cutparam.get('reject_depot'))
 
 # find rebias time
 config = {
