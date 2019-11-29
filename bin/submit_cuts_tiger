@@ -33,7 +33,7 @@ for n in range(nnode):
     f = open( '%s/submitjob.sh.%d' % (outdir, n), 'w' )
     f.write( '#!/bin/sh\n' )
     f.write( '#SBATCH -N 1\n')
-    f.write( '#SBATCH --ntasks-per-node=%d\n' % tpn)
+    f.write( '#SBATCH --ntasks-per-node=40\n')
     f.write( '#SBATCH -J %s%d\n' % (jobname,n))
     f.write( '#SBATCH -t %s\n' % runtime )
     f.write( '#SBATCH --partition %s\n' % partition )
@@ -43,7 +43,7 @@ for n in range(nnode):
     f.write( 'source activate py2\n' )
     start, end = n*tpn, (n+1)*tpn
     for i in range(start, end):
-        f.write('run_cuts -n %d --index %d -f %s & sleep 1\n' % (nproc, i, args.param))
+        f.write('OMP_NUM_THREADS=20 run_cuts -n %d --index %d -f %s & sleep 1\n' % (nproc, i, args.param))
     f.write('wait\n')
     f.close()
     if not args.dry:
