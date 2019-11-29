@@ -7,7 +7,8 @@ setup(
     scripts=['bin/promote_version',
              'bin/cutspipe',
              'bin/run_cuts',
-             'bin/submit_cuts'],
+             'bin/submit_cuts',
+             'bin/submit_cuts_tiger'],
     install_requires=['dotmap',
                       'configparser',
                       'pycook',
@@ -16,9 +17,10 @@ setup(
                       'matplotlib',
                       'scipy',
                       'astropy',
-                      'pyfits',
                       'ephem',
                       'pytz',
                       'h5py',
-                      'profilehooks']
+                      'profilehooks',
+                      'fitsio',
+                      'pyfits',]
 )

@@ -1,3 +1,5 @@
+#!/bin/env python
+
 """This script generates a list of TODs for preliminary cuts study.
 It takes parameters from an external parameter file. See `todlist.par`
 as an example.
@@ -41,7 +43,9 @@ fb = moby2.scripting.get_filebase()
 params = moby2.util.MobyDict.from_file( sys.argv[1] )
 
 # load catalog of tods and convert to pandas dataframe
-filename = params.get('ObsCatalog','/home/lmaurin/actpol_data_shared/ObsCatalog/catalog.fits')
+moby2_conf = moby2.util.MobyConfig()
+filename = moby2_conf.get_deep(('obs_catalog','filename'))
+
 npcat = fitsio.read(filename)
 npcat = npcat.byteswap().newbyteorder()
 catalog = pd.DataFrame.from_records(npcat)
@@ -78,4 +82,3 @@ else:
 
 ######################################################################
 # end of get_todList.py
-
