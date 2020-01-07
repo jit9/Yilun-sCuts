@@ -1,0 +1,12 @@
+# parameter file used with select_
+output = '{season}_{array}_wide01hn.txt'
+season = '2017'
+array = 'ar6'
+obs_detail = ['wide_01h_n']
+hwp_epoch = False
+night = 1
+pwv_upper = 2
+ra_lower = -1
+ra_upper = 1
+calibration = 'uranus'
+nlimit = 1000 
