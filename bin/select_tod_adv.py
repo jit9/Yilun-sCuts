@@ -7,7 +7,8 @@ Example:
 
 An example parameter file is given by:
 # =========================================
-output = '{season}_{array}_wide01hn.txt'
+output_dir = "/scratch/gpfs/yilung/depot/TODLists"
+tag = '{season}_{array}_wide01hn'
 season = '2017'
 array = 'ar6'
 obs_detail = ['wide_01h_n']
@@ -22,7 +23,7 @@ nlimit = 1000
 """
 
 import moby2
-import sys
+import sys, os
 import fitsio
 import pandas as pd
 import numpy as np
@@ -31,8 +32,17 @@ import matplotlib.pyplot as plt
 
 fb = moby2.scripting.get_filebase()
 
+# utility function
+def write_list_to_file(output_dir, filename, lst):
+    """A utility function to save tod list into disk"""
+    print('Output %i tods to %s' %(len(lst), filename))
+    with open(os.path.join(output_dir, filename), "w") as f:
+        for n in lst:
+            f.write("%s\n" % n)
+
 # load parameter file
 params = moby2.util.MobyDict.from_file( sys.argv[1] )
+output_dir = params.get("output_dir", ".")
 
 # load catalog of tods and convert to pandas dataframe
 moby2_conf = moby2.util.MobyConfig()
@@ -170,7 +180,6 @@ if 0:
     ax.set_ylabel("DEC")
     plt.savefig("hits.png")
 
-
 # 4th iteration: look at uranus
 if "calibration" in params.keys():
     planet = params.get("calibration")
@@ -198,6 +207,9 @@ if "calibration" in params.keys():
     print('%s: left with %i TODs' % (planet, sel.sum()))
     catalog = catalog[sel]
     new_tod_list = list(catalog['tod_name'])
+    # save the uranus tods separately
+    output_filename = params['tag'].format(**params)+"_%s.txt" % planet
+    write_list_to_file(output_dir, output_filename, new_tod_list)
     print("Add %s tods: %d" % (planet, len(new_tod_list)))
     tod_list.extend(new_tod_list)
 
@@ -210,14 +222,10 @@ if "nlimit" in params.keys():
                                   # that calibration tods are included
     print("Total number of TODs selected: %d" % len(tod_list))
 
+# save the list
+output_filename = params['tag'].format(**params)+".txt"
+write_list_to_file(output_dir, output_filename, tod_list)
 
-# prepare output
-output_filename = params['output'].format(**params)
-print('Output %i tods to %s' %(len(tod_list), output_filename))
-
-with open(output_filename, "w") as f:
-    for n in tod_list:
-        f.write("%s\n" % n)
 
 print("Done")
 ######################################################################

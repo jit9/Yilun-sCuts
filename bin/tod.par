@@ -1,5 +1,6 @@
 # parameter file used with select_
-output = '{season}_{array}_wide01hn.txt'
+output_dir = "/scratch/gpfs/yilung/depot/TODLists"
+tag = '{season}_{array}_wide01hn'
 season = '2017'
 array = 'ar6'
 obs_detail = ['wide_01h_n']
@@ -9,4 +10,4 @@ pwv_upper = 2
 ra_lower = -1
 ra_upper = 1
 calibration = 'uranus'
-nlimit = 1000 
+nlimit = 1000
