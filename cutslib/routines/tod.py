@@ -46,6 +46,11 @@ class LoadTOD(Routine):
         params.update(self._load_params)
         # get tod
         tod = moby2.scripting.get_tod(params)
+        # check alt/az validity (not pretty)
+        error = np.sum(np.logical_or(tod.alt > np.pi/2, tod.alt < 0)) > 0
+        if error:
+            raise RuntimeError("TOD altitude has invalid values")
+
         # save tod into data store
         store.set("tod", tod)
 
