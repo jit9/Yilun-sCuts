@@ -6,18 +6,38 @@ import moby2
 import pickle, os.path as op
 import numpy as np
 import numpy.ma as ma
-from moby2.analysis.tod_ana.visual import array_plots
+from cutslib.visual import array_plots
 from matplotlib import pyplot as plt
 
 
 def init(config):
-    global calibrate, targets, shared_depot
+    global calibrate, targets, shared_depot, estimator_name, \
+        gain_l, gain_h, corr_l, corr_h, rms_l, rms_h, kurt_l, kurt_h, \
+        skew_l, skew_h, norm_l, norm_h, de_l, de_h
+
     calibrate = config.getboolean("calibrate", False)
     targets = config.get("targets", None)
     shared_depot = config.get("shared_depot", None)
+    estimator_name = config.get("estimator", "mean")
+    gain_l = config.getfloat("gain_l", None)
+    gain_h = config.getfloat("gain_h", None)
+    corr_l = config.getfloat("corr_l", None)
+    corr_h = config.getfloat("corr_h", None)
+    rms_l = config.getfloat("rms_l", None)
+    rms_h = config.getfloat("rms_h", None)
+    kurt_l = config.getfloat("kurt_l", None)
+    kurt_h = config.getfloat("kurt_h", None)
+    skew_l = config.getfloat("skew_l", None)
+    skew_h = config.getfloat("skew_h", None)
+    norm_l = config.getfloat("norm_l", None)
+    norm_h = config.getfloat("norm_h", None)
+    de_l = config.getfloat("de_l", None)
+    de_h = config.getfloat("de_h", None)
 
 def run(p):
-    global calibrate, targets, shared_depot
+    global calibrate, targets, shared_depot, estimator_name, \
+        gain_l, gain_h, corr_l, corr_h, rms_l, rms_h, kurt_l, kurt_h, \
+        skew_l, skew_h, norm_l, norm_h, de_l, de_h
     freq = p.i.freq
     array = p.i.ar
     season = p.i.season
@@ -29,6 +49,14 @@ def run(p):
         data = pickle.load(f)
 
     # target to plot
+    # if targets are not specified, all are calculated
+    if not targets:
+        targets = ['corrLive', 'rmsLive', 'kurtLive', 'skewLive',
+                   'normLive', 'darkRatioLive', 'MFELive',
+                   'gainLive', 'DELive', 'jumpLive']
+    else:
+        targets = targets.split(',')
+
     if calibrate:
         data['rmsLive'] *= data['resp'] * data['ff'][:,np.newaxis]
         data['normLive'] *= data['resp'] * data['ff'][:,np.newaxis]
@@ -36,40 +64,94 @@ def run(p):
         data['DELive'] *= data['resp'] * data['ff'][:,np.newaxis]
         data['jumpLive'] *= data['resp'] * data['ff'][:,np.newaxis]
 
-    # if targets are not specified, all are calculated
-    if not targets:
-        targets = ['corrLive', 'rmsLive', 'kurtLive', 'skewLive',
-                   'normLive', 'darkRatioLive', 'MFELive',
-                   'gainLive', 'DELive', 'jumpLive']
+    # Get estimator
+    if estimator_name == "mean":
+        estimator = lambda x: np.mean(x, axis=1)
+    elif estimator_name == "median":
+        estimator = lambda x: np.median(x, axis=1)
+    elif estimator_name == "std":
+        estimator = lambda x: np.std(x, axis=1, ddof=1)
+    else:
+        raise NotImplementedError("Estimator %s is not implemented!" %
+                                  estimator_name)
 
     # Run estimators on each target pathological param
-    for target in targets:
+    target = 'gainLive'
+    if target in targets:
         target_values = ma.array(data[target], mask=np.logical_not(data['sel']))
-
-        # estimators
-        target_mean = np.mean(target_values, axis=1)
-        target_median = np.median(target_values, axis=1)
-        target_std = np.std(target_values, axis=1, ddof=1)
-        # more can be added
-        # their output paths are managed by the proj script
-
-        # mean
-        outfile = p.o.patho.array.mean + "/" + target + "_mean.png"
+        target_est = estimator(target_values)
+        outfile = p.o.patho.array.root + "/" + target + "_%s.png" % estimator_name
         print("Saving plot: %s" % outfile)
-        array_plots(target_mean[dets], dets, array=array,
+        array_plots(target_est[dets], dets, array=array,
                     season=season, display='save', save_name=outfile,
-                    title=target+"_mean", pmin=1e-10)
+                    title=target+"_%s" % estimator_name, pmin=gain_l, pmax=gain_h)
 
-        # median
-        outfile = p.o.patho.array.median + "/" + target + "_median.png"
+    target = 'corrLive'
+    if target in targets:
+        target_values = ma.array(data[target], mask=np.logical_not(data['sel']))
+        target_est = estimator(target_values)
+        outfile = p.o.patho.array.root + "/" + target + "_%s.png" % estimator_name
         print("Saving plot: %s" % outfile)
-        array_plots(target_median[dets], dets, array=array,
+        array_plots(target_est[dets], dets, array=array,
                     season=season, display='save', save_name=outfile,
-                    title=target+"_median", pmin=1e-10)
+                    title=target+"_%s" % estimator_name, pmin=corr_l, pmax=corr_h)
 
-        # std
-        outfile = p.o.patho.array.std + "/" + target + "_std.png"
+    target = 'rmsLive'
+    if target in targets:
+        target_values = ma.array(data[target], mask=np.logical_not(data['sel']))
+        target_est = estimator(target_values)
+        outfile = p.o.patho.array.root + "/" + target + "_%s.png" % estimator_name
         print("Saving plot: %s" % outfile)
-        array_plots(target_std[dets], dets, array=array,
+        array_plots(target_est[dets], dets, array=array,
                     season=season, display='save', save_name=outfile,
-                    title=target+"_std", pmin=1e-10)
+                    title=target+"_%s" % estimator_name, pmin=rms_l, pmax=rms_h)
+
+    target = 'kurtLive'
+    if target in targets:
+        target_values = ma.array(data[target], mask=np.logical_not(data['sel']))
+        target_est = estimator(target_values)
+        outfile = p.o.patho.array.root + "/" + target + "_%s.png" % estimator_name
+        print("Saving plot: %s" % outfile)
+        array_plots(target_est[dets], dets, array=array,
+                    season=season, display='save', save_name=outfile,
+                    title=target+"_%s" % estimator_name, pmin=kurt_l, pmax=kurt_h)
+
+    target = 'skewLive'
+    if target in targets:
+        target_values = ma.array(data[target], mask=np.logical_not(data['sel']))
+        target_est = estimator(target_values)
+        outfile = p.o.patho.array.root + "/" + target + "_%s.png" % estimator_name
+        print("Saving plot: %s" % outfile)
+        array_plots(target_est[dets], dets, array=array,
+                    season=season, display='save', save_name=outfile,
+                    title=target+"_%s" % estimator_name, pmin=skew_l, pmax=skew_h)
+
+    target = 'normLive'
+    if target in targets:
+        target_values = ma.array(data[target], mask=np.logical_not(data['sel']))
+        target_est = estimator(target_values)
+        outfile = p.o.patho.array.root + "/" + target + "_%s.png" % estimator_name
+        print("Saving plot: %s" % outfile)
+        array_plots(target_est[dets], dets, array=array,
+                    season=season, display='save', save_name=outfile,
+                    title=target+"_%s" % estimator_name, pmin=norm_l, pmax=norm_h)
+
+    target = 'MFELive'
+    if target in targets:
+        target_values = ma.array(data[target], mask=np.logical_not(data['sel']))
+        target_est = estimator(target_values)
+        outfile = p.o.patho.array.root + "/" + target + "_%s.png" % estimator_name
+        print("Saving plot: %s" % outfile)
+        array_plots(target_est[dets], dets, array=array,
+                    season=season, display='save', save_name=outfile,
+                    title=target+"_%s" % estimator_name, pmin=mfe_l, pmax=mfe_h)
+
+    target = 'DELive'
+    if target in targets:
+        target_values = ma.array(data[target], mask=np.logical_not(data['sel']))
+        target_est = estimator(target_values)
+        outfile = p.o.patho.array.root + "/" + target + "_%s.png" % estimator_name
+        print("Saving plot: %s" % outfile)
+        array_plots(target_est[dets], dets, array=array,
+                    season=season, display='save', save_name=outfile,
+                    title=target+"_%s" % estimator_name, pmin=de_l, pmax=df_h)

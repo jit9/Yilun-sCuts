@@ -4,12 +4,13 @@ tods that correspond to each of the field of observations"""
 
 import fitsio
 import moby2, sys, numpy as np, ephem, os
-from moby2.scripting.pathologies_tools import pathoList, get_pwv
 from moby2.util.database import TODList
 from moby2.instruments import actpol
 from moby2.util import ctime as ct
 from moby2.scripting.products import get_filebase
 import pandas as pd
+
+from .pathologies_tools import pathoList, get_pwv
 
 
 def init(config):

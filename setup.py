@@ -12,6 +12,7 @@ setup(
     install_requires=['dotmap',
                       'configparser',
                       'pycook',
+                      'seaborn',
                       'future', # from here onwards will be moby2 deps
                       'numpy',
                       'matplotlib',

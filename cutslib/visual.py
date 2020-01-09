@@ -1,7 +1,7 @@
 from moby2.libactpol import freq_space_waterfall
 from moby2.libactpol import time_space_waterfall
 from moby2.scripting import products
-import numpy 
+import numpy
 try:
     import pylab
 except:
@@ -29,7 +29,7 @@ def plot_with_cuts(tod, det, interactive=True):
 
 class freqSpaceWaterfall( object ):
     """
-    Functions to generate the waterfall data (power spectrum) and 
+    Functions to generate the waterfall data (power spectrum) and
     shelve it to a depot
     """
 
@@ -64,14 +64,14 @@ class freqSpaceWaterfall( object ):
         self.nfreq = nfreq
         self.logx = logx
         self.matfreqs = numpy.zeros(self.nfreq)
-        if (logx): 
+        if (logx):
             self.matfreqs = numpy.logspace(numpy.log10(fmin), numpy.log10(fmax), nfreq)
         else:
             self.matfreqs = numpy.linspace(fmin, fmax, nfreq)
         self.mat = freq_space_waterfall(self.data, self.matfreqs, self.sampleTime)
 
 
-    def plot( self, selection = None, vmin = None, vmax = None, title = None, filename = None, 
+    def plot( self, selection = None, vmin = None, vmax = None, title = None, filename = None,
               rowDominance = False, units = 'DAC', separators = True, show = True, logy = True,
               ratio = 1.2, size = [10.0, 10.5], dpi = None, linTickSep = None, hideYLabel = False,
               forceAll = False, **kargs):
@@ -97,7 +97,7 @@ class freqSpaceWaterfall( object ):
         if show: pylab.ion()
         else: pylab.ioff()
         if self.mat is None: self.analyze()
-        if selection is None: 
+        if selection is None:
             sel = numpy.ones(len(self.dets), dtype = 'bool')
         elif forceAll:
             sel = numpy.ones(len(self.dets), dtype = 'bool')
@@ -126,14 +126,14 @@ class freqSpaceWaterfall( object ):
             ini = numpy.floor(f[0])
             end = numpy.floor(f[-1])
             xt = (numpy.arange(ini, end+1) - f[0]) / step
-            xtl = numpy.array(numpy.power(10., 
+            xtl = numpy.array(numpy.power(10.,
                      numpy.arange(ini, end+1, dtype = "int")), dtype = 'str')
 
-        
+
         if logy: mat = numpy.log10(self.mat[sel][order]+1e-20)
         else: mat = self.mat[sel][order]
         if forceAll: fsel = fsel[order]
-        if vmin is None or vmax is None: 
+        if vmin is None or vmax is None:
             if forceAll: fmat = numpy.sort(self.mat[fsel].flatten())
             else: fmat = numpy.sort(mat.flatten())
             # fmat = fmat[fmat > 0]
@@ -148,10 +148,10 @@ class freqSpaceWaterfall( object ):
         while j < len(tmp):
             i = tmp[j]
             ini = j
-            while tmp[j] == i: 
+            while tmp[j] == i:
                 j += 1
                 if j == len(tmp): break
-            assert ini != j 
+            assert ini != j
             yt.append((j+ini)/2)
             ytl.append(str(i))
             sep.append(j)
@@ -164,8 +164,8 @@ class freqSpaceWaterfall( object ):
             j += 1
         yt.append(j)
         ytl.append('')
-            
-        if forceAll: 
+
+        if forceAll:
             mask = numpy.ones(mat.shape, dtype = bool)
             mask[fsel] = False
             mmat = numpy.ma.array(mat, mask = mask)
@@ -206,7 +206,7 @@ class freqSpaceWaterfall( object ):
         else: cmap = pylab.cm.RdYlBu_r
         cmap.set_bad([0.3, 0.3, 0.3],1.)
         m.set_cmap(cmap)
-        if title is None: 
+        if title is None:
             title = "Watefall TOD %s %s " % \
                 (self.name.split('.')[0], self.array)
             if rowDominance: title += "(Row Dominated)"
@@ -215,7 +215,7 @@ class freqSpaceWaterfall( object ):
         if filename is not None: pylab.savefig(filename, dpi = dpi)
         if show: pylab.show()
         else: pylab.close()
-                    
+
 
 
     def cumQualplot( self, filename = None, forceNew = False, nbins = 50, show = True,
@@ -253,7 +253,7 @@ class freqSpaceWaterfall( object ):
                    units = 'DAC', f0 = 10., f1 = 200., forceNew = False, show = True):
         """
         @brief Plot the quality of the power spectrum across the array in a 2D plot.
-        The quality is defined as the variance of the power spectrum between 2 
+        The quality is defined as the variance of the power spectrum between 2
         specified frequencies (default 10 and 200 Hz).
         @param vmin         Minimum value in scale of the plot.
         @param vmax         Maximum value in scale of the plot.
@@ -295,14 +295,14 @@ class freqSpaceWaterfall( object ):
         b.draw_all()
         pylab.xlabel("rows")
         pylab.ylabel("cols")
-        if title is None: 
+        if title is None:
             title = "Noise Quality TOD %s %s " % \
             (self.name.split('.')[0], self.array)
         pylab.title(title)
         if filename is not None: pylab.savefig(filename)
         if show: pylab.show()
         else: pylab.close()
-        
+
 
 
 class timeSpaceWaterfall( object ):
@@ -335,8 +335,8 @@ class timeSpaceWaterfall( object ):
         self.sort = numpy.array(self.sort, dtype = [('rows', int),('cols', int)])
 
 
-    def plot( self, selection = None, vmin = None, vmax = None, level = 0.95, units = 'DAC', 
-              title = None, rowDominance = False, separators = True, filename = None, 
+    def plot( self, selection = None, vmin = None, vmax = None, level = 0.95, units = 'DAC',
+              title = None, rowDominance = False, separators = True, filename = None,
               show = True):
         """
         @brief Plot function to visualize the time space waterfall plot.
@@ -355,7 +355,7 @@ class timeSpaceWaterfall( object ):
         if selection is None:
             sel = numpy.ones(numpy.shape(self.mat)[0], dtype = 'bool')
         else: sel = selection
-        if vmin is None or vmax is None: 
+        if vmin is None or vmax is None:
             val = numpy.sort(numpy.reshape(self.mat[sel], numpy.size(self.mat[sel])))
             N = len(val)-1
         if vmin is None: vmin = val[int(N*(1.0-level)/2.0)]
@@ -378,10 +378,10 @@ class timeSpaceWaterfall( object ):
         while j < len(tmp):
             i = tmp[j]
             ini = j
-            while tmp[j] == i: 
+            while tmp[j] == i:
                 j += 1
                 if j == len(tmp): break
-            assert ini != j 
+            assert ini != j
             yt.append((j+ini)/2)
             ytl.append(str(i))
             sep.append(j)
@@ -423,7 +423,7 @@ class timeSpaceWaterfall( object ):
 
 class scanWaterfall( object ):
     """
-    @brief a waterfall plot of roughly azimuth angle versus time, stitching together the 
+    @brief a waterfall plot of roughly azimuth angle versus time, stitching together the
            common mode in pieces of left and right going scans.
     """
     def __init__( self, tod, selection = None ):
@@ -438,7 +438,7 @@ class scanWaterfall( object ):
         cm = numpy.mean(tod.data[sel], axis = 0)
         self.cm = cm
 
-        
+
         self.sampleTime = (tod.ctime[-1]-tod.ctime[0])/(tod.nsamps-1)
         T = int(1./tod.scanFreq/self.sampleTime/2)
         az = tod.az[:2*T]
@@ -460,8 +460,8 @@ class scanWaterfall( object ):
         self.az = tod.az[pivot:pivot+T]*180/numpy.pi
         self.az -= self.az.mean()
 
-            
-    def plot( self, vmin = None, vmax = None, units = 'DAC', 
+
+    def plot( self, vmin = None, vmax = None, units = 'DAC',
               title = None, filename = None, show = True):
         """
         @brief Plot function to visualize the time space waterfall plot.
@@ -519,13 +519,13 @@ class quality( object ):
         self.name = tod.info.basename
         self.array = tod.info.array
         d, r, c = tod.listUncut()
-        self.dets = numpy.array(d) 
-        self.rows = numpy.array(r) 
-        self.cols = numpy.array(c) 
+        self.dets = numpy.array(d)
+        self.rows = numpy.array(r)
+        self.cols = numpy.array(c)
 
         sel = self.dets[(self.rows>13)*(self.rows<17)*(self.cols>13)*(self.cols<17)]
         print len(sel)
-        
+
         f = numpy.zeros(len(sel))
         for i in range(len(sel)):
             p, nu, w = mobyUtils.power(tod.data[sel[i]], dt = tod.sampleTime)
@@ -549,7 +549,7 @@ class quality( object ):
                    units = 'DAC', f0 = 10., f1 = 200., forceNew = False, show = True):
         """
         @brief Plot the quality of the power spectrum across the array in a 2D plot.
-        The quality is defined as the variance of the power spectrum between 2 
+        The quality is defined as the variance of the power spectrum between 2
         specified frequencies (default 10 and 200 Hz).
         @param vmin         Minimum value in scale of the plot.
         @param vmax         Maximum value in scale of the plot.
@@ -573,14 +573,14 @@ class quality( object ):
         b.set_label(units+" rms")
         pylab.xlabel("rows")
         pylab.ylabel("cols")
-        if title is None: 
+        if title is None:
             title = "Noise Quality TOD %s %s " % \
             (self.name.split('.')[0], self.array)
         pylab.title(title)
         if filename is not None: pylab.savefig(filename)
         if show: pylab.show()
         else: pylab.clf()
-        
+
 
 
 
@@ -613,7 +613,7 @@ def tuneScanFreq(p, nu, scanFreq, scope = 0.002, nsamp = 100, plot = False):
     mf = freqs[pow == pow.max()]
     if numpy.ndim(mf) > 0: return mf[0]
     else: return mf
-        
+
 
 
 
@@ -625,26 +625,26 @@ def array_plots( param,
                  pmax=None, pmin=None, outrange=True,
                  param_name='', param_units='', title='',
                  display = 'show', save_name = 'newfig.png' ):
-    """Plot a parameter across the array                                       
-                                                                               
-    Arguments:                                                                 
-    ----------                                                                 
-    param: parameter to plot                                                   
-                                                                               
-    Optional:                                                                  
-    ---------                                                                  
-                                                                               
-    |det: list of detectors to plot (can be a list of det_uid or a tuple (row,col))    |instrument: instrument                                                    
-    |array: array name ('ar1', 'pa2', 'pa3', 'pa4')                                     
-    |season: observing season ('s13', 's14', 's15'...)                                
-    or                                                                         
-    |tod: tod object (tod.det, tod.info.array_name, tod.info.season)           
-                                                                               
-    pmax/pmin: range for parameter values                                      
-    outrange: if True, parameters outside [pmin,pmax] will be plotted in black 
-    param_name, param_units, title: informations to add to the plot            
-    display: ['show', 'save'] either show the plot, or directly save it        
-    save_name: if display == 'save', name of the output file                   
+    """Plot a parameter across the array
+
+    Arguments:
+    ----------
+    param: parameter to plot
+
+    Optional:
+    ---------
+
+    |det: list of detectors to plot (can be a list of det_uid or a tuple (row,col))    |instrument: instrument
+    |array: array name ('ar1', 'pa2', 'pa3', 'pa4')
+    |season: observing season ('s13', 's14', 's15'...)
+    or
+    |tod: tod object (tod.det, tod.info.array_name, tod.info.season)
+
+    pmax/pmin: range for parameter values
+    outrange: if True, parameters outside [pmin,pmax] will be plotted in black
+    param_name, param_units, title: informations to add to the plot
+    display: ['show', 'save'] either show the plot, or directly save it
+    save_name: if display == 'save', name of the output file
     """
     if det is None and array is None and tod is None:
         print "List of (dets, season and array name) or tod object must be prov\
@@ -694,13 +694,13 @@ ided"
         color = get_color( param, pmax = pmax, pmin = pmin, outrange = outrange )
     if np.unique(freq).size == 1:
         patchlist = get_patches( pos, color, polfamily, freq )
-    else: 
+    else:
         patchlist = get_patches( pos, color, polfamily, freq, radius=0.012 )
 
 
     # Add other detectors in grey
     #det_uid = array_data['det_uid']
-    #if np.unique(freq).size == 1: 
+    #if np.unique(freq).size == 1:
     #    det_uid = det_uid[array_data['nom_freq']==np.unique(freq)]
     #if Detid.size < det_uid.size:
     #    _dets = set( np.arange(det_uid.size) )
@@ -713,7 +713,7 @@ ided"
     #    else: _patchlist = get_patches( _pos, _color, _polfamily, _freq, radius=0.012 )
     #else:
     _patchlist = []
-    
+
     #Add dark detectors as black circles
     if darks:
         dd = array_data['det_uid'][array_data['det_type']=='dark_tes']
@@ -722,14 +722,14 @@ ided"
             patchlist.append( patches.Wedge( [xd,yd], 0.02, 0., 360.,
                                              width=0.003, fc = 'k', ec='k' ) )
 
-    
+
     x_lim, y_lim = get_array_plot_lims(array, season)
 
     plt.ioff()
     plt.figure( figsize = (10,10) )
     ax = create_plot( patchlist+_patchlist, pmin, pmax, x_lim, y_lim, array )
     set_infos( param_name, param_units, title, ax )
-    
+
     if display == 'show':
         plt.ion()
         plt.show()
@@ -805,7 +805,7 @@ def get_patches(pos, color,polfamily, freq, radius=0.015):
                 theta1, theta2 = (0,360)
             patchlist.append( patches.Wedge( [x,y], radius*1.2, theta1, theta2,
                                              fc = c, ec=c ) )
-    
+
     return patchlist
 
 
@@ -837,7 +837,7 @@ def create_plot(patchlist, pmin, pmax, x_lim, y_lim, array_name):
     plt.text(0.9, 0.05, array_name,
              fontsize='xx-large',
              ha='center', va='center', transform = ax1.transAxes)
-    
+
     # if array_name in ['ar3', 'ar5', 'ar6']:
     #     plt.text(0.1,0.95,'150', ha='center', va='center',
     #              transform=ax1.transAxes)
@@ -949,7 +949,7 @@ def tod3D(tod, dets=None, time_resolution=2., prange=[None,None],
     if pmax == None:
         pmax = tod.data[dets].max()
 
-    
+
 
 
     plt.ioff()
@@ -988,7 +988,7 @@ def tod3D(tod, dets=None, time_resolution=2., prange=[None,None],
     color = get_color( tod_ds.data[dets,0],
                               pmax = pmax, pmin = pmin )
     colors = [ get_color( tod_ds.data[dets,i],
-                          pmax = pmax, pmin = pmin ) 
+                          pmax = pmax, pmin = pmin )
                for i in xrange(tod_ds.nsamps) ]
     if sky_coords:
         # pos = x[:,0], y[:,0]
@@ -1003,8 +1003,8 @@ def tod3D(tod, dets=None, time_resolution=2., prange=[None,None],
         # p = patchlist[0]
         # ax1.add_patch(p)
         ax1.add_collection( patchlist )
-    
-    
+
+
     def animate(i):
         if sky_coords:
             patchlist = patchlists[i]
@@ -1026,7 +1026,7 @@ def tod3D(tod, dets=None, time_resolution=2., prange=[None,None],
                                   np.arange(tod_ds.nsamps),
                                   interval=interval,
                                   **kwargs)
-    
+
     if display == 'show':
         plt.ion()
         plt.show()
@@ -1040,7 +1040,7 @@ def tod3D(tod, dets=None, time_resolution=2., prange=[None,None],
         plt.close()
 
 
-        
+
 def get_sky_coords(tod, pointingpar):
     tod.fplane = products.get_focal_plane(
         pointingpar, det_uid=tod.det_uid, tod_info=tod.info, tod=tod)
@@ -1127,6 +1127,3 @@ def plot_wafer_names(ax, array):
                  transform = ax.transAxes, fontsize = 'x-large')
         plt.text(0.03, 0.25, 'SH8B', color='gray',
                  transform = ax.transAxes, fontsize = 'x-large')
-
-
-
