@@ -1,7 +1,7 @@
 """This module creates the killedbyplot that shows how many detectors
 pass each cut criteria"""
 
-from pathologyReport import pathoReport
+from cutslib.pathologyReport import pathoReport
 
 def init(config):
     pass

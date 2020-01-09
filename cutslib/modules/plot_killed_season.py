@@ -1,8 +1,8 @@
-"""This module creates the killedbyplot as a time series 
+"""This module creates the killedbyplot as a time series
 that shows how many detectors pass each cut criteria as a function
 of time."""
 
-from pathologyReport import pathoReport
+from cutslib.pathologyReport import pathoReport
 
 def init(config):
     global targets, add_pwv
@@ -20,7 +20,7 @@ def run(p):
         targets = ['corrLive', 'rmsLive', 'kurtLive', 'skewLive',
                    'normLive', 'darkRatioLive', 'MFELive',
                    'gainLive', 'DELive', 'jumpLive']
-    
+
     for target in targets:
         outfile = p.o.patho.season.root+"/%s.png" % target
         print("Saving plot: %s" % outfile)

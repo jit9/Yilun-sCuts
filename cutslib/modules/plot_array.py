@@ -1,9 +1,9 @@
-"""In this script I try to produce an array plot of certain pathological 
-quantity. For example, it would be interesting to see the gain on an 
+"""In this script I try to produce an array plot of certain pathological
+quantity. For example, it would be interesting to see the gain on an
 array plot, or the correlation on the array plot"""
 
 import moby2
-import pickle
+import pickle, os.path as op
 import numpy as np
 import numpy.ma as ma
 from moby2.analysis.tod_ana.visual import array_plots
@@ -11,17 +11,18 @@ from matplotlib import pyplot as plt
 
 
 def init(config):
-    global calibrate, targets
+    global calibrate, targets, shared_depot
     calibrate = config.getboolean("calibrate", False)
     targets = config.get("targets", None)
-    
+    shared_depot = config.get("shared_depot", None)
+
 def run(p):
-    global calibrate, targets
+    global calibrate, targets, shared_depot
     freq = p.i.freq
     array = p.i.ar
     season = p.i.season
     pickle_file = p.i.pickle_file
-    ad = moby2.tod.ArrayData.from_fits_table('/home/lmaurin/actpol_data_shared/ArrayData/{}/{}/default.fits'.format(season, array))
+    ad = moby2.tod.ArrayData.from_fits_table(op.join(shared_depot, 'ArrayData/{}/{}/default.fits'.format(season, array)))
     dets = ad['det_uid'][ad['nom_freq']==freq]
 
     with open(pickle_file, "rb") as f:
@@ -51,7 +52,7 @@ def run(p):
         target_std = np.std(target_values, axis=1, ddof=1)
         # more can be added
         # their output paths are managed by the proj script
-        
+
         # mean
         outfile = p.o.patho.array.mean + "/" + target + "_mean.png"
         print("Saving plot: %s" % outfile)

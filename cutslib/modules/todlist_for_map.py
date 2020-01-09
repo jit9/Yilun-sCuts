@@ -13,7 +13,7 @@ import pandas as pd
 
 
 def init(config):
-    global obs_details, cuts_db, include_time, outdir, selParams
+    global obs_details, cuts_db, include_time, outdir, selParams, obs_catalog
     obs_details = config.get('obs_details').split()
     cuts_db = config.get('cuts_db', None)
     include_time = config.get('include_time', None)
@@ -22,9 +22,10 @@ def init(config):
         "liveDets": {"gt": 150},
         "PWV": {"lt": 3},
     })
+    obs_catalog = config.get('obs_catalog', None)
 
 def run(p):
-    global obs_details, cuts_db, include_time, outdir, selParams
+    global obs_details, cuts_db, include_time, outdir, selParams, obs_catalog
 
     if cuts_db is not None:
         pl = pathoList( cuts_db )
@@ -39,7 +40,7 @@ def run(p):
     keys = ['todName', 'liveDets', 'hour', 'hourAfterSunset', 'hourAfterSunrise']
     PL = pd.DataFrame.from_dict( {k:pl.data[k] for k in keys} )
 
-    filename = '/home/lmaurin/actpol_data_shared/ObsCatalog/catalog.fits'
+    filename = obs_catalog
     npcat = fitsio.read(filename)
     npcat = npcat.byteswap().newbyteorder()
     catalog = pd.DataFrame.from_records(npcat)
