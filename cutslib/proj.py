@@ -42,7 +42,7 @@ List of output files:
 
 from util import mkdir, parse_tag, parse_depot, tag_to_afsv
 from dotmap import DotMap
-import os
+import os.path as op
 
 output_dir = "output"
 
@@ -85,17 +85,17 @@ def init(cutparam, output_dir=None):
     o.ff = ff
     o.cal = cal
     o.patho = patho
-    o.pickle_file = o.root + "/" + tag + "_results.pickle"
+    o.pickle_file = op.join(o.root, tag + "_results.pickle")
     # consolidate all input information
     i = DotMap()
-    i.root = os.path.dirname(cutparam)
+    i.root = op.dirname(cutparam)
     i.cutparam = cutparam
     i.cutParam = cutparam.replace("param","Param")
-    i.ff = i.root+"/ff_" + tag + ".dict"
+    i.ff = op.join(i.root, "ff_" + tag + ".dict")
     i.ar, i.freq, i.season, i.version = tag_to_afsv(tag)
     i.pickle_file = o.pickle_file
-    i.run_dir = i.root + "/run_" + i.version
-    i.db = i.run_dir + "/" + tag + ".db"
+    i.run_dir = op.join(i.root, "run_" + i.version)
+    i.db = op.join(i.run_dir, tag + ".db")
     # consolidate all information
     p = DotMap()
     p.i, p.o = i, o
