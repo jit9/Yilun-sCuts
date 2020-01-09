@@ -49,7 +49,7 @@ def run(proj):
     plt.ioff()
     plt.figure(figsize=(20,12))
     # Gain
-    plt.subplot(341)
+    plt.subplot(331)
     d = data['gainLive']
     p1,p5,p95,p99 = scoreatpercentile(d[d!=0], [1,5,95,99])
     for f, sel in zip(freqs,sel_freqs):
@@ -66,7 +66,7 @@ def run(proj):
     plt.title('Gain')
 
     # Correlation
-    plt.subplot(342)
+    plt.subplot(332)
     d = data['corrLive']
     p1,p5,p10 = scoreatpercentile(d[d!=0], [1,5,10])
     for f, sel in zip(freqs,sel_freqs):
@@ -92,7 +92,7 @@ def run(proj):
     #plt.title('Dark Fraction')
 
     # RMS
-    plt.subplot(344)
+    plt.subplot(333)
     d = data['rmsLive']
     p1,p5,p95,p99 = scoreatpercentile(d[d!=0], [1,5,95,99])
     for f, sel in zip(freqs,sel_freqs):
@@ -109,7 +109,7 @@ def run(proj):
     plt.title('RMS')
 
     # Norm
-    plt.subplot(345)
+    plt.subplot(334)
     d = data['normLive']
     p1,p5,p95,p99 = scoreatpercentile(d[d!=0], [1,5,95,99])
     for f, sel in zip(freqs,sel_freqs):
@@ -126,7 +126,7 @@ def run(proj):
     plt.title('Norm')
 
     # Drift Error
-    plt.subplot(346)
+    plt.subplot(335)
     d = data['DELive']
     p1,p5,p95,p99 = scoreatpercentile(d[d!=0], [1,5,95,99])
     for f, sel in zip(freqs,sel_freqs):
@@ -143,7 +143,7 @@ def run(proj):
     plt.title('Drift Error')
 
     # Mid-Frequency Error
-    plt.subplot(347)
+    plt.subplot(336)
     d = data['MFELive']
     p1,p5,p95,p99 = scoreatpercentile(d[d!=0], [1,5,95,99])
     for f, sel in zip(freqs,sel_freqs):
@@ -160,7 +160,7 @@ def run(proj):
     plt.title('Mid-Frequency Error')
 
     # Kurtosis
-    plt.subplot(349)
+    plt.subplot(337)
     d = data['kurtLive']
     p1,p5,p95,p99 = scoreatpercentile(d[d!=0], [1,5,95,99])
     for f, sel in zip(freqs,sel_freqs):
@@ -175,7 +175,7 @@ def run(proj):
     plt.title('Kurtosis')
 
     # Skewness
-    plt.subplot(3,4,10)
+    plt.subplot(338)
     d = data['skewLive']
     p1,p5,p95,p99 = scoreatpercentile(d[d!=0], [1,5,95,99])
     for f, sel in zip(freqs,sel_freqs):
@@ -190,7 +190,7 @@ def run(proj):
     plt.title('Skewness')
 
     # Jump
-    plt.subplot(3,4,11)
+    plt.subplot(339)
     d = data['jumpLive']
     p1,p5,p95,p99 = scoreatpercentile(d[d>0], [1,5,95,99])
     for f, sel in zip(freqs,sel_freqs):
