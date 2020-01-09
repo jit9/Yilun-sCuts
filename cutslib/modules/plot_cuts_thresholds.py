@@ -2,6 +2,8 @@
 
 Options:
     calibrate: True if rms, norm, MFE, DE, jump is to be calibrated
+    {crit}_adj: adjust the histogram range, larger value means larger range
+    corr_l: lower plot range for corr
 """
 
 import moby2
@@ -12,11 +14,18 @@ from scipy.stats import scoreatpercentile
 import numpy as np
 
 def init(config):
-    global calibrate
+    global calibrate, gain_adj, corr_l, rms_adj, norm_adj, de_adj, mfe_adj, jump_adj
     calibrate = config.getboolean("calibrate", False)
+    gain_adj = config.getfloat("gain_adj", 5)
+    corr_l = config.getfloat("corr_l", 0.8)
+    rms_adj = config.getfloat("rms_adj", 5)
+    norm_adj = config.getfloat("norm_adj", 10)
+    de_adj = config.getfloat("de_adj", 20)
+    mfe_adj = config.getfloat("mfe_adj", 20)
+    jump_adj = config.getfloat("jump_adj", 3)
 
 def run(proj):
-    global calibrate
+    global calibrate, gain_adj, corr_l, rms_adj, norm_adj, de_adj, mfe_adj, jump_adj
     filename = proj.i.pickle_file
     array_name = proj.i.ar
     season = proj.i.season
@@ -45,7 +54,8 @@ def run(proj):
     p1,p5,p95,p99 = scoreatpercentile(d[d!=0], [1,5,95,99])
     for f, sel in zip(freqs,sel_freqs):
         d = data['gainLive'][sel]
-        h, b, e = plt.hist(d[np.isfinite(d)], bins=np.logspace(np.log10(p5/5),np.log10(p95*5),100), alpha=0.5, label='%i' %f)
+        adj = gain_adj
+        h, b, e = plt.hist(d[np.isfinite(d)], bins=np.logspace(np.log10(p5/adj),np.log10(p95*adj),100), alpha=0.5, label='%i' %f)
     plt.axvline(p5, color='g')
     plt.text(p5, h.max()/2, 'p5 = %.2f'%p5, color='g', ha='right')
     plt.axvline(p95, color='g')
@@ -61,7 +71,7 @@ def run(proj):
     p1,p5,p10 = scoreatpercentile(d[d!=0], [1,5,10])
     for f, sel in zip(freqs,sel_freqs):
         d = data['corrLive'][sel]
-        h,b,e=plt.hist(d[np.isfinite(d)], bins=np.linspace(0.8,1,100), alpha=0.5, label='%i' %f)
+        h,b,e=plt.hist(d[np.isfinite(d)], bins=np.linspace(corr_l,1,100), alpha=0.5, label='%i' %f)
     plt.text(p10, h.max()/2, 'p10 = %.4f'%p10, color='g', ha='right')
     plt.axvline(p10, color='g')
     plt.legend(loc='best',frameon=False)
@@ -87,7 +97,8 @@ def run(proj):
     p1,p5,p95,p99 = scoreatpercentile(d[d!=0], [1,5,95,99])
     for f, sel in zip(freqs,sel_freqs):
         d = data['rmsLive'][sel]
-        h,b,e=plt.hist(d[np.isfinite(d)], bins=np.logspace(np.log10(p5/5),np.log10(p95*5),100), alpha=0.5, label='%i' %f)
+        adj = rms_adj
+        h,b,e=plt.hist(d[np.isfinite(d)], bins=np.logspace(np.log10(p5/adj),np.log10(p95*adj),100), alpha=0.5, label='%i' %f)
     plt.axvline(p5, color='g')
     plt.text(p5, h.max()/2, 'p5 = %.2e'%p1, color='g', ha='right')
     plt.axvline(p95, color='g')
@@ -103,7 +114,8 @@ def run(proj):
     p1,p5,p95,p99 = scoreatpercentile(d[d!=0], [1,5,95,99])
     for f, sel in zip(freqs,sel_freqs):
         d = data['normLive'][sel]
-        h,b,e=plt.hist(d[np.isfinite(d)], bins=np.logspace(np.log10(p5/10),np.log10(p95*10),100), alpha=0.5, label='%i' %f)
+        adj = norm_adj
+        h,b,e=plt.hist(d[np.isfinite(d)], bins=np.logspace(np.log10(p5/adj),np.log10(p95*adj),100), alpha=0.5, label='%i' %f)
     plt.axvline(p5, color='g')
     plt.text(p5, h.max()/2, 'p5 = %.2e'%p1, color='g', ha='right')
     plt.axvline(p95, color='g')
@@ -119,7 +131,8 @@ def run(proj):
     p1,p5,p95,p99 = scoreatpercentile(d[d!=0], [1,5,95,99])
     for f, sel in zip(freqs,sel_freqs):
         d = data['DELive'][sel]
-        h,b,e=plt.hist(d[np.isfinite(d)], bins=np.logspace(np.log10(p5/20),np.log10(p95*20),100), alpha=0.5, label='%i' %f)
+        adj = de_adj
+        h,b,e=plt.hist(d[np.isfinite(d)], bins=np.logspace(np.log10(p5/adj),np.log10(p95*adj),100), alpha=0.5, label='%i' %f)
     plt.axvline(p5, color='g')
     plt.text(p5, h.max()/2, 'p5 = %.2e'%p1, color='g', ha='right')
     plt.axvline(p95, color='g')
@@ -135,7 +148,8 @@ def run(proj):
     p1,p5,p95,p99 = scoreatpercentile(d[d!=0], [1,5,95,99])
     for f, sel in zip(freqs,sel_freqs):
         d = data['MFELive'][sel]
-        h,b,e=plt.hist(d[np.isfinite(d)], bins=np.logspace(np.log10(p5/20),np.log10(p95*20),100), alpha=0.5, label='%i' %f)
+        adj = mfe_adj
+        h,b,e=plt.hist(d[np.isfinite(d)], bins=np.logspace(np.log10(p5/adj),np.log10(p95*adj),100), alpha=0.5, label='%i' %f)
     plt.axvline(p5, color='g')
     plt.text(p5, h.max()/2, 'p5 = %.2e'%p1, color='g', ha='right')
     plt.axvline(p95, color='g')
@@ -181,7 +195,8 @@ def run(proj):
     p1,p5,p95,p99 = scoreatpercentile(d[d>0], [1,5,95,99])
     for f, sel in zip(freqs,sel_freqs):
         d = data['jumpLive'][sel]
-        h,b,e=plt.hist(d[np.isfinite(d)*(d>0)], bins=np.logspace(np.log10(p1/3),np.log10(p99*3),100), alpha=0.5, label='%i' %f)
+        adj = jump_adj
+        h,b,e=plt.hist(d[np.isfinite(d)*(d>0)], bins=np.logspace(np.log10(p1/adj),np.log10(p99*adj),100), alpha=0.5, label='%i' %f)
     plt.xscale('log')
     plt.axvline(p1, color='g')
     plt.text(p1, h.max()/2, 'p1 = %.2e'%p1, color='g', ha='right')
