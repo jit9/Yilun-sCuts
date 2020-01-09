@@ -2,9 +2,9 @@ import moby2
 import pandas as pd
 import seaborn as sns
 sns.set(style="white")
-from moby2.scripting.pathologies_tools import pathoList, get_pwv
+from .pathologies_tools import pathoList, get_pwv
 from matplotlib import pyplot as plt
-plt.ion()
+# plt.ion()
 
 
 class pathoReport(object):
