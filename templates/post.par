@@ -1,0 +1,43 @@
+# Post-processing pipeline
+# =====================================
+# Full pipeline assuming only get_cuts / cutsCaller are completed
+
+
+[pipeline]
+cutparam = ./cutparams_v0.par
+output_dir = /scratch/gpfs/yilung/depot/Postprocess/
+# pipeline = collect_crit select_good_tods plot_cuts_thresholds plot_array
+#            plot_killed_array plot_killed_season get_flatfield plot_ff
+#            todlist_for_map plot_planet_cal plot_planet_cal_array
+pipeline = collect_crit select_good_tods plot_cuts_thresholds plot_array
+           plot_killed_array plot_killed_season get_flatfield plot_ff
+           todlist_for_map
+[select_good_tods]
+[collect_crit]
+[get_flatfield]
+[plot_array]
+calibrate = False
+shared_depot = /scratch/gpfs/yilung/actpol_data_shared/
+[plot_cuts_thresholds]
+calibrate = False
+[plot_killed_array]
+[plot_killed_season]
+add_pwv = True
+[plot_ff]
+[todlist_for_map]
+obs_catalog = /scratch/gpfs/snaess/actpol/depot/mhasse/mhasse1/ObsCatalog/catalog.fits
+include_time=/scratch/gpfs/yilung/actpol_data_shared/ObsTimes/actpol_obs_2017_180404.txt
+outdir = /scratch/gpfs/yilung/depot/SelectedTODs/
+obs_details = deep5 deep56 deep56_A deep56_B deep6 deep8 deep9
+              boss_north_A boss_north_B boss_north neptune saturn jupiter
+              mars uranus tau_a cen_a orion wide7
+# [plot_planet_cal]
+# planet_path = /data/actpol/depot/fp_fit_results/181022/
+# ctime_start = 1471280400
+# live_min = 300
+# loading_max = 2.7
+# gauss_test = 10
+# [plot_planet_cal_array]
+# planet_path = /data/actpol/depot/fp_fit_results/181022/
+# ctime_start = 1471280400
+# loading_max = 2.7
