@@ -1,3 +1,9 @@
+"""This module plots the histograms for each selCriteria.
+
+Options:
+    calibrate: True if rms, norm, MFE, DE, jump is to be calibrated
+"""
+
 import moby2
 import cPickle
 import sys
@@ -8,7 +14,7 @@ import numpy as np
 def init(config):
     global calibrate
     calibrate = config.getboolean("calibrate", False)
-    
+
 def run(proj):
     global calibrate
     filename = proj.i.pickle_file
@@ -24,10 +30,11 @@ def run(proj):
         data['jumpLive'] *= data['resp'] * data['ff'][:,np.newaxis]
 
     array_data = moby2.scripting.get_array_data({'array_name':array_name,'season':season})
-    freqs = np.unique(array_data['nom_freq'])
-    freqs = freqs[freqs!=0]
-    # sel_freqs = [array_data['nom_freq'] == f for f in freqs]
-    sel_freqs = [proj.i.freq]
+    # freqs = np.unique(array_data['nom_freq'])
+    # freqs = freqs[freqs!=0]
+    freqs = [proj.i.freq]
+    sel_freqs = [array_data['nom_freq'] == f for f in freqs]
+
     keys = [k for k in data.keys() if 'Live' in k]
 
     plt.ioff()
@@ -74,7 +81,7 @@ def run(proj):
     #plt.yticks(visible=False)
     #plt.title('Dark Fraction')
 
-    # RMS       
+    # RMS
     plt.subplot(344)
     d = data['rmsLive']
     p1,p5,p95,p99 = scoreatpercentile(d[d!=0], [1,5,95,99])
@@ -90,7 +97,7 @@ def run(proj):
     plt.yticks(visible=False)
     plt.title('RMS')
 
-    # Norm         
+    # Norm
     plt.subplot(345)
     d = data['normLive']
     p1,p5,p95,p99 = scoreatpercentile(d[d!=0], [1,5,95,99])
@@ -106,7 +113,7 @@ def run(proj):
     plt.yticks(visible=False)
     plt.title('Norm')
 
-    # Drift Error  
+    # Drift Error
     plt.subplot(346)
     d = data['DELive']
     p1,p5,p95,p99 = scoreatpercentile(d[d!=0], [1,5,95,99])
