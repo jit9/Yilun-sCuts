@@ -17,7 +17,10 @@ def combine(ver):
             continue
         filename = '.'.join(files[0].split('.')[:-1])
         mode = "a" if os.path.exists(filename) else "w"
-        first = True
+        if mode == "a":
+            first = False
+        else:
+            first = True
         with open(filename, mode) as ff:
             for f in files:
                 with open(f, "r") as tf:
