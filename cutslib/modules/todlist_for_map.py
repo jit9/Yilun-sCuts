@@ -10,7 +10,7 @@ from moby2.util import ctime as ct
 from moby2.scripting.products import get_filebase
 import pandas as pd
 
-from .pathologies_tools import pathoList, get_pwv
+from cutslib.pathologies_tools import pathoList, get_pwv
 
 
 def init(config):
@@ -46,7 +46,6 @@ def run(p):
     npcat = npcat.byteswap().newbyteorder()
     catalog = pd.DataFrame.from_records(npcat)
     catalog.index = pd.to_datetime(catalog.date)
-
     sel = np.logical_and( catalog.obs_type != 'stare', catalog.season == p.i.season)
     sel = np.logical_and( sel, catalog.array == p.i.ar)
     output = pd.merge(catalog[sel], PL, left_on='tod_name', right_on='todName', how='left')
