@@ -1,18 +1,30 @@
-"""This module plots the flatfield on an array"""
+"""This module plots the flatfield on an array
 
-import os
+Options:
+    pmin, pmax: plot ranges
+    flatfield: if flatfield is other than the output one from param
+    freq: if freq is other than the given
+    tag: if tag is other than the default tag from param
+"""
 import moby2.util
 import numpy as np
-from moby2.analysis.tod_ana import visual as v
+from cutslib import visual as v
 
 def init(config):
-    global pmin, pmax
+    global pmin, pmax, flatfield, tag, freq
     pmin = config.getfloat("pmin", None)
     pmax = config.getfloat("pmax", None)
+    flatfield = config.get("flatfield", None)
+    tag = config.get("tag", None)
+    freq = config.getfloat("freq", None)
 
 def run(p):
-    global pmin, pmax
-    ff_name = p.i.ff
+    global pmin, pmax, flatfield, tag, freq
+    if not flatfield:
+        ff_name = p.i.ff
+    else:
+        ff_name = flatfield
+    print("Plotting: %s" % ff_name)
     ff = moby2.util.MobyDict.from_file(ff_name)
 
     det_uid = np.asarray(ff['det_uid'], dtype=int)
@@ -25,17 +37,17 @@ def run(p):
         pmax = cal.max()
 
     # save flatfield plot
-    outfile = p.o.ff + "/ff_%s_cal.png" % p.tag
+    if not tag:
+        tag = p.tag
+    outfile = p.o.ff + "/ff_%s_cal.png" % tag
     print("Saving plot: %s" % outfile)
-    v.array_plots(cal, det_uid, season=p.i.season, array=p.i.ar,
-                  pmin=pmin, pmax=pmax, title='Flatfield %s' % p.tag,
+    v.array_plots(cal, det_uid, season=p.i.season, array=p.i.ar, fr=freq,
+                  pmin=pmin, pmax=pmax, title='Flatfield %s' % tag,
                   display='save', save_name=outfile)
 
     # save stable detector plot
-    outfile = p.o.ff + "/ff_%s_stable.png" % p.tag
+    outfile = p.o.ff + "/ff_%s_stable.png" % tag
     print("Saving plot: %s" % outfile)
-    v.array_plots(stable, det_uid, title = 'Stable %s' % p.tag,
-                  season=p.i.season, array=p.i.ar, display='save',
+    v.array_plots(stable, det_uid, title = 'Stable %s' % tag,
+                  season=p.i.season, array=p.i.ar, display='save', fr=freq,
                   save_name=outfile)
-
-

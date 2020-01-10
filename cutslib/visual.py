@@ -621,7 +621,7 @@ def tuneScanFreq(p, nu, scanFreq, scope = 0.002, nsamp = 100, plot = False):
 
 def array_plots( param,
                  det=None, instrument = 'actpol', array = None, season = None,
-                 tod=None, darks=True,
+                 fr=None, tod=None, darks=True,
                  pmax=None, pmin=None, outrange=True,
                  param_name='', param_units='', title='',
                  display = 'show', save_name = 'newfig.png' ):
@@ -637,6 +637,7 @@ def array_plots( param,
     |det: list of detectors to plot (can be a list of det_uid or a tuple (row,col))    |instrument: instrument
     |array: array name ('ar1', 'pa2', 'pa3', 'pa4')
     |season: observing season ('s13', 's14', 's15'...)
+    |fr: frequency
     or
     |tod: tod object (tod.det, tod.info.array_name, tod.info.season)
 
@@ -680,6 +681,17 @@ ided"
     else:
         Detid = det
 
+    # if we want to force a frequency
+    if fr:
+        det_uid = array_data['det_uid']
+        det_uid = det_uid[array_data['nom_freq']==fr]
+        Detid = np.intersect1d(Detid, det_uid)
+        # also update param
+        tmp = np.zeros(max(det)+1)
+        tmp[det] = param
+        param = tmp[Detid]
+        del tmp
+
     pos, polfamily, freq = get_position( Detid, instrument, array, season )
     x, y = pos
 
@@ -696,7 +708,6 @@ ided"
         patchlist = get_patches( pos, color, polfamily, freq )
     else:
         patchlist = get_patches( pos, color, polfamily, freq, radius=0.012 )
-
 
     # Add other detectors in grey
     #det_uid = array_data['det_uid']
