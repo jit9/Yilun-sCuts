@@ -22,7 +22,7 @@ nproc = tpn * nnode
 # output parameters
 outdir = par["outdir"]
 runtime = par.get("runtime")
-partition = par.get("partition")
+qos = par.get("qos")
 basedir = os.path.dirname(args.param)
 
 # find list of tods to process
@@ -36,7 +36,7 @@ for n in range(nnode):
     f.write( '#SBATCH --ntasks-per-node=40\n')
     f.write( '#SBATCH -J %s%d\n' % (jobname,n))
     f.write( '#SBATCH -t %s\n' % runtime )
-    f.write( '#SBATCH --partition %s\n' % partition )
+    f.write( '#SBATCH --qos %s\n' % qos )
     f.write( '#SBATCH --output=%s/slurmjob.log.%d\n' % (outdir, n))
     f.write( 'module load gcc\n' )
     f.write( 'module load openmpi\n' )
