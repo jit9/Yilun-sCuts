@@ -218,8 +218,8 @@ print("Total number of TODs selected: %d" % len(tod_list))
 if "nlimit" in params.keys():
     nlimit = params.get("nlimit")
     print("nlimit set: %d" % nlimit)
-    tod_list = tod_list[:nlimit]  # choose the last nlimit ensures
-                                  # that calibration tods are included
+    tod_list = tod_list[-nlimit:]  # choose the last nlimit ensures
+                                   # that calibration tods are included
     print("Total number of TODs selected: %d" % len(tod_list))
 
 # save the list
