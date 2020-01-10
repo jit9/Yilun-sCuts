@@ -127,7 +127,7 @@ catalog = catalog[sel]
 
 # third iteration selection
 # upper and lower are both closed interval
-for k in ['pwv', 'ra', 'dec']:
+for k in ['pwv', 'ra', 'dec', 'loading']:
     k_upper = "%s_upper" % k
     if k_upper in params.keys():
         v_upper = params.get(k_upper)
@@ -224,7 +224,9 @@ if "nlimit" in params.keys():
 
 # save the list
 output_filename = params['tag'].format(**params)+".txt"
-write_list_to_file(output_dir, output_filename, tod_list)
+if raw_input("write to file? y/n: ") == "y":
+    print("Writing %s" % output_filename)
+    write_list_to_file(output_dir, output_filename, tod_list)
 
 
 print("Done")
