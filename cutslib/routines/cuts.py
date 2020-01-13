@@ -73,7 +73,13 @@ class CutSources(Routine):
             if tod.info.basename in f:
                 grp = f[tod.info.basename]
                 flags_sources = moby2.tod.TODFlags.from_hdf(grp)
-                pos_cuts_sources = flags_sources.get_cuts('cut')
+                flags_sources_cuts = flags_sources.get_cuts('cut')
+                # to avoid possible mismatch between det_uid in source cuts
+                # versus the det_uid in the tod, we initialize an empty
+                # cuts object for the tod (with the right det_uid) and merge
+                # the sources cut in, to be safe.
+                pos_cuts_sources = moby2.tod.TODCuts.for_tod(tod, assign=False)
+                pos_cuts_sources.merge_tod_cuts(flags_sources_cuts)
                 self._depot.write_object(pos_cuts_sources,
                                          tag=self._tag_source,
                                          force=True, tod=tod,
