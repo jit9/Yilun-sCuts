@@ -2,8 +2,8 @@ from todloop import Routine
 import pickle, h5py, os
 import numpy as np
 import copy
-from moby2.scripting import  pathologies_tools
-from profilehooks import profile
+from cutslib import pathologies_tools
+
 
 class PathologyReport(Routine):
     def __init__(self, **params):

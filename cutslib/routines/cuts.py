@@ -79,7 +79,7 @@ class CutSources(Routine):
                 # cuts object for the tod (with the right det_uid) and merge
                 # the sources cut in, to be safe.
                 pos_cuts_sources = moby2.tod.TODCuts.for_tod(tod, assign=False)
-                pos_cuts_sources.merge_tod_cuts(flags_sources_cuts)
+                pos_cuts_sources.merge_tod_cuts(flags_sources_cuts, cut_missing=True)
                 self._depot.write_object(pos_cuts_sources,
                                          tag=self._tag_source,
                                          force=True, tod=tod,
