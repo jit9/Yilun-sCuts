@@ -1,4 +1,4 @@
-import os, sys, numpy as np
+import os.path as op, sys, numpy as np
 from moby2.scripting.pathologies_tools import pathoList
 from moby2.util import MobyDict
 
@@ -12,8 +12,7 @@ def run(proj):
     datafile = str(proj.i.db)
     pl = pathoList(datafile)
     pl.addPWV2results()
-
-    outfile = proj.i.root + "/selTODs_%s.txt" % params.get("tag_out")
+    outfile = op.join(proj.o.root, "selTODs_%s.txt" % params.get("tag_out"))
     print("Saving file: %s" % outfile)
     sp = params.get("selParams",{"liveDets":{"gt":100},"PWV": {"lt":3}})
     tod_list = pl.data['todName']

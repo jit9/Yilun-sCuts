@@ -3,7 +3,7 @@ create a flatfield dictionary that can be used as the input to the
 next iteration of cuts
 """
 
-import os
+import os.path as op
 import moby2.util
 import cPickle, numpy, os, sys
 np=numpy
@@ -54,7 +54,7 @@ def run(proj):
 
     if ffpar.get('selectedTODs') is not None:
         names = []
-        f = open(proj.i.root+"/"+ffpar['selectedTODs'])
+        f = open(op.join(proj.o.root,ffpar['selectedTODs']), "r")
         for l in f:
             if l[0] != '#':
                 names.append(l.split('\n')[0].split()[0].split('/')[-1].split(".zip")[0])
@@ -117,6 +117,5 @@ def run(proj):
     else:
         ff["cal"] = list(m[ld])#*cal0[ld])
         ff["calRMS"] = list(s[ld])#*cal0[ld])
-    ff_out_file = proj.i.root + "/ff_%s.dict"%params["tag_patho"]
+    ff_out_file = op.join(proj.o.root, "ff_%s.dict"%params["tag_patho"])
     ff.write_to_file(ff_out_file)
-

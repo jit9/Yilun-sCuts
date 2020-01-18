@@ -8,6 +8,7 @@ Options:
 """
 import moby2.util
 import numpy as np
+import os.path as op
 from cutslib import visual as v
 
 def init(config):
@@ -25,7 +26,7 @@ def run(p):
     else:
         ff_name = flatfield
     print("Plotting: %s" % ff_name)
-    ff = moby2.util.MobyDict.from_file(ff_name)
+    ff = moby2.util.MobyDict.from_file(op.join(p.o.root, ff_name))
 
     det_uid = np.asarray(ff['det_uid'], dtype=int)
     cal = np.asarray(ff['cal'], dtype=float)
