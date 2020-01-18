@@ -96,9 +96,13 @@ def init(cutparam, output_dir=None):
     i.pickle_file = o.pickle_file
     i.run_dir = op.join(i.root, "run_" + i.version)
     i.db = op.join(i.run_dir, tag + ".db")
+    # export for reporting
+    e = DotMap()
+    e.root = mkdir(root+'/report')
     # consolidate all information
     p = DotMap()
     p.i, p.o = i, o
+    p.e = e
     p.tag = tag
     p.depot = depot
     return p
