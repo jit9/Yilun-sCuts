@@ -11,6 +11,13 @@ TEMPLATE="""#+TITLE: ={tag}=
   |-------+-----------+--------|
   | {ntod}| {nproc}   | {ngood}|
   |-------+-----------+--------|
+
+  |----------+------------+--------------+--------------|
+  | mean(ld) | total dets | frac         | total frac   |
+  |----------+------------+--------------+--------------|
+  | {mld:.1f}| {ndets}    |{ldfrac:.1f}\%|{tfrac:.1f}\% |
+  |----------+------------+--------------+--------------|
+
 - Hits map:
 #+ATTR_LATEX: :width 10cm
 [[{hits_map}]]
@@ -69,6 +76,10 @@ def run(p):
     res['nproc'] = len(pr.data)
     res['ngood'] = len(pr.data[pr.data.liveDets >= 100])
     res['source_scans'] = source_scans
+    res['mld'] = pr.data.liveDets.mean()
+    res['ndets'] = pr.data.liveDets.max()  # FIXME: may not be accurate
+    res['ldfrac'] = res['mld'] * 100. / res['ndets']
+    res['tfrac'] = res['ldfrac'] * res['nproc'] / res['ntod']
 
     ############
     # hits map #
