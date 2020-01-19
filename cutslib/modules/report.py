@@ -30,18 +30,18 @@ TEMPLATE="""#+TITLE: ={tag}=
 [[{flatfield_out}]]
 #+END_center
 * Array plots
-- gain
-#+ATTR_LaTeX: :width 10cm
+#+BEGIN_center
+#+ATTR_LaTeX: :height 0.45\\textwidth :center
 [[{gain_plot}]]
-- corr
-#+ATTR_LaTeX: :width 10cm
+#+ATTR_LaTeX: :height 0.45\\textwidth :center
 [[{corr_plot}]]
-- rms
-#+ATTR_LaTeX: :width 10cm
+#+ATTR_LaTeX: :height 0.45\\textwidth :center
 [[{rms_plot}]]
-- norm
-#+ATTR_LaTeX: :width 10cm
+#+ATTR_LaTeX: :height 0.45\\textwidth :center
 [[{norm_plot}]]
+#+END_center
+* Calibration
+[[{planet_cal}]]
 """
 
 import os, glob
@@ -114,6 +114,11 @@ def run(p):
     res['corr_plot'] = op.join(p.o.patho.array.root, 'corrLive_mean.png')
     res['norm_plot'] = op.join(p.o.patho.array.root, 'normLive_mean.png')
     res['rms_plot']  = op.join(p.o.patho.array.root, 'rmsLive_mean.png')
+
+    ###############
+    # calibration #
+    ###############
+    res['planet_cal'] = glob.glob(op.join(p.o.cal.root, "peak_vs_loading*.png"))[0]
 
     ###################
     # generate report #

@@ -33,15 +33,16 @@ def get_planet_solid_angle(ctime):
     return np.pi*U.radius**2
 
 def init(config):
-    global ctime_start, loading_max, live_min, path, gauss_test
+    global ctime_start, loading_max, live_min, path, gauss_test, force
     ctime_start = config.getint('ctime_start', 0)
     loading_max = config.getfloat('loading_max', 10)
     live_min = config.getint('live_min', 300)
     path = config.get('planet_path')
     gauss_test = config.getint('gauss_test', 10)
+    force = config.getboolean('force', False)
 
 def run(proj):
-    global ctime_start, loading_max, live_min, path, gauss_test
+    global ctime_start, loading_max, live_min, path, gauss_test, force
     df = pd.DataFrame()
 
     # Initialize parameters
@@ -53,8 +54,8 @@ def run(proj):
     tag_selected = proj.tag
     if params.has_key('flatfield'):
         FF = moby2.util.MobyDict.from_file(params.get('flatfield'))
-    tods, flag = np.loadtxt(
-        '/data/actpol/depot_yguan/SelectedTODs/%s/selectedTODs_uranus.txt' %tag_selected, dtype=str, usecols=[0,5]).T
+    tods, flag = np.loadtxt(os.path.join(proj.depot,
+        'SelectedTODs/%s/selectedTODs_uranus.txt' %tag_selected), dtype=str, usecols=[0,5]).T
     df['tods'] = np.asarray( tods, dtype=str )
     df['flag'] = np.asarray( flag, dtype=int )
     df = df[df.flag==2]
@@ -69,13 +70,14 @@ def run(proj):
     array_data =  products.get_array_data(
         {'instrument':'actpol','array_name':proj.i.ar,'season':proj.i.season})
 
+    ndets = len(array_data['det_uid'])
     alma_pwv = moby2.aux_data.alma.WeatherChannel('pwv')
     apex_pwv = moby2.aux_data.apex.WeatherChannel('radiometer')
 
     # Read the data
-    if not os.path.exists(os.path.join(proj.o.cal.root, tag_calib+'.pickle')):
-        cal = np.zeros((2048,len(df.tods)))
-        peak_DAC = np.zeros((2048,len(df.tods)))
+    if not os.path.exists(os.path.join(proj.o.cal.root, tag_calib+'.pickle')) or force:
+        cal = np.zeros((ndets,len(df.tods)))
+        peak_DAC = np.zeros((ndets,len(df.tods)))
         alt = np.zeros(len(df.tods))
         pwv = np.zeros(len(df.tods))
         hour_utc = np.zeros(len(df.tods))
@@ -238,12 +240,12 @@ def run(proj):
     #peak_error = np.ma.std(peak_masked, axis=0) / np.sqrt(Ndets)
 
     # load gm correction and apply it
-    gm = np.load("/home/yguan/work/cuts_analysis/data/gm_pa4_f150_s17_c11_v7_1.npy")
-    pkl_file = cPickle.load(open(proj.i.pickle_file, "r"))
-    tod_names = np.array(pkl_file['name'])
-    idx = np.where(tod_names[:,None] == df.tods.values)[0]
-    gm = gm[idx]
-    df.peak_mean *= gm
+    # gm = np.load("/home/yguan/work/cuts_analysis/data/gm_pa4_f150_s17_c11_v7_1.npy")
+    # pkl_file = cPickle.load(open(proj.i.pickle_file, "r"))
+    # tod_names = np.array(pkl_file['name'])
+    # idx = np.where(tod_names[:,None] == df.tods.values)[0]
+    # gm = gm[idx]
+    # df.peak_mean *= gm
 
     # Fit
     # Only points for which distribution was gaussian enough are considered
@@ -261,8 +263,8 @@ def run(proj):
     ax1.plot(x, y, 'b--')
     ax1.errorbar(df.loading, df.peak_mean, df.peak_error, fmt=',', color='k', ecolor='k', elinewidth=2)
     splot = ax1.scatter(df.loading, df.peak_mean, s=100,
-                c=df.hour_utc, vmin=0, vmax=24,
-    #            c=df.Ndets,
+    #            c=df.hour_utc, vmin=0, vmax=24,
+                c=df.Ndets,
                 edgecolor='None',
     #            cmap='hsv')
                 cmap='RdYlBu_r')
