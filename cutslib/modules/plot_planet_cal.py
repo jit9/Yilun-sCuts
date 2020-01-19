@@ -3,7 +3,7 @@
 import pandas as pd
 import moby2
 from moby2.scripting import products
-from moby2.scripting.pathologies_tools import get_pwv
+from cutslib.pathologies_tools import get_pwv
 import os
 import numpy as np
 from scipy import stats
