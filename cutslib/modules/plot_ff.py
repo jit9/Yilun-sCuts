@@ -21,6 +21,11 @@ def init(config):
 
 def run(p):
     global pmin, pmax, flatfield, tag, freq
+
+    ####################
+    # output flatfield #
+    ####################
+    freq = p.i.freq
     if not flatfield:
         ff_name = p.i.ff
     else:
@@ -40,14 +45,47 @@ def run(p):
     # save flatfield plot
     if not tag:
         tag = p.tag
-    outfile = p.o.ff + "/ff_%s_cal.png" % tag
+    outfile = p.o.ff + "/ff_%s_cal_output.png" % tag
     print("Saving plot: %s" % outfile)
     v.array_plots(cal, det_uid, season=p.i.season, array=p.i.ar, fr=freq,
-                  pmin=pmin, pmax=pmax, title='Flatfield %s' % tag,
+                  pmin=pmin, pmax=pmax, title='Flatfield (output) %s' % tag,
                   display='save', save_name=outfile)
 
     # save stable detector plot
-    outfile = p.o.ff + "/ff_%s_stable.png" % tag
+    outfile = p.o.ff + "/ff_%s_stable_output.png" % tag
+    print("Saving plot: %s" % outfile)
+    v.array_plots(stable, det_uid, title = 'Stable %s' % tag,
+                  season=p.i.season, array=p.i.ar, display='save', fr=freq,
+                  save_name=outfile)
+
+    ###################
+    # input flatfield #
+    ###################
+
+    cutParam = moby2.util.MobyDict.from_file(p.i.cutParam)
+    ff_name = cutParam.get_deep(('pathologyParams','calibration','flatfield'))
+    ff = moby2.util.MobyDict.from_file(ff_name)
+
+    det_uid = np.asarray(ff['det_uid'], dtype=int)
+    cal = np.asarray(ff['cal'], dtype=float)
+    stable = np.asarray(ff['stable'], dtype=int)
+
+    if pmin is None:
+        pmin = cal.min()
+    if pmax is None:
+        pmax = cal.max()
+
+    # save flatfield plot
+    if not tag:
+        tag = p.tag
+    outfile = p.o.ff + "/ff_%s_cal_input.png" % tag
+    print("Saving plot: %s" % outfile)
+    v.array_plots(cal, det_uid, season=p.i.season, array=p.i.ar, fr=freq,
+                  pmin=pmin, pmax=pmax, title='Flatfield (input) %s' % tag,
+                  display='save', save_name=outfile)
+
+    # save stable detector plot
+    outfile = p.o.ff + "/ff_%s_stable_input.png" % tag
     print("Saving plot: %s" % outfile)
     v.array_plots(stable, det_uid, title = 'Stable %s' % tag,
                   season=p.i.season, array=p.i.ar, display='save', fr=freq,
