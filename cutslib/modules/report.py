@@ -19,13 +19,16 @@ TEMPLATE="""#+TITLE: ={tag}=
   |----------+------------+--------------+--------------|
 
 - Hits map:
-#+ATTR_LATEX: :width 10cm
+#+ATTR_LATEX: :width 16cm
 [[{hits_map}]]
 - Cuts parameters:
 {cuts_summary}
 * Statistics
+- Uncut vs. loading
+#+ATTR_LATEX: :width 16cm
+[[{ld_vs_loading}]]
 - Histogram:
-#+ATTR_LATEX: :width 15cm
+#+ATTR_LATEX: :width 16cm
 [[{cuts_threshold}]]
 - Killed by:
 [[{killed_by_plot}]]
@@ -48,6 +51,7 @@ TEMPLATE="""#+TITLE: ={tag}=
 [[{norm_plot}]]
 #+END_center
 * Calibration
+#+ATTR_LATEX: :width 16cm
 [[{planet_cal}]]
 """
 
@@ -76,7 +80,7 @@ def run(p):
     res['nproc'] = len(pr.data)
     res['ngood'] = len(pr.data[pr.data.liveDets >= 100])
     res['source_scans'] = source_scans
-    res['mld'] = pr.data.liveDets.mean()
+    res['mld'] = pr.data.liveDets.mean(skipna=False)
     res['ndets'] = pr.data.liveDets.max()  # FIXME: may not be accurate
     res['ldfrac'] = res['mld'] * 100. / res['ndets']
     res['tfrac'] = res['ldfrac'] * res['nproc'] / res['ntod']
@@ -99,6 +103,11 @@ def run(p):
                                                 v['apply'])
     cuts_summary += "|--------------+-------------------+-------|\n"
     res['cuts_summary'] = cuts_summary
+
+    #################
+    # ld vs loading #
+    #################
+    res['ld_vs_loading'] = op.join(p.o.root, 'ld_vs_loading.png')
 
     #######################
     # cut threshold plots #
