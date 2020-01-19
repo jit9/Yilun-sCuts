@@ -5,6 +5,8 @@ emacs and latex dependencies.
 
 TEMPLATE="""#+TITLE: ={tag}=
 * Run
+- Changelog
+  {changelog}
 - TOD list: ={source_scans}=
   |-------+-----------+--------|
   | Total | Processed | ld>100 |
@@ -62,13 +64,20 @@ from moby2.util.database import TODList
 from cutslib.pathologyReport import pathoReport
 
 def init(config):
-    pass
+    global hits_map
+    hits_map = config.get("hits_map", None)
 
 def run(p):
+    global hits_map
     # load cut parameters
     cutParam = moby2.util.MobyDict.from_file(p.i.cutParam)
     cutparam = moby2.util.MobyDict.from_file(p.i.cutparam)
     res = {'tag': p.tag}
+
+    #############
+    # changelog #
+    #############
+    res['changelog'] = cutParam.get('changelog', '')
 
     ############
     # tod list #
@@ -88,7 +97,10 @@ def run(p):
     ############
     # hits map #
     ############
-    res['hits_map'] = op.join(p.o.root, "hits.png")
+    if hits_map:
+        res['hits_map'] = hits_map
+    else:
+        res['hits_map'] = op.join(p.o.root, "hits.png")
 
     ################
     # cuts summary #
