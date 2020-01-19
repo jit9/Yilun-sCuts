@@ -7,14 +7,17 @@ from moby2.util.database import TODList
 import os.path as op
 
 def init(config):
-    global exclude, ra_l, ra_h, dec_l, dec_h
+    global exclude, ra_l, ra_h, dec_l, dec_h, ra_bins, dec_bins
     exclude = config.get("exclude_list")
     ra_l = config.getfloat("ra_l",-2)
     ra_h = config.getfloat("ra_h",2)
     dec_l = config.getfloat("dec_l",-0.4)
     dec_h = config.getfloat("dec_h",0.4)
+    ra_bins = config.getint("ra_bins",100)
+    dec_bins = config.getint("dec_bins",100)
+
 def run(p):
-    global exclude, ra_l, ra_h, dec_l, dec_h
+    global exclude, ra_l, ra_h, dec_l, dec_h, ra_bins, dec_bins
     # get list of tods
     par = moby2.util.MobyDict.from_file(p.i.cutparam)
     tod_list = TODList.from_file(par.get('source_scans'))
@@ -24,8 +27,8 @@ def run(p):
     tod_list -= exclude_list
     # load each tod and get the ra and dec for each tod
     # setup histogram
-    x = np.linspace(ra_l,ra_h,100)
-    y = np.linspace(dec_l,dec_h,100)
+    x = np.linspace(ra_l,ra_h,ra_bins)
+    y = np.linspace(dec_l,dec_h,dec_bins)
     X, Y = np.meshgrid(x, y)
     first = True
     for i,n in enumerate(tod_list):
@@ -37,7 +40,7 @@ def run(p):
             print("Alt falls outside range of 0 and pi/2, skipping")
             continue
 
-        ra, dec = moby2.pointing.get_coords(tod.ctime,tod.az,tod.alt)
+        ra, dec = moby2.pointing.get_coords(tod.ctime[::5],tod.az[::5],tod.alt[::5])
         if first:  # use the first as a basis and add others on it
             H, _, __ = np.histogram2d(ra, dec, bins=(x, y))
             H = H.T
