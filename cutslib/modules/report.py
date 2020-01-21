@@ -4,9 +4,9 @@ emacs and latex dependencies.
 """
 
 TEMPLATE="""#+TITLE: ={tag}=
+* Changelog
+{changelog}
 * Run
-- Changelog
-  {changelog}
 - TOD list: ={source_scans}=
   |-------+-----------+--------|
   | Total | Processed | ld>100 |
@@ -20,9 +20,6 @@ TEMPLATE="""#+TITLE: ={tag}=
   | {mld:.1f}| {ndets}    |{ldfrac:.1f}\%|{tfrac:.1f}\% |
   |----------+------------+--------------+--------------|
 
-- Hits map:
-#+ATTR_LATEX: :width 16cm
-[[{hits_map}]]
 - Cuts parameters:
 {cuts_summary}
 * Statistics
@@ -32,7 +29,12 @@ TEMPLATE="""#+TITLE: ={tag}=
 - Histogram:
 #+ATTR_LATEX: :width 16cm
 [[{cuts_threshold}]]
+
+Note that the vertical lines on the histograms are for reference
+only, they are not the same as the cuts applied on them.
 - Killed by:
+Number of detectors that passes each criteria
+
 [[{killed_by_plot}]]
 * Flatfield
 #+BEGIN_center
@@ -41,6 +43,9 @@ TEMPLATE="""#+TITLE: ={tag}=
 #+ATTR_LaTeX: :height 0.45\\textwidth :center
 [[{flatfield_out}]]
 #+END_center
+The plot on the left (input) refers to the input flatfield for the
+cuts pipeline. For this case it refers to the planet flatfield. On
+the right is the output flatfield estimated from the atmosphere gain.
 * Array plots
 #+BEGIN_center
 #+ATTR_LaTeX: :height 0.45\\textwidth :center
@@ -90,17 +95,15 @@ def run(p):
     res['ngood'] = len(pr.data[pr.data.liveDets >= 100])
     res['source_scans'] = source_scans
     res['mld'] = pr.data.liveDets.mean(skipna=False)
-    res['ndets'] = pr.data.liveDets.max()  # FIXME: may not be accurate
+    # get number of detectors
+    ld_dict = cutParam.get_deep(('pathologyParams','detectorLists','live'))
+    exclude_dict = cutParam.get_deep(('pathologyParams','detectorLists','exclude'))
+    ld_data = moby2.util.MobyDict.from_file(ld_dict)
+    exclude_data = moby2.util.MobyDict.from_file(exclude_dict)
+    dets = [d for d in ld_data['det_uid'] if d not in exclude_data['det_uid']]
+    res['ndets'] = len(dets)
     res['ldfrac'] = res['mld'] * 100. / res['ndets']
     res['tfrac'] = res['ldfrac'] * res['nproc'] / res['ntod']
-
-    ############
-    # hits map #
-    ############
-    if hits_map:
-        res['hits_map'] = hits_map
-    else:
-        res['hits_map'] = op.join(p.o.root, "hits.png")
 
     ################
     # cuts summary #
