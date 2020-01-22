@@ -36,6 +36,11 @@ only, they are not the same as the cuts applied on them.
 Number of detectors that passes each criteria
 
 [[{killed_by_plot}]]
+- Live fraction:
+Fraction of the time that a detector is uncut
+
+#+ATTR_LATEX: :width 10cm
+[[{live_fraction}]]
 * Flatfield
 #+BEGIN_center
 #+ATTR_LaTeX: :height 0.45\\textwidth :center
@@ -135,6 +140,11 @@ def run(p):
     ##################
     killed_by_plot = glob.glob(op.join(p.o.patho.root,"killedbyplot_*.png"))[0]
     res['killed_by_plot'] = killed_by_plot
+
+    ######################
+    # live fraction plot #
+    ######################
+    res['live_fraction'] = glob.glob(op.join(p.o.root, "live_frac.png"))[0]
 
     ##################
     # flatfield plot #
