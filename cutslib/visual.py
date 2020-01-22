@@ -624,7 +624,7 @@ def array_plots( param,
                  fr=None, tod=None, darks=True,
                  pmax=None, pmin=None, outrange=True,
                  param_name='', param_units='', title='',
-                 display = 'show', save_name = 'newfig.png' ):
+                 display = 'show', save_name = 'newfig.png', cmap=cm.RdYlBu_r):
     """Plot a parameter across the array
 
     Arguments:
@@ -703,7 +703,7 @@ ided"
     if param.min() == param.max():
         color = ['b']*param.size
     else:
-        color = get_color( param, pmax = pmax, pmin = pmin, outrange = outrange )
+        color = get_color( param, pmax = pmax, pmin = pmin, outrange = outrange, cmap=cmap)
     if np.unique(freq).size == 1:
         patchlist = get_patches( pos, color, polfamily, freq )
     else:
@@ -738,7 +738,7 @@ ided"
 
     plt.ioff()
     plt.figure( figsize = (10,10) )
-    ax = create_plot( patchlist+_patchlist, pmin, pmax, x_lim, y_lim, array )
+    ax = create_plot( patchlist+_patchlist, pmin, pmax, x_lim, y_lim, array, cmap=cmap)
     set_infos( param_name, param_units, title, ax )
 
     if display == 'show':
@@ -820,7 +820,7 @@ def get_patches(pos, color,polfamily, freq, radius=0.015):
     return patchlist
 
 
-def create_plot(patchlist, pmin, pmax, x_lim, y_lim, array_name):
+def create_plot(patchlist, pmin, pmax, x_lim, y_lim, array_name, cmap=cm.RdYlBu_r):
     if pmin != pmax:
         ax1 = plt.subplot2grid((1,10),(0,0),colspan=9,aspect='equal')
         ax2 = plt.subplot2grid((1,10),(0,9))
@@ -874,7 +874,7 @@ def create_plot(patchlist, pmin, pmax, x_lim, y_lim, array_name):
 
     if pmin != pmax:
         norm = mpl.colors.Normalize(vmin=pmin,vmax=pmax)
-        cb1 = mpl.colorbar.ColorbarBase(ax2,cmap=cm.RdYlBu_r,norm=norm,orientation='vertical')
+        cb1 = mpl.colorbar.ColorbarBase(ax2,cmap=cmap,norm=norm,orientation='vertical')
         return ax1, ax2
     else:
         return ax1
