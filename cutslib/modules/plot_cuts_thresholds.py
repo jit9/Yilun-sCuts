@@ -211,5 +211,5 @@ def run(proj):
     else:
         postfix = "uncalibrated"
     plt.figtext(0.5,0.95,tag+' '+postfix,ha='center',va='center',fontsize='xx-large')
-    plt.savefig(proj.o.patho.root+'/seasoncrit_hist_%s_%s.png' %(tag, postfix))
+    plt.savefig(proj.o.patho.root+'/seasoncrit_hist_%s.png' %tag)
     plt.close('all')
