@@ -118,14 +118,19 @@ class pathoReport(object):
             plt.close()
 
 
-    def killedbyplot(self, filename=None, dets_lim = (0,1056)):
+    def killedbyplot(self, filename=None, dets_lim = (0,1056), type="violin"):
         """Show the distribution of live detectors after
         applying each criteria individually"""
         if not hasattr(self, 'livedata'):
             self.livedata = self.data[self.livekeys]
         fig = plt.figure(figsize=(10,6))
-        ax = sns.violinplot(data=self.livedata,color='grey',fliersize=0.15,
-                            orient='h', scale='width',inner='box')
+        if type=="violin":
+            ax = sns.violinplot(data=self.livedata, color='grey', fliersize=0.15,
+                                orient='h', scale='width',inner='box')
+        elif type=="box":
+            ax = sns.boxplot(data=self.livedata, color='grey', orient='h', fliersize=0.3)
+        else:
+            raise NotImplemented("plot type not implemented")
         ax.set_title(self.reportname,fontsize='xx-large')
         ax.set_xlim(dets_lim)
         ax.set_xlabel('Number of live detectors')
@@ -135,7 +140,6 @@ class pathoReport(object):
         else:
             fig.savefig(filename)
             plt.close(fig)
-
 
 
 
