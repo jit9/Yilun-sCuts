@@ -41,6 +41,9 @@ Fraction of the time that a detector is uncut
 
 #+ATTR_LATEX: :width 10cm
 [[{live_fraction}]]
+
+- rms vs. input gain
+[[{rms_vs_gain}]]
 * Flatfield
 #+BEGIN_center
 #+ATTR_LaTeX: :height 0.45\\textwidth :center
@@ -138,13 +141,18 @@ def run(p):
     ##################
     # killed_by_plot #
     ##################
-    killed_by_plot = glob.glob(op.join(p.o.patho.root,"killedbyplot_*.png"))[0]
+    killed_by_plot = glob.glob(op.join(p.o.patho.root,"killedbyplot.png"))[0]
     res['killed_by_plot'] = killed_by_plot
 
     ######################
     # live fraction plot #
     ######################
     res['live_fraction'] = glob.glob(op.join(p.o.root, "live_frac.png"))[0]
+
+    ###############
+    # rms vs gain #
+    ###############
+    res['rms_vs_gain'] = glob.glob(op.join(p.o.root, "rms_gain.png"))[0]
 
     ##################
     # flatfield plot #
