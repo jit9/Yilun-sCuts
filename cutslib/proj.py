@@ -69,6 +69,7 @@ def init(cutparam, output_dir=None):
     patho = DotMap()
     patho.root = mkdir(root+'/pathologies')
     patho.hist = mkdir(root+'/pathologies/hist')
+    patho.viz = mkdir(root+'/pathologies/viz')
     patho.season = DotMap()
     patho.season.root = mkdir(root+'/pathologies/season')
     patho.season.mean = mkdir(root+'/pathologies/season/mean')
