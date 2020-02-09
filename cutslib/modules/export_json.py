@@ -6,13 +6,14 @@ import json, os.path as op
 from moby2.util.database import TODList
 
 def init(config):
-    global todname, tod_list
+    global todname, tod_list, limit
     todname = config.get("tod",None)
     tod_list = config.get("tod_list",None)
+    limit = config.getint("limit", None)
 
 
 def run(p):
-    global todname, tod_list
+    global todname, tod_list, limit
     # load cut parameters
     params = moby2.util.MobyDict.from_file(p.i.cutparam)
 
@@ -23,6 +24,10 @@ def run(p):
         obsnames = TODList.from_file(tod_list)
     else:
         obsnames = TODList.from_file(params.get("source_scans"))
+
+    if limit:
+        obsnames = obsnames[:limit]
+
     for obs in obsnames:
         parse_stats(obs, p)
 
@@ -58,11 +63,11 @@ def parse_stats(todname, p):
     res['presel'] = patho.preLiveSel
 
     export = {}
-    export['tod_name'] = todname
     export['tag'] = p.tag
     export['dimensions'] = ['det_uid','array_x','array_y','row','col','MFELive',\
                             'skewLive','corrLive','rmsLive','gainLive','DELive',\
-                            'normLive','kurtLive','ff','resp','presel','pol_family']
+                            'normLive','kurtLive','ff','resp','presel','pol_family',
+                            'bias_line', 'optical_sign']
     export['source'] = []
     for i in range(len(res['det_uid'])):
         if res['nom_freq'][i] == p.i.freq:
@@ -81,9 +86,11 @@ def parse_stats(todname, p):
                 float(res['normLive'][i]),
                 float(res['kurtLive'][i]),
                 float(res['ff'][i]),
-                float(res['resp'][i]),
+                float(res['resp'][i])*1e16,
                 int(res['presel'][i]),
                 res['pol_family'][i].decode('utf-8'),
+                int(res['bias_line'][i]),
+                int(res['optical_sign'][i])
             ])
     outfile = op.join(p.o.patho.viz, "%s.json" % todname)
     print("Writing: %s" % outfile)
