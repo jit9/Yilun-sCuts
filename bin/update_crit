@@ -1,0 +1,69 @@
+#!/bin/env python
+
+"""This script aims to update the cut thresholds. This in-principle
+should only generate the new cuts, calibrations and update the
+pathology report but should not affect everything else.
+
+Pre-requisite steps:
+- remove pathology report db file
+
+usage:
+>>> update_crit cutparam.par
+
+"""
+
+import os, moby2
+from todloop import TODLoop
+from cutslib.routines.report import PathologyReport
+import argparse
+
+# define command line options
+parser = argparse.ArgumentParser()
+parser.add_argument("param", help="cutparam")
+parser.add_argument("-s", "--start", help="start", type=int, default=0)
+parser.add_argument("-e", "--end", help="end", type=int, default=None)
+parser.add_argument("-n", "--nworkers", help="number of workers",
+                    type=int, default=1)
+parser.add_argument("-i", "--index", help="index for fake mpi",
+                    type=int, default=0)
+parser.add_argument("-m", "--mpi", help="use mpi",
+                    action="store_true")
+parser.add_argument("-f", "--fmpi", help="use fake mpi",
+                    action="store_true")
+args = parser.parse_args()
+
+# load parameters from cutparam file
+# general cut parameter file
+cutparam_file = args.param
+cutparam = moby2.util.MobyDict.from_file(cutparam_file)
+# specific cut parameter file
+cutParam_file = cutparam.get('cutParams')
+cutParam = moby2.util.MobyDict.from_file(cutParam_file)
+
+# get useful parameters
+pathop = cutParam['pathologyParams']
+
+# initialize loop
+loop = TODLoop()
+
+# add list of tod
+loop.add_tod_list(cutparam.get('source_scans'))
+outdir = cutparam.get('outdir')
+loop.set_output_dir(outdir)
+loop.add_done_list(os.path.join(outdir, cutparam.get('report')+".db"))
+loop.add_reject_list(cutparam.get('reject_depot'))
+
+# save pathology report
+# FIXME: only support the cutparam file in the same folder
+config = {
+    'cutparam': cutparam_file,
+}
+loop.add_routine(PathologyReport(**config))
+
+# run loop
+if args.mpi:
+    loop.run_parallel(args.start,args.end,args.nworkers)
+elif args.fmpi:
+    loop.run_fparallel(args.start,args.end,args.nworkers,args.index)
+else:
+    loop.run(args.start, args.end)

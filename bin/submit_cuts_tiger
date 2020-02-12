@@ -1,7 +1,6 @@
 #!/bin/env python
 
 from moby2.util import MobyDict
-from moby2.util.database import TODList
 import sys, os, time
 import argparse
 
