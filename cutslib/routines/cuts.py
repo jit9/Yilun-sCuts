@@ -328,19 +328,19 @@ class CutPartial(Routine):
             cuts_partial = moby2.tod.get_glitch_cuts(
                 tod=tod, params=self._glitchp)
 
-        # check if we want to include mce_cuts
-        if self._include_mce:
-            # find mce cuts
-            mce_cuts = moby2.tod.get_mce_cuts(tod)
+            # check if we want to include mce_cuts
+            if self._include_mce:
+                # find mce cuts
+                mce_cuts = moby2.tod.get_mce_cuts(tod)
 
-            # merge it with the partial cuts
-            cuts_partial.merge_tod_cuts(mce_cuts)
+                # merge it with the partial cuts
+                cuts_partial.merge_tod_cuts(mce_cuts)
 
-        # write to depot, not needed here
-        if self._write_depot:
-            self._depot.write_object(cuts_partial,
-                                     tag=self._tag_partial,
-                                     tod=tod, make_dirs=True, force=True)
+            # write to depot, not needed here
+            if self._write_depot:
+                self._depot.write_object(cuts_partial,
+                                         tag=self._tag_partial,
+                                         tod=tod, make_dirs=True, force=True)
 
         # fill the partial cuts in our tod
         moby2.tod.fill_cuts(
