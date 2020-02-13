@@ -14,11 +14,23 @@ TEMPLATE="""#+TITLE: ={tag}=
   | {ntod}| {nproc}   | {ngood}|
   |-------+-----------+--------|
 
-  |----------+------------+--------------+--------------|
-  | mean(ld) | total dets | frac         | total frac   |
-  |----------+------------+--------------+--------------|
-  | {mld:.1f}| {ndets}    |{ldfrac:.1f}\%|{tfrac:.1f}\% |
-  |----------+------------+--------------+--------------|
+  |-----------------------+-----------------------|
+  | Type                  | ndets                 |
+  |-----------------------+-----------------------|
+  | f{freq}+tes           | {ndets_tes}           |
+  | f{freq}+tes+ff        | {ndets_tes_ff}        |
+  | f{freq}+tes+ff+stable | {ndets_tes_ff_stable} |
+  |-----------------------+-----------------------|
+
+The total number of detector in the table below also includes
+the exclude list of unfavorable detectors based on previous
+cuts run, so it is different than the number above.
+
+  |-----------+------------+----------------+---------------|
+  | mean(ld)  | total dets | frac           | total frac    |
+  |-----------+------------+----------------+---------------|
+  | {mld:.1f} | {ndets}    | {ldfrac:.1f}\% | {tfrac:.1f}\% |
+  |-----------+------------+----------------+---------------|
 
 - Cuts parameters:
 {cuts_summary}
@@ -71,7 +83,7 @@ the right is the output flatfield estimated from the atmosphere gain.
 """
 
 import os, glob
-import os.path as op
+import os.path as op, numpy as np
 import moby2
 from moby2.util.database import TODList
 from cutslib.pathologyReport import pathoReport
@@ -103,6 +115,29 @@ def run(p):
     res['ngood'] = len(pr.data[pr.data.liveDets >= 100])
     res['source_scans'] = source_scans
     res['mld'] = pr.data.liveDets.mean(skipna=False)
+
+    ####################
+    # detector numbers #
+    ####################
+    # get array data
+    res['freq'] = "%s" % int(p.i.freq)
+    array_data = moby2.scripting.get_array_data({
+        'instrument': 'actpol',
+        'array_name': p.i.ar,
+        'season': p.i.season
+    })
+    # get number of tes detectors in the given freq
+    dets_tes = array_data['det_uid'][(array_data['nom_freq']== p.i.freq) * (array_data['det_type'] == 'tes')]
+    res['ndets_tes'] = len(dets_tes)
+    # get the number of tes detectors with ff
+    ff_file = cutParam.get_deep(("pathologyParams","calibration","flatfield"))
+    ff_dict = moby2.util.MobyDict.from_file(ff_file)
+    dets_ff = ff_dict.get("det_uid")
+    res['ndets_tes_ff'] = len(set(dets_tes).intersection(set(dets_ff)))
+    dets_stable = np.array(dets_ff)[np.array(ff_dict.get("stable"))]
+    res['ndets_tes_ff_stable'] = len(set(dets_tes).intersection(set(dets_stable)))
+
+
     # get number of detectors
     ld_dict = cutParam.get_deep(('pathologyParams','detectorLists','live'))
     exclude_dict = cutParam.get_deep(('pathologyParams','detectorLists','exclude'))
