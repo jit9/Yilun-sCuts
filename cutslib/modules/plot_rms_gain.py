@@ -26,7 +26,6 @@ def run(p):
     data['MFELive'] *= input_gain
     data['DELive'] *= input_gain
     data['jumpLive'] *= input_gain
-    import pdb;pdb.set_trace()
     # make 2d histogram
     # x: rms, y: input gain
     # get bin edges
