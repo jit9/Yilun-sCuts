@@ -1,7 +1,7 @@
 from moby2.libactpol import freq_space_waterfall
 from moby2.libactpol import time_space_waterfall
 from moby2.scripting import products
-import numpy
+import numpy as np
 try:
     import pylab
 except:
@@ -12,14 +12,13 @@ from matplotlib import cm, patches
 import matplotlib.animation as animation
 from matplotlib.collections import PatchCollection
 import moby2
+from moby2.tod.array_data import ArrayData
 moby2.pointing.set_bulletin_A()
-ArrayData = moby2.tod.array_data.ArrayData
-np = numpy
 
 def plot_with_cuts(tod, det, interactive=True):
     if interactive: pylab.ion()
     else: pylab.ioff()
-    sel = numpy.ones(tod.nsamps, dtype=bool)
+    sel = np.ones(tod.nsamps, dtype=bool)
     for c in tod.cuts.cuts[det]:
         sel[c[0]:c[1]] = False
     t = tod.ctime - tod.ctime[0]
@@ -60,14 +59,14 @@ class freqSpaceWaterfall( object ):
         self.sort = []
         for i in range(len(self.rows)):
             self.sort.append((self.rows[i], self.cols[i]))
-        self.sort = numpy.array(self.sort, dtype = [('rows', int),('cols', int)])
+        self.sort = np.array(self.sort, dtype = [('rows', int),('cols', int)])
         self.nfreq = nfreq
         self.logx = logx
-        self.matfreqs = numpy.zeros(self.nfreq)
+        self.matfreqs = np.zeros(self.nfreq)
         if (logx):
-            self.matfreqs = numpy.logspace(numpy.log10(fmin), numpy.log10(fmax), nfreq)
+            self.matfreqs = np.logspace(np.log10(fmin), np.log10(fmax), nfreq)
         else:
-            self.matfreqs = numpy.linspace(fmin, fmax, nfreq)
+            self.matfreqs = np.linspace(fmin, fmax, nfreq)
         self.mat = freq_space_waterfall(self.data, self.matfreqs, self.sampleTime)
 
 
@@ -96,52 +95,51 @@ class freqSpaceWaterfall( object ):
         """
         if show: pylab.ion()
         else: pylab.ioff()
-        if self.mat is None: self.analyze()
         if selection is None:
-            sel = numpy.ones(len(self.dets), dtype = 'bool')
+            sel = np.ones(len(self.dets), dtype = 'bool')
         elif forceAll:
-            sel = numpy.ones(len(self.dets), dtype = 'bool')
+            sel = np.ones(len(self.dets), dtype = 'bool')
             fsel = selection[self.dets]
         else: sel = selection[self.dets]
 
         if linTickSep is None:
             linTickSep = (self.matfreqs[-1] - self.matfreqs[0])/5
-            p = numpy.power(10,numpy.floor(numpy.log10(linTickSep)))
-            linTickSep = numpy.floor(linTickSep/p)*p
+            p = np.power(10,np.floor(np.log10(linTickSep)))
+            linTickSep = np.floor(linTickSep/p)*p
 
         if rowDominance:
-            order = numpy.argsort(self.sort[sel], order = ['rows', 'cols'])
+            order = np.argsort(self.sort[sel], order = ['rows', 'cols'])
             tmp = self.rows[sel][order]
             ylabel = "Row"
         else:
-            order = numpy.argsort(self.sort[sel], order = ['cols', 'rows'])
+            order = np.argsort(self.sort[sel], order = ['cols', 'rows'])
             tmp = self.cols[sel][order]
             ylabel = "Column"
 
         # Find frequency axis which has a resolution given by self.nfreq
         # Produce a linear scale over a logaritmic scale.
         if self.logx:
-            f = numpy.log10(self.matfreqs)
+            f = np.log10(self.matfreqs)
             step = (f[-1]-f[0])/(float(self.nfreq-1))
-            ini = numpy.floor(f[0])
-            end = numpy.floor(f[-1])
-            xt = (numpy.arange(ini, end+1) - f[0]) / step
-            xtl = numpy.array(numpy.power(10.,
-                     numpy.arange(ini, end+1, dtype = "int")), dtype = 'str')
+            ini = np.floor(f[0])
+            end = np.floor(f[-1])
+            xt = (np.arange(ini, end+1) - f[0]) / step
+            xtl = np.array(np.power(10.,
+                     np.arange(ini, end+1, dtype = "int")), dtype = 'str')
 
 
-        if logy: mat = numpy.log10(self.mat[sel][order]+1e-20)
+        if logy: mat = np.log10(self.mat[sel][order]+1e-20)
         else: mat = self.mat[sel][order]
         if forceAll: fsel = fsel[order]
         if vmin is None or vmax is None:
-            if forceAll: fmat = numpy.sort(self.mat[fsel].flatten())
-            else: fmat = numpy.sort(mat.flatten())
+            if forceAll: fmat = np.sort(self.mat[fsel].flatten())
+            else: fmat = np.sort(mat.flatten())
             # fmat = fmat[fmat > 0]
             ntot = len(fmat)
         if vmin is None: vmin = fmat[int(ntot*0.02)]
         if vmax is None: vmax = fmat[int(ntot*0.98)]
         sep = [0]
-        z = numpy.zeros(self.nfreq)
+        z = np.zeros(self.nfreq)
         j = 0; yt = []; ytl = []
         yt.append(0)
         ytl.append('')
@@ -157,18 +155,18 @@ class freqSpaceWaterfall( object ):
             sep.append(j)
             if separators:
                 if j < len(tmp):
-                    mat = numpy.vstack([mat[:j],z,mat[j:]])
-                    tmp = numpy.hstack([tmp[:j],-1,tmp[j:]])
+                    mat = np.vstack([mat[:j],z,mat[j:]])
+                    tmp = np.hstack([tmp[:j],-1,tmp[j:]])
                     if forceAll:
-                        fsel = numpy.hstack([fsel[:j], True, fsel[j:]])
+                        fsel = np.hstack([fsel[:j], True, fsel[j:]])
             j += 1
         yt.append(j)
         ytl.append('')
 
         if forceAll:
-            mask = numpy.ones(mat.shape, dtype = bool)
+            mask = np.ones(mat.shape, dtype = bool)
             mask[fsel] = False
-            mmat = numpy.ma.array(mat, mask = mask)
+            mmat = np.ma.array(mat, mask = mask)
             m = pylab.matshow(mmat, **kargs)
         else:
             m = pylab.matshow(mat, **kargs)
@@ -183,12 +181,12 @@ class freqSpaceWaterfall( object ):
             m.axes.set_xticks(xt)
             m.axes.set_xticklabels(xtl)
         else:
-            ini = self.matfreqs[0]-numpy.mod(self.matfreqs[0], linTickSep)+linTickSep
-            end = self.matfreqs[-1]-numpy.mod(self.matfreqs[-1], linTickSep)
-            f = numpy.linspace(ini, end, (end-ini)/linTickSep + 1)
+            ini = self.matfreqs[0]-np.mod(self.matfreqs[0], linTickSep)+linTickSep
+            end = self.matfreqs[-1]-np.mod(self.matfreqs[-1], linTickSep)
+            f = np.linspace(ini, end, (end-ini)/linTickSep + 1)
             step = (self.matfreqs[-1] - self.matfreqs[0]) / self.nfreq
             xt = (f-self.matfreqs[0])/step
-            xtl = numpy.array(f, dtype = str)
+            xtl = np.array(f, dtype = str)
             m.axes.set_xticks(xt)
             m.axes.set_xticklabels(xtl)
         rat = float(self.nfreq)/float(len(tmp))*ratio
@@ -216,38 +214,6 @@ class freqSpaceWaterfall( object ):
         if show: pylab.show()
         else: pylab.close()
 
-
-
-    def cumQualplot( self, filename = None, forceNew = False, nbins = 50, show = True,
-                     selection = None,
-                     title = None, f0 = 10., f1 = 200., Nmin = 30):
-        """
-        """
-        self.analyze(fmin = f0, fmax = f1, logx = False)
-        self.qual = numpy.zeros(len(self.mat))
-        for i in range(len(self.mat)):
-            p = self.mat[i][(self.matfreqs > f0)*(self.matfreqs < f1)]
-            p -= p.mean()
-            self.qual[i] = numpy.sqrt(p.std()/2.0/self.sampleTime)
-        if selection is not None:
-            self.qual = self.qual[selection]
-        order = numpy.argsort(self.qual)
-        self.qualDets = self.dets[order]
-        self.qual = self.qual[order]
-        self.qualDets = self.qualDets[self.qual != 0.0]
-        self.qual = self.qual[self.qual != 0.0]
-        cum = numpy.flipud(numpy.arange(len(self.qual))[Nmin:])
-        q = self.qual[:-Nmin]
-        pylab.plot(q, cum)
-        pylab.xlabel('Noise Quality')
-        pylab.ylabel('Number of Detectors')
-        if title is not None: pylab.title(title)
-        if filename is not None: pylab.savefig(filename)
-        if show: pylab.show()
-        else: pylab.close()
-        return q, cum
-
-
     def plotArray( self, vmin = None, vmax = None, title = None, filename = None,
                    selection = None,
                    units = 'DAC', f0 = 10., f1 = 200., forceNew = False, show = True):
@@ -267,23 +233,21 @@ class freqSpaceWaterfall( object ):
         """
         if show: pylab.ion()
         else: pylab.ioff()
-        if forceNew or self.mat is None:
-            self.analyze(fmin = f0, fmax = f1, logx = False)
         if forceNew or self.qual is None:
-            self.qual = numpy.zeros(len(self.mat))
+            self.qual = np.zeros(len(self.mat))
             for i in range(len(self.mat)):
                 p = self.mat[i][(self.matfreqs > f0)*(self.matfreqs < f1)]
                 p -= p.mean()
-                self.qual[i] = numpy.sqrt(p.std()/2.0)
+                self.qual[i] = np.sqrt(p.std()/2.0)
         if selection is None:
-            self.arrayQual = self.qual.reshape([self.Nrows,self.Ncol])
+            self.arrayQual = self.qual.reshape([self.Nrows,self.Ncols])
         else:
             q = self.qual.copy()
             q[~selection] = 0.0
             self.arrayQual = q.reshape([self.Nrows,self.Ncols])
         if vmin is None or vmax is None:
             vals = self.arrayQual.flatten()
-            vals = numpy.sort(vals[vals != 0.0])
+            vals = np.sort(vals[vals != 0.0])
         if vmin is None: vmin = vals[int(len(vals)*0.02)]
         if vmax is None: vmax = vals[int(len(vals)*0.98)]
         m = pylab.matshow(self.arrayQual.transpose())
@@ -321,7 +285,7 @@ class timeSpaceWaterfall( object ):
         self.sampleTime = DT/(tod.nsamps-1)
         if tmin is None or tmin < 0.0: tmin = 0.0
         if tmax is None or tmax > DT: tmax = DT
-        self.times = numpy.linspace(tmin,tmax, ntime)
+        self.times = np.linspace(tmin,tmax, ntime)
         self.ntime = ntime
         self.ndet, self.ndata = tod.data.shape
         self.resultsDict = {}
@@ -332,7 +296,7 @@ class timeSpaceWaterfall( object ):
         self.sort = []
         for i in range(len(self.rows)):
             self.sort.append((self.rows[i], self.cols[i]))
-        self.sort = numpy.array(self.sort, dtype = [('rows', int),('cols', int)])
+        self.sort = np.array(self.sort, dtype = [('rows', int),('cols', int)])
 
 
     def plot( self, selection = None, vmin = None, vmax = None, level = 0.95, units = 'DAC',
@@ -353,25 +317,25 @@ class timeSpaceWaterfall( object ):
         if show: pylab.ion()
         else: pylab.ioff()
         if selection is None:
-            sel = numpy.ones(numpy.shape(self.mat)[0], dtype = 'bool')
+            sel = np.ones(np.shape(self.mat)[0], dtype = 'bool')
         else: sel = selection
         if vmin is None or vmax is None:
-            val = numpy.sort(numpy.reshape(self.mat[sel], numpy.size(self.mat[sel])))
+            val = np.sort(np.reshape(self.mat[sel], np.size(self.mat[sel])))
             N = len(val)-1
         if vmin is None: vmin = val[int(N*(1.0-level)/2.0)]
         if vmax is None: vmax = val[int(N*(level+1.0)/2.0)]
         if rowDominance:
-            order = numpy.argsort(self.sort[sel], order = ['rows', 'cols'])
+            order = np.argsort(self.sort[sel], order = ['rows', 'cols'])
             tmp = self.rows[sel][order]
             ylabel = "Row"
         else:
-            order = numpy.argsort(self.sort[sel], order = ['cols', 'rows'])
+            order = np.argsort(self.sort[sel], order = ['cols', 'rows'])
             tmp = self.cols[sel][order]
             ylabel = "Column"
         mat = self.mat[sel][order]
 
         sep = [0]
-        z = numpy.zeros(numpy.shape(mat)[1])
+        z = np.zeros(np.shape(mat)[1])
         j = 0; yt = []; ytl = []
         yt.append(0)
         ytl.append('')
@@ -386,8 +350,8 @@ class timeSpaceWaterfall( object ):
             ytl.append(str(i))
             sep.append(j)
             if j < len(tmp):
-                mat = numpy.vstack([mat[:j],z,mat[j:]])
-                tmp = numpy.hstack([tmp[:j],-1,tmp[j:]])
+                mat = np.vstack([mat[:j],z,mat[j:]])
+                tmp = np.hstack([tmp[:j],-1,tmp[j:]])
             j += 1
         yt.append(j)
         ytl.append('')
@@ -398,12 +362,12 @@ class timeSpaceWaterfall( object ):
         pylab.ylabel(ylabel)
         pylab.xlabel("Time [s]")
 
-        shape = numpy.shape(self.mat[sel])
+        shape = np.shape(self.mat[sel])
         rat = float(shape[1])/float(shape[0])*1.2
         m.axes.set_aspect(rat)
 
         xt = m.axes.get_xticks(); xtl = []
-        st = numpy.mean(self.times[1:]-self.times[:-1])
+        st = np.mean(self.times[1:]-self.times[:-1])
         ti = self.times[0]
         for x in xt:
             xtl.append("%12.3f"%(x*st+ti))
@@ -431,33 +395,33 @@ class scanWaterfall( object ):
         """
         if selection is not None: sel = selection
         else:
-            a = numpy.min(tod.data, axis = 1)
-            b = numpy.max(tod.data, axis = 1)
+            a = np.min(tod.data, axis = 1)
+            b = np.max(tod.data, axis = 1)
             sel = ~((a == 0.0)*(b == 0.0))
 
-        cm = numpy.mean(tod.data[sel], axis = 0)
+        cm = np.mean(tod.data[sel], axis = 0)
         self.cm = cm
 
 
         self.sampleTime = (tod.ctime[-1]-tod.ctime[0])/(tod.nsamps-1)
         T = int(1./tod.scanFreq/self.sampleTime/2)
         az = tod.az[:2*T]
-        pivot = numpy.where(az == az.min())[0][0]
+        pivot = np.where(az == az.min())[0][0]
 
         i = pivot
         dir = 1
         k = 0
         self.time = [0]
-        self.mat = numpy.zeros([int(tod.nsamps-pivot)/T,T])
+        self.mat = np.zeros([int(tod.nsamps-pivot)/T,T])
         while i+T < tod.nsamps:
             if dir == 1: self.mat[k] = cm[i:i+T];
-            else: self.mat[k] = numpy.flipud(cm[i:i+T]);
+            else: self.mat[k] = np.flipud(cm[i:i+T]);
             self.time.append((self.time[-1]+T))
             i += T
             dir *= -1
             k += 1
-        self.time = numpy.array(self.time)*self.sampleTime/60
-        self.az = tod.az[pivot:pivot+T]*180/numpy.pi
+        self.time = np.array(self.time)*self.sampleTime/60
+        self.az = tod.az[pivot:pivot+T]*180/np.pi
         self.az -= self.az.mean()
 
 
@@ -472,8 +436,8 @@ class scanWaterfall( object ):
         @param filename     Name of the file where to store the plot.
         @param show         Whether to display or not the plot.
         """
-        if vmin is None: numpy.median(numpy.min(self.mat, axis = 1))
-        if vmax is None: numpy.median(numpy.max(self.mat, axis = 1))
+        if vmin is None: np.median(np.min(self.mat, axis = 1))
+        if vmax is None: np.median(np.max(self.mat, axis = 1))
 
         m = pylab.matshow(self.mat)
         b = pylab.colorbar(shrink=0.8)
@@ -481,7 +445,7 @@ class scanWaterfall( object ):
         pylab.ylabel("Time [min]")
         pylab.xlabel("dAz [deg]")
 
-        shape = numpy.shape(self.mat)
+        shape = np.shape(self.mat)
         rat = float(shape[1])/float(shape[0])*1.2
         m.axes.set_aspect(rat)
 
@@ -489,15 +453,15 @@ class scanWaterfall( object ):
 
         daz = (self.az.max()-self.az.min())/(len(self.az)-1)
         x_max = int(self.az.max())
-        x = numpy.arange(2*x_max+1)-x_max
-        xt = list((numpy.arange(2*x_max+1)-x_max)/daz + len(self.az)/2)
-        xtl = list(numpy.array(x, dtype = 'str'))
+        x = np.arange(2*x_max+1)-x_max
+        xt = list((np.arange(2*x_max+1)-x_max)/daz + len(self.az)/2)
+        xtl = list(np.array(x, dtype = 'str'))
         m.axes.set_xticks(xt)
         m.axes.set_xticklabels(xtl)
         m.axes.xaxis.set_ticks_position("bottom")
-        y = numpy.arange(self.time[-1])
+        y = np.arange(self.time[-1])
         yt = list(y/self.time[1])
-        ytl = list(numpy.array(y, dtype = 'str'))
+        ytl = list(np.array(y, dtype = 'str'))
         m.axes.set_yticks(yt)
         m.axes.set_yticklabels(ytl)
 
@@ -519,26 +483,26 @@ class quality( object ):
         self.name = tod.info.basename
         self.array = tod.info.array
         d, r, c = tod.listUncut()
-        self.dets = numpy.array(d)
-        self.rows = numpy.array(r)
-        self.cols = numpy.array(c)
+        self.dets = np.array(d)
+        self.rows = np.array(r)
+        self.cols = np.array(c)
 
         sel = self.dets[(self.rows>13)*(self.rows<17)*(self.cols>13)*(self.cols<17)]
         print len(sel)
 
-        f = numpy.zeros(len(sel))
+        f = np.zeros(len(sel))
         for i in range(len(sel)):
             p, nu, w = mobyUtils.power(tod.data[sel[i]], dt = tod.sampleTime)
             f[i] = tuneScanFreq(p, nu, tod.scanFreq)
             f[i] = tuneScanFreq(p, nu, f[i], scope = 0.0001)
-        self.sf = numpy.median(f)
+        self.sf = np.median(f)
         self.f = f
 
         mask = generateArmonicMask(nu, self.sf, window = 6)
         sel = (nu > f0)*(nu < f1)
 
         print "Start arrayQual calculation"
-        self.arrayQual = numpy.zeros([tod.ncol, tod.nrow])
+        self.arrayQual = np.zeros([tod.ncol, tod.nrow])
         for i in range(tod.ndet):
             p, nu, w = mobyUtils.power(tod.data[i], dt = tod.sampleTime)
             mean1 = p[sel*mask].mean()
@@ -563,7 +527,7 @@ class quality( object ):
         """
         if vmin is None or vmax is None:
             vals = self.arrayQual.flatten()
-            vals = numpy.sort(vals[vals != 0.0])
+            vals = np.sort(vals[vals != 0.0])
         if vmin is None: vmin = vals[int(len(vals)*0.02)]
         if vmax is None: vmax = vals[int(len(vals)*0.98)]
         m = pylab.matshow(self.arrayQual)
@@ -591,8 +555,8 @@ def generateArmonicMask(freqs, scanFreq, window = 10):
     """
     w = window/2
     df = freqs[2]-freqs[1]
-    index = numpy.where(numpy.mod(freqs,scanFreq) < df)[0]
-    mask = numpy.zeros(len(freqs), dtype = 'bool')
+    index = np.where(np.mod(freqs,scanFreq) < df)[0]
+    mask = np.zeros(len(freqs), dtype = 'bool')
     for i in index:
         if i-w < 0: mask[:i+w] = True
         elif i+w >= len(freqs): mask[i-w:] = True
@@ -604,14 +568,14 @@ def tuneScanFreq(p, nu, scanFreq, scope = 0.002, nsamp = 100, plot = False):
     @brief Find the scan frequency by maximizing the harmonic content of a signal
     """
     df = nu[2] - nu[1]
-    freqs = (numpy.arange(nsamp, dtype = 'float')/nsamp-0.5)*scope + scanFreq
-    pow = numpy.zeros(nsamp)
+    freqs = (np.arange(nsamp, dtype = 'float')/nsamp-0.5)*scope + scanFreq
+    pow = np.zeros(nsamp)
     for i in range(nsamp):
-        index = numpy.where(numpy.mod(nu,freqs[i]) < df)[0]
-        pow[i] = numpy.mean(numpy.log(p[index]))
+        index = np.where(np.mod(nu,freqs[i]) < df)[0]
+        pow[i] = np.mean(np.log(p[index]))
     if plot: pylab.plot(pow), pylab.show()
     mf = freqs[pow == pow.max()]
-    if numpy.ndim(mf) > 0: return mf[0]
+    if np.ndim(mf) > 0: return mf[0]
     else: return mf
 
 
