@@ -54,10 +54,11 @@ def run(proj):
     tag_selected = proj.tag
     if params.has_key('flatfield'):
         FF = moby2.util.MobyDict.from_file(params.get('flatfield'))
-    tods, flag = np.loadtxt(os.path.join(proj.depot,
-        'SelectedTODs/%s/selectedTODs_uranus.txt' %tag_selected), dtype=str, usecols=[0,5]).T
+    tods, az, flag = np.loadtxt(os.path.join(proj.depot,
+        'SelectedTODs/%s/selectedTODs_uranus.txt' %tag_selected), dtype=str, usecols=[0,3,5]).T
     df['tods'] = np.asarray( tods, dtype=str )
     df['flag'] = np.asarray( flag, dtype=int )
+    df['az'] = np.asarray( az, dtype=float)
     df = df[df.flag==2]
 
     print "Start with %i selected TODs" %df.tods.size
@@ -255,6 +256,7 @@ def run(proj):
     p0 = np.exp( np.polyval(p,0) )
     p1 = np.exp( np.polyval(p,0.5/np.sin(np.radians(50))) )
     df['residual'] = df.peak_mean - np.exp( np.polyval(p,df.loading) )
+    # import ipdb;ipdb.set_trace()
 
     # Make the plot
     plt.ioff()
@@ -263,13 +265,19 @@ def run(proj):
     ax1.plot(x, y, 'b--')
     ax1.errorbar(df.loading, df.peak_mean, df.peak_error, fmt=',', color='k', ecolor='k', elinewidth=2)
     splot = ax1.scatter(df.loading, df.peak_mean, s=100,
-    #            c=df.hour_utc, vmin=0, vmax=24,
-                c=df.Ndets,
+    #            c=df.hour_utc, vmin=-8, vmax=16,
+    #            c=df.Ndets,
+    #              c=df.ctime,
+                c=df.az,
                 edgecolor='None',
     #            cmap='hsv')
-                cmap='RdYlBu_r')
+    #            cmap='RdYlBu_r')
+                cmap='copper')
     clb = plt.colorbar(splot)
-    clb.set_label('Ndets')
+    # clb.set_label('Ndets')
+    # clb.set_label('ctime')
+    # clb.set_label('hour_utc')
+    clb.set_label('azimuth')
     ax1.set_xlim((0,loading_max))
     y_lim = params.get('y_lim', p0*2)
     ax1.set_ylim((0,y_lim))
