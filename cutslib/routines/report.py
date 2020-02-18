@@ -1,3 +1,7 @@
+from __future__ import print_function
+from __future__ import absolute_import
+from past.builtins import basestring
+
 from todloop import Routine
 import pickle, h5py, os
 import numpy as np
@@ -42,7 +46,7 @@ class Summarize(Routine):
         for key in self.inputs.get('features'):
             results.update(store.get(key))
 
-        self.logger.info("Successfully processed: %s" % results.keys())
+        self.logger.info("Successfully processed: %s" % list(results.keys()))
         store.set(self.outputs.get('report'), results)
 
 
@@ -88,7 +92,7 @@ class PrepareDataLabel(Routine):
 
         # retrieve the calculated statustics
         report = store.get(self.inputs.get('report'))
-        keys = report.keys()
+        keys = list(report.keys())
 
         # remove mean if needed
         if self._remove_mean:
@@ -179,7 +183,7 @@ class PrepareDataLabelNew(Routine):
 
         # retrieve the calculated statistics
         report = store.get(self.inputs.get('report'))
-        keys = report.keys()
+        keys = list(report.keys())
 
         # remove mean if needed
         if self._remove_mean:

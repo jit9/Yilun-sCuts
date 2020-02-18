@@ -1,3 +1,7 @@
+from __future__ import print_function
+from __future__ import absolute_import
+from past.builtins import basestring
+
 import numpy as np
 from numpy import ma
 import scipy.stats.mstats as ms
@@ -8,19 +12,19 @@ import logging
 import moby2
 from todloop import Routine
 
-from utils import *
+from .utils import *
 
 
 class AnalyzeScan(Routine):
     def __init__(self, **params):
         """This routine analyzes the scan pattern. It takes in an
         TOD and produces scan parameters including the scan freq,
-        when it pivot, number of scans. 
+        when it pivot, number of scans.
 
-        Inputs: 
+        Inputs:
             tod: TOD data
         Outputs:
-            scan_params: 
+            scan_params:
                 T: time per chunk
                 pivot: index of pivot
                 N: number of chunks
@@ -57,7 +61,7 @@ class AnalyzeScan(Routine):
             # 'N': scan["N"],
             'scan_freq': scan_freq
         }
-        
+
         self.logger.debug(scan_params)
         store.set(self.outputs.get('scan'), scan_params)
 
@@ -181,7 +185,7 @@ class AnalyzeTemperature(Routine):
         Inputs:
             tod: TOD data
         Outputs:
-            thermal: 
+            thermal:
                 Temp: mean temperature
                 dTemp: thermal drift
                 temperatureCut: cuts based on the temperature
@@ -199,7 +203,7 @@ class AnalyzeTemperature(Routine):
         Temp = None
         dTemp = None
         temperatureCut = False
-        
+
         self.logger.info("Analyzing temperature...")
         if self._channel is None or self._T_max is None \
            or self._dT_max is None:
@@ -212,7 +216,7 @@ class AnalyzeTemperature(Routine):
                     thermometers.append(thermometer)
             if len(thermometers) > 0:
                 thermometers = np.array(thermometers)
-                
+
                 # Get thermometer statistics
                 th_mean = moby2.tod.remove_mean(data=thermometers)
                 th_trend = moby2.tod.detrend_tod(data=thermometers)
@@ -220,13 +224,13 @@ class AnalyzeTemperature(Routine):
                 dTemp = th_trend[1][0] - th_trend[0][0]
                 if (Temp > self._T_max) or (abs(dTemp) > self._dT_max):
                     temperatureCut = True
-                    
+
         thermal_results = {
             'Temp': Temp,
             'dTemp': dTemp,
             'temperatureCut': temperatureCut
         }
-        
+
         self.logger.debug(thermal_results)
         store.set(self.outputs.get('thermal'), thermal_results)
 
@@ -252,7 +256,7 @@ class AnalyzeDarkLF(Routine):
         fft_data = store.get(self.inputs.get('fft'))
         fdata = fft_data['fdata']
         df = fft_data['df']
-        
+
         sel = store.get(self.inputs.get('dets'))['dark_final']
         scan_freq = store.get(self.inputs.get('scan'))['scan_freq']
 
@@ -269,7 +273,7 @@ class AnalyzeDarkLF(Routine):
 
         minFreqElem = 16
         # loop over freq windows
-        for i in xrange(Nwin):
+        for i in range(Nwin):
             # find upper / lower bounds' corresponding index in freq
             # lower bound: fmin + [ fshifts ]
             # upper bound: fmin + band  + [ fshifts ]
@@ -293,9 +297,9 @@ class AnalyzeDarkLF(Routine):
         # normalize gain
         for g in gain:
             g /= np.mean(g[sel])
-            
+
         gain = np.array(gain)
-        
+
         # give a default gain of 0 for invalid data
         gain[np.isnan(gain)] = 0.
 
@@ -310,17 +314,17 @@ class AnalyzeDarkLF(Routine):
         # use mean as representative values for norm
         mnorm = ma.MaskedArray(norm, ~np.array(sel))
         mnorm_mean = mnorm.mean(axis=0)
-        
+
         # export the values
         results = {}
-        
+
         results["corrDark"] = mcorr_max.data,
         results["gainDark"] = mgain_mean.data
         results["normDark"] = mnorm_mean.data
 
         # save to the data store
         store.set(self.outputs.get('lf_dark'), results)
-        
+
     def lowFreqAnal(self, fdata, sel, frange, df, nsamps, scan_freq):
         """Find correlations and gains to the main common mode over a
         frequency range
@@ -387,7 +391,7 @@ class AnalyzeLiveLF(Routine):
     def execute(self, store):
         # similar to the dark analysis, for more comments please refer to
         # the AnalyzeDarkLF
-        
+
         # retrieve relevant data from store
         # tod, number of detectors and number of samples
         tod = store.get(self.inputs.get('tod'))
@@ -457,7 +461,7 @@ class AnalyzeLiveLF(Routine):
         for fbSel,fbn in zip(fbandSel, fbands):
             all_data = []
 
-            sel = []            
+            sel = []
             corr = []
             gain = []
             norm = []
@@ -466,18 +470,18 @@ class AnalyzeLiveLF(Routine):
             fcm = []
             cm = []
             cmdt = []
-            
+
             minFreqElem = 16
-            for i in xrange(Nwin):
+            for i in range(Nwin):
                 n_l = int(round((fmin + i*fshift)/df))
                 n_h = int(round((fmin + i*fshift + band)/df))
-                                
+
                 if (n_h - n_l) < minFreqElem:
                     n_h = n_l + minFreqElem
 
                 if self._removeDark:
                     if dark is None:
-                        print "ERROR: no dark selection supplied"
+                        print("ERROR: no dark selection supplied")
                         return 0
 
                     fcmi, cmi, cmdti = self.getDarkModes(fdata, dark, [n_l,n_h],
@@ -489,7 +493,7 @@ class AnalyzeLiveLF(Routine):
                 r = self.lowFreqAnal(fdata, live, [n_l,n_h], df, nsamps, scan_freq,
                                      fcmodes=fcmi, respSel=respSel, flatfield=flatfield)
 
-                sel.append(live)                
+                sel.append(live)
                 corr.append(r["corr"])
                 gain.append(np.abs(r["gain"]))
                 norm.append(r["norm"])
@@ -497,10 +501,10 @@ class AnalyzeLiveLF(Routine):
 
                 if self._full:
                     all_data.append(r)
-                    
+
             for g in gain:
                 g /= np.mean(g[live])
-                
+
             gain = np.array(gain)
             gain[np.isnan(gain)] = 0.
 
@@ -530,7 +534,7 @@ class AnalyzeLiveLF(Routine):
             crit['gainLive'][fbSel] = results["gain"][fbSel]
             crit['normLive'][fbSel] = results["norm"][fbSel]
 
-            if results.has_key('darkRatio'):
+            if 'darkRatio' in results:
                 crit["darkRatioLive"][fbSel] = results["darkRatio"][fbSel]
 
         # Undo flatfield correction
@@ -611,10 +615,10 @@ class AnalyzeLiveLF(Routine):
         # data = CM * gain
         gain = np.zeros(ndet, dtype=complex)
         gain[sel] = np.abs(u[:, 0])
-        
+
         res.update({"corr": corr, "gain": gain, "norm": norm, "dcoeff": dcoeff,
                     "ratio": ratio, "cc": cc})
-        
+
         return res
 
     def getDarkModes(self, fdata, darkSel, frange, df, nf, nsamps):
@@ -624,7 +628,7 @@ class AnalyzeLiveLF(Routine):
         @return correlated modes in frequency and time domain, plus thermometer
                 info.
         """
-        self.logger.info("Finding dark modes in freqs %s" % frange)        
+        self.logger.info("Finding dark modes in freqs %s" % frange)
         n_l, n_h=frange
         fc_inputs = []
 
@@ -655,7 +659,7 @@ class AnalyzeLiveLF(Routine):
             fcmodes, n_l, nsamps, df)
         cmodes /= np.linalg.norm(cmodes, axis=1)[:, np.newaxis]
         return fcmodes, cmodes, cmodes_dt
-        
+
 
 class GetDriftErrors(Routine):
     def __init__(self, **params):
@@ -714,7 +718,7 @@ class GetDriftErrors(Routine):
 
 class AnalyzeLiveMF(Routine):
     def __init__(self, **params):
-        """This routine looks at the mid-frequency and perform a 
+        """This routine looks at the mid-frequency and perform a
         high-freq like analysis to get the pickle parameter MFE"""
         Routine.__init__(self)
         self.inputs = params.get('inputs', None)
@@ -742,7 +746,7 @@ class AnalyzeLiveMF(Routine):
         # get drift errors
         ndets = len(live)
         hf_data = fdata[live, n_l:n_h]
-        
+
         # remove first [nmodes] common modes
         if nmodes > 0:
             self.logger.info("Deprojecting %d modes" % nmodes)
@@ -819,7 +823,7 @@ class AnalyzeHF(Routine):
                                                   nmodes=nmodes_live)
         else:
             self.logger.info("Performing partial analysis")
-            rms, skewt, kurtt, prms, pskewt, pkurtt = self.highFreqAnal(fdata, live, 
+            rms, skewt, kurtt, prms, pskewt, pkurtt = self.highFreqAnal(fdata, live,
                                                                         [n_l,n_h],
                                                                         nsamps,
                                                                         nmodes=nmodes_live,
@@ -828,8 +832,8 @@ class AnalyzeHF(Routine):
 
             # store the statistics for partial
             results["partialRMSLive"] = np.zeros([ndets, scan["N"]])
-            results["partialSKEWLive"] = np.zeros([ndets, scan["N"]]) 
-            results["partialKURTLive"] = np.zeros([ndets, scan["N"]]) 
+            results["partialSKEWLive"] = np.zeros([ndets, scan["N"]])
+            results["partialKURTLive"] = np.zeros([ndets, scan["N"]])
             results["partialSKEWPLive"] = np.zeros([ndets, scan["N"]])
             results["partialKURTPLive"] = np.zeros([ndets, scan["N"]])
 
@@ -838,7 +842,7 @@ class AnalyzeHF(Routine):
             results["partialKURTLive"][live] = pkurtt.T[:, 0]
             results["partialSKEWPLive"][live] = pskewt.T[:, 1]
             results["partialKURTPLive"][live] = pkurtt.T[:, 1]
-            
+
         # store the statistics for global
         results["rmsLive"] = rms
         results["skewLive"] = np.zeros(ndets)
@@ -852,7 +856,7 @@ class AnalyzeHF(Routine):
 
         # analyze the dark detectors for the same frequency range
         self.logger.info("Analyzing dark detectors")
-        rms = self.highFreqAnal(fdata, dark, [n_l,n_h], nsamps, nmodes=nmodes_dark, 
+        rms = self.highFreqAnal(fdata, dark, [n_l,n_h], nsamps, nmodes=nmodes_dark,
                                 highOrder=False)
 
         results["rmsDark"] = rms
@@ -900,13 +904,13 @@ class AnalyzeHF(Routine):
                 f = float(hfd.shape[1])/nsamps
                 t = int(T*f); p = int(pivot*f)
                 prms = []; pskewt = []; pkurtt = []
-                for c in xrange(N):
+                for c in range(N):
                     # i see this as calculating the statistics for each
                     # swing (no turning part) so the statistics is not
                     # affected by the scan
                     prms.append(hfd[:,c*t+p:(c+1)*t+p].std(axis=1))
-                    pskewt.append(stat.skewtest(hfd[:,c*t+p:(c+1)*t+p],axis=1)) 
-                    pkurtt.append(stat.kurtosistest(hfd[:,c*t+p:(c+1)*t+p],axis=1)) 
+                    pskewt.append(stat.skewtest(hfd[:,c*t+p:(c+1)*t+p],axis=1))
+                    pkurtt.append(stat.kurtosistest(hfd[:,c*t+p:(c+1)*t+p],axis=1))
                 prms = np.array(prms).T
                 pskewt = np.array(pskewt)
                 pkurtt = np.array(pkurtt)
@@ -914,4 +918,4 @@ class AnalyzeHF(Routine):
             else:
                 return (rms, skewt, kurtt)
         else:
-            return rms        
+            return rms

@@ -1,3 +1,8 @@
+from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import division
+from past.builtins import basestring
+
 import numpy as np
 
 def nextregular(n):
@@ -5,14 +10,14 @@ def nextregular(n):
     return n
 
 def checksize(n):
-    while not (n%16): n/=16
-    while not (n%13): n/=13
-    while not (n%11): n/=11
-    while not (n%9): n/=9
-    while not (n%7): n/=7
-    while not (n%5): n/=5
-    while not (n%3): n/=3
-    while not (n%2): n/=2
+    while not (n%16): n//=16
+    while not (n%13): n//=13
+    while not (n%11): n//=11
+    while not (n%9): n//=9
+    while not (n%7): n//=7
+    while not (n%5): n//=5
+    while not (n%3): n//=3
+    while not (n%2): n//=2
     return (1 if n == 1 else 0)
 
 
@@ -43,7 +48,7 @@ def presel_by_median(cc, sel=None, **kwargs):
     if kwargs.get("forceSel") is not None:
         sl *= kwargs.get("forceSel") # NOT PRETTY
 
-    if sl.sum() < np.max([cc.shape[0]/minFrac,minSel]):
+    if sl.sum() < np.max([cc.shape[0]//minFrac,minSel]):
         print("ERROR: did not find any valid detectors for low frequency analysis.")
         sl = (np.median(abs(cc),axis=0) > superMinCorr)*sel
         if sl.sum() < minSel:
@@ -90,7 +95,7 @@ def group_detectors(cc, sel = None, **kwargs):
         # Find reference mode
         n0 = np.sum(np.abs(cco)>thr,axis=0)
         imax = np.argmax(n0)
-        if n0[imax] < np.min([Nmin,N/2]):
+        if n0[imax] < np.min([Nmin,N//2]):
             thr -= dthr
             continue
 

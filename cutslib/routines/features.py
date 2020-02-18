@@ -2,12 +2,16 @@
 Loic is using.
 
 """
+from __future__ import print_function
+from __future__ import absolute_import
+from past.builtins import basestring
+
 from scipy import signal
 import numpy as np
 from scipy.fftpack import fft
 
 from todloop import Routine
-from utils import nextregular
+from .utils import nextregular
 
 
 class JesseFeatures(Routine):
@@ -21,7 +25,7 @@ class JesseFeatures(Routine):
         tod = store.get(self.inputs.get('tod'))
         ndets = len(tod.info.det_uid)
         N = tod.nsamps
-        
+
         # compute the feature 1 and 2
         self.logger.info("Computing feature 1 and 2...")
 
@@ -40,20 +44,20 @@ class JesseFeatures(Routine):
         m = (av != 0)
         pav_low[m] = np.mean(ywf[m, :1000], axis=1) / av[m]
         pav_high[m] = np.mean(ywf[m, 1100:3000], axis=1) / av[m]
-        
-        # compute the feature 3: rms 
+
+        # compute the feature 3: rms
         self.logger.info("Computing feature 3...")
         rmx = np.std(tod.data, axis=1)
 
         # compute the feature 5: a 60 secs feature that jesse proposed
-        self.logger.info("Computing feature 5...")        
+        self.logger.info("Computing feature 5...")
         # here we need to take into account that tod may be
         # down-sampled beforehand
         ds = tod.info.downsample_level
         shift = int(24280 / ds)
         ff5 = np.mean(tod.data[:,:shift]-tod.data[:,-shift:], axis=1)
 
-        # summarize the features into a dictionary 
+        # summarize the features into a dictionary
         results = {
             'feat1': pav_low,
             'feat2': pav_high,
@@ -63,6 +67,6 @@ class JesseFeatures(Routine):
 
         # check the results
         self.logger.info(results)
-            
+
         # share the results in the data store
         store.set(self.outputs.get('results'), results)
