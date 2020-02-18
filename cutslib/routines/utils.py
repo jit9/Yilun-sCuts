@@ -20,7 +20,6 @@ def checksize(n):
     while not (n%2): n//=2
     return (1 if n == 1 else 0)
 
-
 def presel_by_median(cc, sel=None, **kwargs):
     """
     minCorr: minimum correlation requiered for preselection
@@ -136,7 +135,6 @@ def group_detectors(cc, sel = None, **kwargs):
             break
 
     return G, ind, ld, smap
-
 
 def get_sine2_taper(frange, edge_factor = 6):
     # Generate a frequency space taper to reduce ringing in lowFreqAnal
