@@ -59,25 +59,25 @@ output.PWV[~np.isfinite(output.PWV)] = 0
 output['flag'] = np.zeros(len(output), dtype=int)
 output.flag[~np.isnan(output.liveDets)] += 1
 
-print "%i TODs" %(len(output))
-print "%i were processed" %((output.flag == 1).sum())
+print("%i TODs" %(len(output)))
+print("%i were processed" %((output.flag == 1).sum()))
 sel1 = np.ones(len(output), dtype=bool)
 selParams = params.get('selParams', {})
-for k in selParams.keys():
-    if "lt" in selParams[k].keys():
+for k in list(selParams.keys()):
+    if "lt" in list(selParams[k].keys()):
         sel1 *= (output[k] < selParams[k]['lt']) & ~np.isnan(output[k])
-    if "gt" in selParams[k].keys():
+    if "gt" in list(selParams[k].keys()):
         sel1 *= (output[k] > selParams[k]['gt']) & ~np.isnan(output[k])
-    print "%i passed the %s criteria (and anteriors)" %(sel1.sum(),k)
+    print("%i passed the %s criteria (and anteriors)" %(sel1.sum(),k))
 
 include_time = np.loadtxt(params.get('include_time'), dtype=int )
 sel2 = np.zeros(len(output), dtype=bool)
 for start, end in include_time:
     sel2 += np.logical_and(output.ctime > start, output.ctime < end)
-print "%i were taken inside the observation times" %(sel2.sum())
+print("%i were taken inside the observation times" %(sel2.sum()))
 
 output.flag[sel1*sel2] += 1
-print "%i are good for mapping" %((output.flag==2).sum())
+print("%i are good for mapping" %((output.flag==2).sum()))
 
 output['mean_az'] = output.az + output.az_throw / 2.
 output['hour2'] = output.index.hour + output.index.minute/60.

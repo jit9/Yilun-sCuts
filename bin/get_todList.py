@@ -53,9 +53,9 @@ catalog.index = pd.to_datetime(catalog.date)
 
 # select tods based on the specified criteria
 sel = np.ones(catalog.shape[0], dtype=bool)
-for k in params.keys():
+for k in list(params.keys()):
     if k in catalog.columns:
-        print '%s: ' %k,
+        print('%s: ' %k, end=' ')
         p = params[k]
         if type(p) == list:
             sel *= catalog[k].isin(p)
@@ -66,13 +66,13 @@ for k in params.keys():
                 sel *= catalog[k] == 'none'
         else:
             sel *= catalog[k] == p
-        print 'left with %i TODs' %sel.sum()
+        print('left with %i TODs' %sel.sum())
     else:
-        print '%s is not a valid parameter, skip it' %k
+        print('%s is not a valid parameter, skip it' %k)
 
 # prepare output
 output_filename = params['output'].format(**params)
-print 'Output %i tods to %s' %(sel.sum(),output_filename)
+print('Output %i tods to %s' %(sel.sum(),output_filename))
 
 # whether to randomize the list
 if not params["do_random"]:

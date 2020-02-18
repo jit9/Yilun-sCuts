@@ -1,5 +1,5 @@
 import moby2
-import cPickle
+import pickle
 import numpy as np
 import sys
 
@@ -17,7 +17,7 @@ input_exclude['det_uid'] = np.asarray(input_exclude['rows'])*32 + np.asarray(inp
 input_dark = moby2.util.MobyDict.from_file(detector_lists['dark'])
 
 
-season = cPickle.load(open(params['critfile'], 'r'))
+season = pickle.load(open(params['critfile'], 'r'))
 liveSum = (season['sel']).sum(axis=1)
 exclude = np.arange(season['sel'].shape[0])[liveSum==0]
 
@@ -26,7 +26,7 @@ live_in = len(set_live)
 set_exclude = set(exclude)
 set_live.difference_update(set_exclude)
 live_out = len(set_live)
-print "%i detectors have been excluded" %(live_in-live_out)
+print("%i detectors have been excluded" %(live_in-live_out))
 
 def generate_mobydict(input_set):
     uid = np.array(list(input_set))

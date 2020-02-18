@@ -84,7 +84,7 @@ def new_partial_cuts(obs, params, params_fix):
     moby2.tod.fill_cuts(tod, mce_cuts, no_noise = no_noise)
     
     # CUT SOURCES
-    if params_fix.has_key('sigurds_cuts'):
+    if 'sigurds_cuts' in params_fix:
         f = h5py.File(params_fix.get('sigurds_cuts'), 'r+')
         grp = f[tod.info.basename]
         grp.attrs['_moby2_class_name'] ='tod_flags'
@@ -107,7 +107,7 @@ def new_partial_cuts(obs, params, params_fix):
             tod=tod, source_list=cpar.get_deep(('source_cuts','source_list')), pointing_shift=mask_params['offset'])
 	
         pos_cuts_sources = moby2.TODCuts.for_tod(tod, assign=False)
-        print "Found %i sources for this TOD" %len(matched_sources)
+        print("Found %i sources for this TOD" %len(matched_sources))
         for source in matched_sources:
             source_cut = moby2.tod.get_source_cuts(
                 tod, source[1], source[2], **mask_params)
@@ -157,7 +157,7 @@ def replace_pcuts(obs, params, params_fix):
     depot.write_object(cuts_new, tag=new_cuts_tag, tod=obs, make_dirs=True, force=True)
 
 def fix_mr3(obs, params, params_fix):
-    print "Fix mr3 for %s"%obs
+    print("Fix mr3 for %s"%obs)
     depot = moby2.util.Depot(params.get('depot'))
     old_cuts = os.path.exists(
         depot.get_full_path(
@@ -165,15 +165,15 @@ def fix_mr3(obs, params, params_fix):
     new_cuts = os.path.exists(
         depot.get_full_path(
             moby2.tod.TODCuts, tag=params_fix['tag_out'], tod=obs))
-    print "Old cuts = %r, New cuts = %r" %(old_cuts, new_cuts)
+    print("Old cuts = %r, New cuts = %r" %(old_cuts, new_cuts))
     if not new_cuts and old_cuts:
         try:
             # new_partial_cuts(obs, params, params_fix)
             replace_pcuts(obs, params, params_fix)
         except:
-            print 'Failed for %s' %obs
+            print('Failed for %s' %obs)
     else:
-        print 'Already exists for %s' %obs
+        print('Already exists for %s' %obs)
 
 joblib.Parallel(n_jobs=numcores)(
     joblib.delayed(fix_mr3)(obs, params, params_fix) for obs in tl)

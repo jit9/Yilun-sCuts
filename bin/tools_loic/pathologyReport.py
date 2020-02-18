@@ -18,7 +18,7 @@ class pathoReport(object):
         self.ndata = pl.ndata
         self.filename = filename
         self.reportname = filename.split('/')[-1].split('.')[0]
-        self.livekeys = [k for k in self.data.keys() if k[-4:] == 'Live']
+        self.livekeys = [k for k in list(self.data.keys()) if k[-4:] == 'Live']
 
     def addPWV(self):
         self.data['PWV'] = get_pwv(self.data.ctime)
@@ -37,8 +37,8 @@ class pathoReport(object):
             self.data = self.data[time[0]:time[1]]
         else:
             self.data = self.data[time]
-        print "%i TODs have been discarded. %i remain." %(self.ndata-self.data.shape[0],
-                                                         self.data.shape[0])
+        print("%i TODs have been discarded. %i remain." %(self.ndata-self.data.shape[0],
+                                                         self.data.shape[0]))
         self.ndata = self.data.shape[0]
 
     
@@ -47,8 +47,8 @@ class pathoReport(object):
         """
         if not hasattr(self,'data_original'): self.data_original = self.data.copy()
         self.data = self.data.between_time(hour_min,hour_max)
-        print "%i TODs have been discarded. %i remain." %(self.ndata-self.data.shape[0],
-                                                         self.data.shape[0])
+        print("%i TODs have been discarded. %i remain." %(self.ndata-self.data.shape[0],
+                                                         self.data.shape[0]))
         self.ndata = self.data.shape[0]
 
 
@@ -65,27 +65,27 @@ class pathoReport(object):
         
         Argument should be passed as a dictionnary of the form { crit: ('lt',val) }
         (use 'lt' for < and 'gt' for >)"""
-        crit = seldict.keys()
+        crit = list(seldict.keys())
         if not hasattr(self,'data_original'): self.data_original = self.data.copy()
         for c in crit:
             if seldict[c][0] == 'lt':
                 self.data = self.data[self.data[c] < seldict[c][1]]
             elif seldict[c][0] == 'gt':
                 self.data = self.data[self.data[c] > seldict[c][1]]
-        print "%i TODs have been discarded. %i remain." %(self.ndata-self.data.shape[0],
-                                                         self.data.shape[0])
+        print("%i TODs have been discarded. %i remain." %(self.ndata-self.data.shape[0],
+                                                         self.data.shape[0]))
 
         self.ndata = self.data.shape[0]
 
 
     def revert_selection(self):
         if not hasattr(self,'data_original'):
-            print 'No selection has been aplied'
+            print('No selection has been aplied')
         else:
             self.data = self.data_original.copy()
             self.ndata = self.data.shape[0]
             del self.data_original
-        print "%i TODs." %self.ndata
+        print("%i TODs." %self.ndata)
 
     def drop_duplicates():
         """Remove duplicates"""
@@ -161,7 +161,7 @@ class pathoReport(object):
     def gridlive(self):
         plt.ioff()
         if not hasattr(self, 'livedata'):
-            livekeys = [k for k in self.data.keys() if k[-4:] == 'Live']
+            livekeys = [k for k in list(self.data.keys()) if k[-4:] == 'Live']
             self.livedata = self.data[livekeys]
         g = sns.PairGrid(self.livedata,diag_sharey=False,despine=False)
         with sns.color_palette("bone_r"):

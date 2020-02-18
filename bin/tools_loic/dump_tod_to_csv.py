@@ -14,7 +14,7 @@ for obs in obslist:
     cal = moby2.scripting.get_calibration({'type':'iv','source':'data'}, tod=tod)
     moby2.tod.apply_calibration(tod.data, cal.det_uid, cal.cal)
     
-    data = pd.DataFrame(data=tod.data.T, index=tod.ctime, columns=['tesdata%04i' %i for i in xrange(tod.data.shape[0])])
+    data = pd.DataFrame(data=tod.data.T, index=tod.ctime, columns=['tesdata%04i' %i for i in range(tod.data.shape[0])])
     
     
     

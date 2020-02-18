@@ -62,7 +62,7 @@ if len(recs) > 0:
 else:
     offset_rebias = 0
 offset = max( offset_IV, offset_rebias, params.get("offset",0)*400 )
-print "Offset set to %is" %offset
+print("Offset set to %is" %offset)
 
 
 
@@ -81,11 +81,11 @@ dt = (time.time() - tic1) / 60
 minFreq = pathop["findPathoParams"]['liveCorrPar']['freqRange']['fmin']
 minPeriods = pathop["findPathoParams"].get("minPeriods", 1.)
 minTODlength = 1 / minFreq * minPeriods
-print "It took %6.2f minutes to load TOD"%dt
-print "Processing TOD %s" % tod.info.name
-print "ndata = %d"%tod.data.shape[1]
+print("It took %6.2f minutes to load TOD"%dt)
+print("Processing TOD %s" % tod.info.name)
+print("ndata = %d"%tod.data.shape[1])
 if minTODlength > tod.ctime[-1] - tod.ctime[0]:
-    raise RuntimeError, "TOD too short to perform LF analysis"
+    raise RuntimeError("TOD too short to perform LF analysis")
 tic2 = time.time()
 
 # CUT MCE FRAME ERROR
@@ -94,7 +94,7 @@ moby2.tod.fill_cuts(tod, mce_cuts, no_noise = no_noise)
 
 # CUT SOURCES
 if cpar.get_deep(('source_cuts','source_list'),None) is not None:
-    print "Finding new source cuts"
+    print("Finding new source cuts")
     tod.fplane = products.get_focal_plane(cpar['pointing'], tod.info)
     f = open(cpar['source_cuts']['source_list'], 'r')
     source_list = f.readlines()
@@ -113,7 +113,7 @@ if cpar.get_deep(('source_cuts','source_list'),None) is not None:
             mask_params['map_size'] = max(mask_params['offset']) + 10./60
     pos_cuts_sources = moby2.TODCuts.for_tod(tod, assign=False)
     pos_cut_dict = {}
-    print matched_sources
+    print(matched_sources)
     for source in matched_sources:
         pos_cut_dict[source[0]] = moby2.tod.get_source_cuts(
             tod, source[1], source[2], **mask_params)
@@ -122,7 +122,7 @@ if cpar.get_deep(('source_cuts','source_list'),None) is not None:
 
 # CUT PLANETS
 if params.get("cut_planets",False):
-    print "Finding new planet cuts"
+    print("Finding new planet cuts")
     if not hasattr(tod,'fplane'):
         tod.fplane = products.get_focal_plane(cpar['pointing'], tod.info)
     matched_sources = moby2.ephem.get_sources_in_patch(
@@ -138,7 +138,7 @@ if params.get("cut_planets",False):
             mask_params['map_size'] = max(mask_params['offset']) + 10./60
     pos_cuts_planets = moby2.TODCuts.for_tod(tod, assign=False)
     pos_cut_dict = {}
-    print matched_sources
+    print(matched_sources)
     for source in matched_sources:
         pos_cut_dict[source[0]] = moby2.tod.get_source_cuts(
             tod, source[1], source[2], **mask_params)
@@ -209,7 +209,7 @@ pa.calibrate2pW()
 resp = pa.calData["resp"]; ff = pa.calData["ff"]
 cal = resp*ff
 if not(np.any(pa.calData["calSel"])):
-    print "ERROR: no calibration for this TOD"
+    print("ERROR: no calibration for this TOD")
     stop
 
 
@@ -297,7 +297,7 @@ n_h = int(round((fmin + i*fshift + band)/df))
 if n_h - n_l < minFreqElem: n_h = n_l+minFreqElem
 if par['liveCorrPar'].get("removeDark",False):
     if darkSel is None:
-        print "ERROR: no dark selection supplied"
+        print("ERROR: no dark selection supplied")
         stop
         fcmi, cmi, cmdti = pathologies.getDarkModes(fdata, darkSel, [n_l,n_h],
                                         df, nf, nsamps, par, tod)

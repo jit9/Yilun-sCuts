@@ -49,10 +49,10 @@ class Database:
         Argument is either 'tods' or 'acq'
         """
         if table not in ['tods', 'acqs']:
-            print "Argument should be either 'tods' or 'acqs'"
+            print("Argument should be either 'tods' or 'acqs'")
         else:
-            print pd.read_sql('describe %s%s' %(self._prefix,self._table(table)),
-                              self.mysql_cn)
+            print(pd.read_sql('describe %s%s' %(self._prefix,self._table(table)),
+                              self.mysql_cn))
     
     def create_query(self, table, column=None):
         """Create a new query from the database
@@ -105,9 +105,9 @@ class Database:
             raise RuntimeError("A query needs to be created first")
         self.data = pd.read_sql(self.query, self.mysql_cn)
         self.data = self.data[self.data.datafile_id.notnull()]
-        if 'ctime' in self.data.keys():
+        if 'ctime' in list(self.data.keys()):
             k = 'ctime'
-        elif 'ctime_start' in self.data.keys():
+        elif 'ctime_start' in list(self.data.keys()):
             k = 'ctime_start'
         self.data.index = pd.to_datetime(self.data[k], unit='s')
         if not hasattr(self.data, 'name'):
@@ -121,9 +121,9 @@ class Database:
         if hasattr(self,'data'):
             self.data = pd.merge(self.data, datafiles,
                                  left_on='datafile_id', right_on='id', how='left')
-            if 'ctime' in self.data.keys():
+            if 'ctime' in list(self.data.keys()):
                 k = 'ctime'
-            elif 'ctime_start' in self.data.keys():
+            elif 'ctime_start' in list(self.data.keys()):
                 k = 'ctime_start'
             self.data.index = pd.to_datetime(self.data[k], unit='s')
 

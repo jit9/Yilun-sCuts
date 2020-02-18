@@ -11,7 +11,7 @@ todlist = TODList.from_file(
     '/home/lmaurin/TODLists/2015_ar3_season_nohwp.txt')
 
 for obs in todlist:
-    print obs
+    print(obs)
     try:
         tod = moby2.scripting.get_tod({'filename':obs, 'read_data':False,
                                        'repair_pointing':True})

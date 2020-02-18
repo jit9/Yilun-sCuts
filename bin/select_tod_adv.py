@@ -56,7 +56,7 @@ catalog.index = pd.to_datetime(catalog.date)
 # select tods based on the specified criteria
 # 1st iteration
 sel = np.ones(catalog.shape[0], dtype=bool)
-for k in params.keys():
+for k in list(params.keys()):
     if k in catalog.columns:
         p = params[k]
         if type(p) == list:
@@ -109,7 +109,7 @@ catalog['night'] = night
 # select tods based on the specified criteria
 sel = np.ones(catalog.shape[0], dtype=bool)
 
-for k in params.keys():
+for k in list(params.keys()):
     if k in ['ra','dec','night']:
         p = params[k]
         if type(p) == list:
@@ -129,13 +129,13 @@ catalog = catalog[sel]
 # upper and lower are both closed interval
 for k in ['pwv', 'ra', 'dec', 'loading']:
     k_upper = "%s_upper" % k
-    if k_upper in params.keys():
+    if k_upper in list(params.keys()):
         v_upper = params.get(k_upper)
         sel = catalog[k] <= v_upper
         catalog = catalog[sel]
         print("%s: left with %d TODs" % (k_upper, sel.sum()))
     k_lower = "%s_lower" % k
-    if k_lower in params.keys():
+    if k_lower in list(params.keys()):
         v_lower = params.get(k_lower)
         sel = catalog[k] >= v_lower
         catalog = catalog[sel]
@@ -181,7 +181,7 @@ if 0:
     plt.savefig("hits.png")
 
 # 4th iteration: look at uranus
-if "calibration" in params.keys():
+if "calibration" in list(params.keys()):
     planet = params.get("calibration")
     print("include %s calibration tods..." % planet)
     catalog = pd.DataFrame.from_records(npcat)
@@ -189,7 +189,7 @@ if "calibration" in params.keys():
     # select tods based on the specified criteria
     # 1st iteration
     sel = np.ones(catalog.shape[0], dtype=bool)
-    for k in params.keys():
+    for k in list(params.keys()):
         if k in ['season', 'array', 'hwp_epoch']:
             p = params[k]
             if type(p) == list:
@@ -215,7 +215,7 @@ if "calibration" in params.keys():
 
 print("Total number of TODs selected: %d" % len(tod_list))
 
-if "nlimit" in params.keys():
+if "nlimit" in list(params.keys()):
     nlimit = params.get("nlimit")
     print("nlimit set: %d" % nlimit)
     tod_list = tod_list[-nlimit:]  # choose the last nlimit ensures
@@ -224,8 +224,7 @@ if "nlimit" in params.keys():
 
 # save the list
 output_filename = params['tag'].format(**params)+".txt"
-if raw_input("write to file? y/n: ") == "y":
-    print("Writing %s" % output_filename)
+if input("write to file? y/n: ") == "y":
     write_list_to_file(output_dir, output_filename, tod_list)
 
 

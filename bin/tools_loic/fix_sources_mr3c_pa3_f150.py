@@ -157,7 +157,7 @@ def replace_pcuts(obs, params, params_fix):
     depot.write_object(cuts_new, tag=new_cuts_tag, tod=obs, make_dirs=True, force=True)
 
 def fix_mr3(obs, params, params_fix):
-    print "Fix mr3 for %s"%obs
+    print("Fix mr3 for %s"%obs)
     depot = moby2.util.Depot(params.get('depot'))
     old_cuts = os.path.exists(
         depot.get_full_path(
@@ -165,15 +165,15 @@ def fix_mr3(obs, params, params_fix):
     new_cuts = os.path.exists(
         depot.get_full_path(
             moby2.tod.TODCuts, tag=params_fix['tag_out'], tod=obs))
-    print "Old cuts = %r, New cuts = %r" %(old_cuts, new_cuts)
+    print("Old cuts = %r, New cuts = %r" %(old_cuts, new_cuts))
     if not new_cuts and old_cuts:
         try:
         # new_partial_cuts(obs, params, params_fix)
             replace_pcuts(obs, params, params_fix)
         except:
-            print 'Failed for %s' %obs
+            print('Failed for %s' %obs)
     else:
-        print 'Already exists for %s' %obs
+        print('Already exists for %s' %obs)
 
 joblib.Parallel(n_jobs=numcores)(
     joblib.delayed(fix_mr3)(obs, params, params_fix) for obs in tl)

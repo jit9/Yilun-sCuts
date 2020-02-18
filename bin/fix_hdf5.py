@@ -76,7 +76,7 @@ for obs in obsnames:
     logger.trace(0,"Total offset set to %d" %offset)
 
     
-    if obs not in f.keys():
+    if obs not in list(f.keys()):
         continue
     grp = f[obs]    
     grp.attrs['_moby2_class_name'] = 'tod_flags'

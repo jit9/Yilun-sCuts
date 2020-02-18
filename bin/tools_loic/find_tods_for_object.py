@@ -107,11 +107,11 @@ for id in ids:
         dMoon = 180 / np.pi * min(
             angdist([tod.az.min(), tod.alt.mean()], [Moon_az, Moon_alt]),
             angdist([tod.az.max(), tod.alt.mean()], [Moon_az, Moon_alt]) )
-        print "Sun distance: %.2f deg, Moon distance: %.2f deg" %(dSun,
-                                                                  dMoon)
+        print("Sun distance: %.2f deg, Moon distance: %.2f deg" %(dSun,
+                                                                  dMoon))
         dsm = angdist([Moon_az, Moon_alt], [Sun_az, Sun_alt]) * rad2deg
-        print "distance sun-moond: %.2f deg" %dsm
-        print ""
+        print("distance sun-moond: %.2f deg" %dsm)
+        print("")
         f = open('distance_sun_moon.txt', 'a')
         f.write('%s   %.2f   %.2f\n' %(id.basename, dSun, dMoon))
         f.close()

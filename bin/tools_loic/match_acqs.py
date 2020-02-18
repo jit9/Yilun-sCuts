@@ -24,7 +24,7 @@ def get_previous_BS(ctime, array):
         previous_bs = time_bs.searchsorted(ctime) - 1
         last_bs = time_bs[previous_bs]
         if np.any(time_bs[previous_bs] < time_ivs[previous_iv]):
-            print "No BS available between last IV and TOD for at least one TOD. Return 0 for these TODs."
+            print("No BS available between last IV and TOD for at least one TOD. Return 0 for these TODs.")
             last_bs[time_bs[previous_bs] < time_ivs[previous_iv]] = 0
     else:
         arrays = np.unique(array)
@@ -41,9 +41,9 @@ def get_previous_BS(ctime, array):
             previous_bs = time_bs.searchsorted(ctime[ar_idx]) - 1
             last_bs[ar_idx] = time_bs[previous_bs]
             if np.any(time_bs[previous_bs] < time_ivs[previous_iv]):
-                print "No BS available between last IV and TOD for at least one TOD. Return 0 for these TODs."
+                print("No BS available between last IV and TOD for at least one TOD. Return 0 for these TODs.")
                 last_bs[ar_idx][time_bs[previous_bs] < time_ivs[previous_iv]] = 0
-            print ar, (last_bs == 0).sum()
+            print(ar, (last_bs == 0).sum())
                     
 
     return last_bs
@@ -69,7 +69,7 @@ def get_next_BS(ctime, array):
         next_bs = time_bs.searchsorted(ctime)
         following_bs = time_bs[next_bs]
         if np.any(time_bs[next_bs] > time_ivs[next_iv]):
-            print "No BS available between last IV and TOD for at least one TOD. Return 0 for these TODs."
+            print("No BS available between last IV and TOD for at least one TOD. Return 0 for these TODs.")
             next_bs[time_bs[next_bs] > time_ivs[next_iv]] = 0
     else:
         arrays = np.unique(array)
@@ -88,12 +88,12 @@ def get_next_BS(ctime, array):
             next_bs[next_bs==time_bs.size] = 0
             following_bs[ar_idx] = time_bs[next_bs]
             if np.any(next_bs == time_bs.size):
-                print "There are TODs after the last BS. Return 0 for these TODs."
+                print("There are TODs after the last BS. Return 0 for these TODs.")
                 following_bs[ar_idx][next_bs==time_bs.size] = 0.
             # if np.any(time_bs[next_bs] > time_ivs[next_iv]):
             #     print "No BS available between next IV and TOD for at least one TOD. Return 0 for these TODs."
             #     following_bs[ar_idx][time_bs[next_bs] > time_ivs[next_iv]] = 0
-            print ar, (following_bs == 0).sum()
+            print(ar, (following_bs == 0).sum())
 
     return following_bs
 

@@ -21,7 +21,7 @@ o.add_option('-o','--output-prefix',default='.')
 o.add_option('-p', '--path', default=None)
 opts, args = o.parse_args()
 
-print opts
+print(opts)
 # if len(args) < 1:
 #     o.error("Parameter file should be given as first argument.\n")
 
@@ -36,7 +36,7 @@ det_uid = np.asarray(ff['det_uid'], dtype=int)
 cal = np.asarray(ff['cal'], dtype=float)
 stable = np.asarray(ff['stable'], dtype=int)
 
-print opts.lim
+print(opts.lim)
 if opts.lim is not None:
     lim = np.float(opts.lim)
     pmin = 1./lim
@@ -48,8 +48,8 @@ else:
     pmin = cal.min()
     pmax = cal.max()
 
-print os.path.join(
-    opts.output_prefix,'ff_%s_cal.png' %opts.tag)
+print(os.path.join(
+    opts.output_prefix,'ff_%s_cal.png' %opts.tag))
 v.array_plots(cal, det_uid,
              instrument=opts.instrument, season=opts.year, array=opts.array,
              pmin=pmin, pmax=pmax, title = 'Flatfield %s' %opts.tag,

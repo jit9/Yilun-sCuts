@@ -157,7 +157,7 @@ else:
     logger.trace(0, "Processing TOD %s" % tod.info.name)
     logger.trace(0, "ndata = %d"%tod.data.shape[1])
     if minTODlength > tod.ctime[-1] - tod.ctime[0]:
-        raise RuntimeError, "TOD too short to perform LF analysis"
+        raise RuntimeError("TOD too short to perform LF analysis")
 #    if tod.data.shape[1] < 10000: sys.exit()
     tic2 = time.time()
 
@@ -183,7 +183,7 @@ else:
     sourceResult = os.path.exists(
         depot.get_full_path(moby2.TODCuts, tag=params['tag_source'], tod=tod) ) 
 
-    if params.has_key('hdf_source_cuts') and not sourceResult:
+    if 'hdf_source_cuts' in params and not sourceResult:
         f = h5py.File(params.get('hdf_source_cuts'), 'r', swmr=True)
         if tod.info.basename in f:
             grp = f[tod.info.basename]
@@ -226,7 +226,7 @@ else:
             tod=tod, source_list=cpar['source_cuts']['source_list'], pointing_shift=pointing_shift)
         pos_cuts_sources = moby2.TODCuts.for_tod(tod, assign=False)
         pos_cut_dict = {}
-        print matched_sources
+        print(matched_sources)
         for source in matched_sources:
             pos_cut_dict[source[0]] = moby2.tod.get_source_cuts(
                 tod, source[1], source[2], **mask_params)
@@ -261,7 +261,7 @@ else:
                 mask_params['map_size'] = max(mask_params['offset']) + 10./60
             pos_cuts_planets = moby2.TODCuts.for_tod(tod, assign=False)
             pos_cut_dict = {}
-            print matched_sources
+            print(matched_sources)
             for source in matched_sources:
                 pos_cut_dict[source[0]] = moby2.tod.get_source_cuts(
                     tod, source[1], source[2], **mask_params)

@@ -42,18 +42,18 @@ output.flag[~np.isnan(output.liveDets)] += 1
 
 sel1 = np.ones(len(output), dtype=bool)
 selParams = params.get('selParams', {})
-for k in selParams.keys():
-    if "lt" in selParams[k].keys():
+for k in list(selParams.keys()):
+    if "lt" in list(selParams[k].keys()):
         sel1 *= (output[k] < selParams[k]['lt']) & ~np.isnan(output[k])
-    if "gt" in selParams[k].keys():
+    if "gt" in list(selParams[k].keys()):
         sel1 *= (output[k] > selParams[k]['gt']) & ~np.isnan(output[k])
-    print sel1.sum()
+    print(sel1.sum())
 
 include_time = np.loadtxt(params.get('include_time'), dtype=int )
 sel2 = np.zeros(len(output), dtype=bool)
 for start, end in include_time:
     sel2 += (output.ctime_start > start) & (output.ctime_start < end)
-print sel2.sum()
+print(sel2.sum())
 
 output.flag[sel1*sel2] += 1
 

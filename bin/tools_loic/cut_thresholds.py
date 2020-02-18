@@ -1,5 +1,5 @@
 import moby2
-import cPickle
+import pickle
 import sys
 from matplotlib import pyplot as plt
 from scipy.stats import scoreatpercentile
@@ -13,7 +13,7 @@ season = '20%s' %season[-2:]
 
 
 tag = filename.split('/')[-1][:-15]
-data = cPickle.load(open(filename,'r'))
+data = pickle.load(open(filename,'r'))
 #data['rmsLive'] *= data['resp'] * data['ff'][:,np.newaxis]
 #data['normLive'] *= data['resp'] * data['ff'][:,np.newaxis]
 #data['MFELive'] *= data['resp'] * data['ff'][:,np.newaxis]
@@ -25,7 +25,7 @@ freqs = np.unique(array_data['nom_freq'])
 freqs = freqs[freqs!=0]
 sel_freqs = [array_data['nom_freq'] == f for f in freqs]
 
-keys = [k for k in data.keys() if 'Live' in k]
+keys = [k for k in list(data.keys()) if 'Live' in k]
 
 plt.ioff()
 plt.figure(figsize=(20,12))

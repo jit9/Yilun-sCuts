@@ -38,7 +38,7 @@ if end is not None:
 
 f = h5py.File(input_file, "r+")
 
-for obs in f.keys():
+for obs in list(f.keys()):
     # Find IV/rebias gap time
     ct = int(obs.split("/")[-1].split(".")[0])
     ctimes = (ct-IV_wait,ct)

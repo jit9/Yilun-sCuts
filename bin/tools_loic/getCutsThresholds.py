@@ -1,15 +1,15 @@
 import matplotlib
 matplotlib.use('Agg')
 import numpy as np
-import cPickle
+import pickle
 import sys
 from matplotlib import pyplot as plt
 from scipy.stats import scoreatpercentile
 
 filename = sys.argv[1]
 
-data = cPickle.load(open(filename, 'r'))
-liveKeys = [k for k in data.keys() if 'Live' in k]
+data = pickle.load(open(filename, 'r'))
+liveKeys = [k for k in list(data.keys()) if 'Live' in k]
 
 plt.ioff()
 plt.figure()

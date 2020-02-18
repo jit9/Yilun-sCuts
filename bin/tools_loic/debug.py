@@ -100,11 +100,11 @@ if shift_params is not None:
 matched_sources = [('J2000', 1.4596188534428578, 0.38414696836395196, 'source')]
 
 pos_cuts_sources = moby2.TODCuts.for_tod(tod, assign=False)
-print tod.data.shape
-print "Found %i sources for this TOD" %len(matched_sources)
+print(tod.data.shape)
+print("Found %i sources for this TOD" %len(matched_sources))
 for source in matched_sources:
-    print source
-    print mask_params
+    print(source)
+    print(mask_params)
     source_cut = moby2.tod.get_source_cuts(
         tod, source[1], source[2], **mask_params)
     pos_cuts_sources.merge_tod_cuts(source_cut)
