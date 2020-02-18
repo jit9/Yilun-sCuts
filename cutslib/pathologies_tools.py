@@ -1,9 +1,8 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from past.builtins import basestring
+
 import moby2
-#from weather import APEX_weather
-#import moby2.util.noninteractive_plots
 import matplotlib, pylab
 from matplotlib import pyplot as plt
 from moby2.analysis.tod_ana import visual as v
@@ -11,8 +10,7 @@ pylab.ion()
 from moby2.scripting import products
 from moby2.analysis.tod_ana import pathologies
 from moby2.util.database import TODList
-import numpy, os, sys, time, ephem, pickle
-np = numpy
+import numpy as np, os, sys, time, ephem, pickle
 pylab.ioff()
 
 
@@ -239,7 +237,7 @@ class reportPathologies( object ):
         if "tag_cal" in self.params:
             _=recoverCalibration(tod,self.params, cuts=c_obj, pa=pa)
         self._initializeFiles(pa)
-        # live = numpy.ones(len(pa.dets), dtype = 'bool')
+        # live = np.ones(len(pa.dets), dtype = 'bool')
         # live[1024:] = False
 
         # GET CUT STATISTICS
@@ -248,7 +246,7 @@ class reportPathologies( object ):
         liveDets = len(d)
         frac = 0.0
         for det in d:
-            frac += numpy.asarray(c_obj.cuts[det].get_mask(),dtype=int).sum()/ \
+            frac += np.asarray(c_obj.cuts[det].get_mask(),dtype=int).sum()/ \
                     float(c_obj.nsamps)/len(d)
         # GET TOD PARAMETERS
         length = (tod.ctime[-1] - tod.ctime[0])/60 # minutes
@@ -264,7 +262,7 @@ class reportPathologies( object ):
         f.write("%4d "%darkDets)
         f.write("%4d "%glitches)
         for k in self.sel_keys[5:-4]:
-            ndet = numpy.asarray(pa.crit[k[0]]["sel"]*~pa.origDark, dtype=int).sum()
+            ndet = np.asarray(pa.crit[k[0]]["sel"]*~pa.origDark, dtype=int).sum()
             f.write('%4d '%ndet)
         f.write('%4d '%int(pa.gainCut))
         f.write('%4d '%int(pa.temperatureCut))
@@ -311,7 +309,7 @@ class pathoList( object ):
             self.data['ctime'].append(int(name.split('/')[-1].split('.')[0]))
         self.ndata = len(self.data['todName'])
         for k in list(self.data.keys()):
-            self.data[k] = numpy.array(self.data[k])
+            self.data[k] = np.array(self.data[k])
 
 
     def merge( self, pl2 ):
@@ -321,12 +319,12 @@ class pathoList( object ):
         tod1 = self.data['todName']
         keys = list(self.data.keys())
         for i in range(pl2.ndata):
-            if not(numpy.any(tod1 == pl2.data['todName'][i])):
+            if not(np.any(tod1 == pl2.data['todName'][i])):
                 for k in keys:
-                    self.data[k] = numpy.hstack([self.data[k],pl2.data[k][i]])
-        s = numpy.argsort(self.data['todName'])
+                    self.data[k] = np.hstack([self.data[k],pl2.data[k][i]])
+        s = np.argsort(self.data['todName'])
         for k in keys:
-            self.data[k] = numpy.array(self.data[k])[s]
+            self.data[k] = np.array(self.data[k])[s]
         self.ndata = len(s)
 
 
@@ -345,8 +343,8 @@ class pathoList( object ):
         hours from sunrise and to sunset.
         """
         act = ephem.Observer()
-        act.lat = -(22+57./60+35./3600)*numpy.pi/180
-        act.long = -(67+47./60+13./3600)*numpy.pi/180
+        act.lat = -(22+57./60+35./3600)*np.pi/180
+        act.long = -(67+47./60+13./3600)*np.pi/180
         sun = ephem.Sun()
         self.data["hour"] = []
         self.data["hourAfterSunrise"] = []
@@ -358,9 +356,9 @@ class pathoList( object ):
             self.data["hour"].append((act.date-act.previous_antitransit(sun))*24)
             self.data["hourAfterSunrise"].append((act.date-act.previous_rising(sun))*24)
             self.data["hourAfterSunset"].append((act.date-act.previous_setting(sun))*24)
-        self.data["hour"] = numpy.array(self.data["hour"])
-        self.data["hourAfterSunrise"] = numpy.array(self.data["hourAfterSunrise"])
-        self.data["hourAfterSunset"] = numpy.array(self.data["hourAfterSunset"])
+        self.data["hour"] = np.array(self.data["hour"])
+        self.data["hourAfterSunrise"] = np.array(self.data["hourAfterSunrise"])
+        self.data["hourAfterSunset"] = np.array(self.data["hourAfterSunset"])
 
     def addDB( self, year, array ):
         """
@@ -418,32 +416,32 @@ class pathoList( object ):
         #date = []
         #for name in self.data['todName']:
         #    date.append(float(name.split('.')[0])/86400 + 2440587.5 - 4./24 - 1721424.5)
-        #date = numpy.array(date)
-        date = numpy.array(self.data['ctime'], dtype = float)/86400 + 2440587.5 - 4./24 - 1721424.5
+        #date = np.array(date)
+        date = np.array(self.data['ctime'], dtype = float)/86400 + 2440587.5 - 4./24 - 1721424.5
 
-        if factors is None: factors = numpy.ones(len(keywords))
-        if selection is None: selection = numpy.ones(len(date), dtype = 'bool')
+        if factors is None: factors = np.ones(len(keywords))
+        if selection is None: selection = np.ones(len(date), dtype = 'bool')
 
         if pwv:
             if doubleAxis:
                 pwv = False
                 print("ERROR: cannot plot PWV in double axis mode. Omitting")
             else:
-                ctime = numpy.array(self.data['ctime'], dtype = int)[selection]
+                ctime = np.array(self.data['ctime'], dtype = int)[selection]
                 ct = (ctime - 54000)/86400
                 night_ctime = []
                 for c in range(ct.min(),ct.max()+1):
-                    if numpy.any(ct == c):
+                    if np.any(ct == c):
                         night_ctime.append((c+1)*86400 + 3*3600)
-                ct_ini = numpy.array(night_ctime).min()
-                ct_end = numpy.array(night_ctime).max() + 86400
+                ct_ini = np.array(night_ctime).min()
+                ct_end = np.array(night_ctime).max() + 86400
                 ct_pwv = list(range(ct_ini, ct_end, 86400))
                 PWV = get_pwv(ct_pwv)
                 ct_date = []
                 for c in ct_pwv:
                     ct_date.append(c/86400 + 2440587.5 - 1721424.5 - 3./24)
                 #for i in range(len(PWV)):
-                #    if PWV[i] == -1.0: PWV[i] = numpy.nan
+                #    if PWV[i] == -1.0: PWV[i] = np.nan
 
         mondays = pylab.WeekdayLocator(pylab.MO)
         months = pylab.MonthLocator()
@@ -454,33 +452,33 @@ class pathoList( object ):
         lines = []
         leg = []
         if doubleAxis:
-            lines += pylab.plot_date(date[selection], numpy.array(self.data[keywords[0]])[selection], \
+            lines += pylab.plot_date(date[selection], np.array(self.data[keywords[0]])[selection], \
                                      'b.', label = keywords[0])
             leg.append(keywords[0])
             if invSel:
                 lines += pylab.plot_date(date[~selection], \
-                                         numpy.array(self.data[keywords[0]])[~selection], \
+                                         np.array(self.data[keywords[0]])[~selection], \
                                          'b+', label = keywords[0]+" cut")
                 leg.append(keywords[0])
 
             ax2 = pylab.twinx()
             ax2.yaxis.tick_right()
-            lines += pylab.plot_date(date[selection], numpy.array(self.data[keywords[1]])[selection], \
+            lines += pylab.plot_date(date[selection], np.array(self.data[keywords[1]])[selection], \
                                      'g.', label = keywords[1])
             leg.append(keywords[1])
             if invSel:
                 lines += pylab.plot_date(date[~selection], \
-                                         numpy.array(self.data[keywords[1]])[~selection], \
+                                         np.array(self.data[keywords[1]])[~selection], \
                                          'g+', label = keywords[1]+" cut")
                 leg.append(keywords[1])
         else:
             for i in range(len(keywords)):
                 lines += pylab.plot_date(date[selection], \
-                                         numpy.array(self.data[keywords[i]])[selection]*factors[i],'.')
+                                         np.array(self.data[keywords[i]])[selection]*factors[i],'.')
                 leg.append(keywords[i])
                 if invSel:
                     lines += pylab.plot_date(date[~selection], \
-                                   numpy.array(self.data[keywords[i]])[~selection]*factors[i], \
+                                   np.array(self.data[keywords[i]])[~selection]*factors[i], \
                                    '.', label = keywords[i]+" cut")
                     leg.append(keywords[i])
             if pwv:
@@ -534,16 +532,16 @@ class pathoList( object ):
         @param  pwv   Add line indicating a smooth PWV contour.
         """
         if not(display): pylab.ioff()
-        if selection is None: selection = numpy.ones(self.ndata, dtype = 'bool')
+        if selection is None: selection = np.ones(self.ndata, dtype = 'bool')
         elif invSel: selection = ~selection
-        if weights is None: weights = numpy.ones(self.ndata, dtype = float)
+        if weights is None: weights = np.ones(self.ndata, dtype = float)
         weights = weights[selection]
-        data = numpy.array(self.data[keyword])[selection]
-        ctime = numpy.array(self.data['ctime'], dtype = int)[selection]
+        data = np.array(self.data[keyword])[selection]
+        ctime = np.array(self.data['ctime'], dtype = int)[selection]
         ct = (ctime - 54000)/86400
         if includeCuts:
-            data_cut = numpy.array(self.data[keyword])[~selection]
-            ctime_cut = numpy.array(self.data['ctime'], dtype = int)[~selection]
+            data_cut = np.array(self.data[keyword])[~selection]
+            ctime_cut = np.array(self.data['ctime'], dtype = int)[~selection]
             date_cut = []
             for c in ctime_cut:
                 date_cut.append(c/86400 + 2440587.5 - 1721424.5 - 3./24)
@@ -553,24 +551,24 @@ class pathoList( object ):
         night_ctime = []
         for c in range(ct.min(),ct.max()+1):
             day = (ct == c)
-            if numpy.any(day):
+            if np.any(day):
                 w = weights[day]/weights[day].sum()
-                m = numpy.sum(data[day]*w)
-                s = numpy.sqrt(numpy.sum(numpy.power(data[day]-m,2)*w))
+                m = np.sum(data[day]*w)
+                s = np.sqrt(np.sum(np.power(data[day]-m,2)*w))
                 night_mean.append(m)
                 night_std.append(s)
                 night_ctime.append((c+1)*86400 + 3*3600)
 
         if pwv:
-            ct_ini = numpy.array(night_ctime).min()
-            ct_end = numpy.array(night_ctime).max() + 86400
+            ct_ini = np.array(night_ctime).min()
+            ct_end = np.array(night_ctime).max() + 86400
             ct_pwv = list(range(ct_ini, ct_end, 86400))
             PWV = get_pwv(ct_pwv)
             ct_date = []
             for c in ct_pwv:
                 ct_date.append(c/86400 + 2440587.5 - 1721424.5 - 3./24)
             #for i in range(len(PWV)):
-            #    if PWV[i] == -1.0: PWV[i] = numpy.nan
+            #    if PWV[i] == -1.0: PWV[i] = np.nan
 
 
         date = []
@@ -632,8 +630,8 @@ class pathoList( object ):
         """
         if not(display): pylab.ioff()
         if selection is None:
-            selection = numpy.ones(len(data), dtype = 'bool')
-        dat = numpy.array(data)[selection].flatten()
+            selection = np.ones(len(data), dtype = 'bool')
+        dat = np.array(data)[selection].flatten()
 
         if range is not None:
             dat = dat[(dat >= range[0])*(dat <= range[1])]
@@ -662,17 +660,17 @@ class pathoList( object ):
         @params   show       wether to show the plot
         """
         if not(display): pylab.ioff()
-        assert numpy.any(numpy.array(list(self.data.keys())) == key)
-        if ~numpy.any(numpy.array(list(self.data.keys())) == 'Effective'):
+        assert np.any(np.array(list(self.data.keys())) == key)
+        if ~np.any(np.array(list(self.data.keys())) == 'Effective'):
             print("ERROR: no 'Effective' field found. You can generate it as 'liveDets'*'fracTimeLive'")
             return
-        if selection is None: selection = numpy.ones(self.ndata, dtype = bool)
+        if selection is None: selection = np.ones(self.ndata, dtype = bool)
         eff = self.data['Effective'][selection]
         total = eff.sum()
         data = self.data[key][selection]
-        exp = numpy.floor(numpy.log10(data.max()))
-        max = numpy.ceil(data.max() / numpy.power(10,exp)*2)/2*numpy.power(10,exp)
-        points = numpy.arange(steps+1)*max/steps
+        exp = np.floor(np.log10(data.max()))
+        max = np.ceil(data.max() / np.power(10,exp)*2)/2*np.power(10,exp)
+        points = np.arange(steps+1)*max/steps
         result = []
         for r in points:
             if increasing:
@@ -704,7 +702,7 @@ class pathoList( object ):
         @brief Obtain mean and standard deviation data in pathoList
         @param filename  output the results to a text file
         """
-        if selection is None: selection = numpy.ones(self.ndata, dtype = bool)
+        if selection is None: selection = np.ones(self.ndata, dtype = bool)
         if filename:
             f = open(filename, 'w')
             f.write('# PathoList statistics (mean and standard deviation)')
@@ -713,7 +711,7 @@ class pathoList( object ):
         if filename: f.write('\n%s\n'%l)
         for k in self.keys:
             if k != 'todName':
-                s = ~numpy.isnan(self.data[k])
+                s = ~np.isnan(self.data[k])
                 l = '%-20s: %12.4g %12.4g %12.4g'%(k,
                                 self.data[k][selection*s].mean(),
                                 np.median(self.data[k][selection*s]),
@@ -721,7 +719,7 @@ class pathoList( object ):
                 if verbose: print(l)
                 if filename:
                     f.write('%s\n'%l)
-        l = 'Number of TODs: %d'%len(numpy.where(selection)[0])
+        l = 'Number of TODs: %d'%len(np.where(selection)[0])
         if "length" in self.keys:
             obstime = self.data["length"][selection].sum()/60.
             l += "\nObserving time: %12.1f hours"%obstime
@@ -747,15 +745,15 @@ class pathoList( object ):
         @param   verbose    print extra information
         @return  selection  Bool array with selected TODs
         """
-        sel = numpy.zeros(self.ndata, dtype = bool)
-        todNames = numpy.array(self.data['todName'])
+        sel = np.zeros(self.ndata, dtype = bool)
+        todNames = np.array(self.data['todName'])
         f = open(filename, 'r')
         for l in f:
             if l[0] != '#':
                 name = l.split('\n')[0].split('#')[0].split()[0].split('/')[-1].strip()
                 sel[todNames == name] = True
                 if verbose:
-                    if ~numpy.any(todNames == name):
+                    if ~np.any(todNames == name):
                         print('TOD %s not found')
         return sel
 
@@ -778,7 +776,7 @@ class pathoList( object ):
         if params is not None:
             self.selParams.update(params)
 
-        selection = numpy.ones(len(self.data['todName']), dtype = 'bool')
+        selection = np.ones(len(self.data['todName']), dtype = 'bool')
         if preselection is not None: selection *= preselection
 
         keys = list(self.selParams.keys())
@@ -804,7 +802,7 @@ class pathoList( object ):
         mine = []
         theirs = []
         for o in range(len(tods)):
-            i = numpy.where(self.data["todName"] == tods[o])[0]
+            i = np.where(self.data["todName"] == tods[o])[0]
             if len(i) > 0:
                 mine.append(i[0])
                 theirs.append(o)
@@ -852,7 +850,7 @@ class pathoList( object ):
         fb = moby2.scripting.get_filebase()
 
         if selection is None:
-            selection = numpy.ones(self.ndata, dtype = 'bool')
+            selection = np.ones(self.ndata, dtype = 'bool')
 
         header = '# BEGIN HEADER\n'
         header += '#\n# TOD selection parameters:\n'
@@ -876,16 +874,16 @@ class pathoList( object ):
         """
         if keys is None: keys = self.keys
         else:
-            ind = (numpy.array(keys) == 'todName')
-            if not(numpy.any(ind)):
+            ind = (np.array(keys) == 'todName')
+            if not(np.any(ind)):
                 keys = ['todName'] + keys
             else:
-                keys = ['todName'] + list(numpy.array(keys)[~ind])
+                keys = ['todName'] + list(np.array(keys)[~ind])
 
         if selection is None:
-            selection = numpy.ones(len(self.data['todName']), dtype = 'bool')
+            selection = np.ones(len(self.data['todName']), dtype = 'bool')
             addHeader = False
-        n = len(numpy.array(self.data['todName'])[selection])
+        n = len(np.array(self.data['todName'])[selection])
 
         hd1 = '# '
         for k in keys:
@@ -895,11 +893,11 @@ class pathoList( object ):
         hd2 = '# '
         for k in keys:
             ty = type(self.data[k][0])
-            if ty == str or ty == numpy.string_:
+            if ty == str or ty == np.string_:
                 hd2 += 'str'
-            elif ty == float or ty == numpy.float64 or ty == numpy.float32:
+            elif ty == float or ty == np.float64 or ty == np.float32:
                 hd2 += 'float'
-            elif ty == int or ty == numpy.int64 or ty == numpy.int32:
+            elif ty == int or ty == np.int64 or ty == np.int32:
                 hd2 += 'int'
             hd2 += ' | '
         hd2 = hd2[:-3] + '\n'
@@ -920,12 +918,12 @@ class pathoList( object ):
         for i in range(n):
             for k in keys:
                 ty = type(self.data[k][0])
-                if ty == str or ty == numpy.string_:
-                    f.write(numpy.array(self.data[k])[selection][i] + ' ')
-                elif ty == float or ty == numpy.float64 or ty == numpy.float32:
-                    f.write('%8.3g' % numpy.array(self.data[k])[selection][i] + ' ')
-                elif ty == int or ty == numpy.int64 or ty == numpy.int32:
-                    f.write('%4d' % numpy.array(self.data[k])[selection][i] + ' ')
+                if ty == str or ty == np.string_:
+                    f.write(np.array(self.data[k])[selection][i] + ' ')
+                elif ty == float or ty == np.float64 or ty == np.float32:
+                    f.write('%8.3g' % np.array(self.data[k])[selection][i] + ' ')
+                elif ty == int or ty == np.int64 or ty == np.int32:
+                    f.write('%4d' % np.array(self.data[k])[selection][i] + ' ')
             f.write('\n')
         f.close()
 
@@ -989,7 +987,7 @@ def readTODList( filename ):
     for l in f:
         if l[0] != "#":
             obsname.append(l.split("\n")[0].split()[0].split("/")[-1])
-    data = {"todName": numpy.array(obsname)}
+    data = {"todName": np.array(obsname)}
     return data, header, names_output, ft_output
 
 def printDictionary( dictio, tabLevel = 0, tabSize = 4, prefix = '', verbose = False ):
@@ -1276,11 +1274,11 @@ def get_stable(data,meta,ff,N_min=500,outdir=None,it=0,
     atm = np.ones(shape)
     atm[nonzero] = 1./data["gainLive"][nonzero]
     norms,goodTODs = normalizeAtms(atm,sels,stable)
-    sels *= numpy.repeat([goodTODs],shape[0],axis=0)
+    sels *= np.repeat([goodTODs],shape[0],axis=0)
 
     # Obtain calibration
     # ffc = ff.get_property("cal",det_uid=np.arange(shape[0]))[1]
-    # ffc = numpy.repeat([ffc],shape[1],axis=0).T
+    # ffc = np.repeat([ffc],shape[1],axis=0).T
     cal = np.ones(shape)
     cal[nonzero] = atm[nonzero]*resp[nonzero]#*ffc[nonzero]
 
@@ -1348,7 +1346,7 @@ def get_stable(data,meta,ff,N_min=500,outdir=None,it=0,
 
     # Find new flatfield
     norms,goodTODs = normalizeAtms(atm,sels,stable)
-    sels *= numpy.repeat([goodTODs],shape[0],axis=0)
+    sels *= np.repeat([goodTODs],shape[0],axis=0)
     N = sels.sum(axis=1)
     G = np.where(N>100)[0]
     ff_new = moby2.detectors.FlatField()
@@ -1382,7 +1380,7 @@ def normalizeAtms(atms,sels,stable):
         # else:
         #     norm.append(1)
         #     mask.append(False)
-    return np.array(norm),numpy.array(mask)
+    return np.array(norm),np.array(mask)
 
 
 # DEPRECATED
@@ -1427,7 +1425,7 @@ def findMode(x,window=1.2e-5,init=[0,7e-5],maxiter=20,minerr=1e-9):
     return m,s
 
 def medsig(x):
-    xsi = numpy.array(x).argsort()
+    xsi = np.array(x).argsort()
     n = len(x)
     m = x[xsi[int(n/2)]]
     q25 = x[xsi[int(n/4)]]
