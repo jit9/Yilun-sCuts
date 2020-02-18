@@ -1,3 +1,6 @@
+from __future__ import print_function
+from __future__ import absolute_import
+from past.builtins import basestring
 import moby2
 #from weather import APEX_weather
 #import moby2.util.noninteractive_plots
@@ -8,18 +11,15 @@ pylab.ion()
 from moby2.scripting import products
 from moby2.analysis.tod_ana import pathologies
 from moby2.util.database import TODList
-import numpy, os, sys, time, ephem, cPickle
+import numpy, os, sys, time, ephem, pickle
 np = numpy
 pylab.ioff()
-
-
 
 
 def recoverScanCuts(tod, params, full=False):
     """
     @brief  Script function that will find the cuts in a TOD and return them. If there is
             no saved version of the cuts, it will create them.
-
     Note that the pathologies object returned by this function is calibrated
     """
     cutParams = moby2.util.MobyDict.from_file(params.get("cutParams"))
@@ -114,7 +114,7 @@ def recoverScanCuts(tod, params, full=False):
         if pathop.get('getPartial',True):
             depot.write_object(section_cuts, tod = tod, force = True,
                                tag=params.get('tag_out')+"_sec")
-        print "cuts exported to %s"%params.get('tag_out')
+        print("cuts exported to %s"%params.get('tag_out'))
 
         if full:
             return c_obj, pa, resp, ff, calib
@@ -136,7 +136,7 @@ def get_pathologies(tod, params):
                                structure = params.get("structure"))
         return pa
     else:
-        print "Error: no pathology object found (as explicit argument or from depot)"
+        print("Error: no pathology object found (as explicit argument or from depot)")
         return
 
 
@@ -164,10 +164,10 @@ class reportPathologies( object ):
                           ("darkDets","int"),
                           ("glitches","int")]
         for k in lkeys:
-            if pa.crit[k].has_key("sel"):
+            if "sel" in pa.crit[k]:
                 self.sel_keys.append((k,"int"))
         for k in dkeys:
-            if pa.crit[k].has_key("sel"):
+            if "sel" in pa.crit[k]:
                 self.sel_keys.append((k,"int"))
         self.sel_keys.append(('gainCut','int'))
         self.sel_keys.append(('temperatureCut','int'))
@@ -176,10 +176,10 @@ class reportPathologies( object ):
 
         self.stat_keys = []
         for k in lkeys:
-            if pa.crit[k].has_key("median"):
+            if "median" in pa.crit[k]:
                 self.stat_keys.append((k,"float"))
         for k in dkeys:
-            if pa.crit[k].has_key("median"):
+            if "median" in pa.crit[k]:
                 self.stat_keys.append((k,"float"))
 
         if self.params.get('newfile',False) or not(os.path.isfile(self.depot_file)):
@@ -236,7 +236,7 @@ class reportPathologies( object ):
         tod.info.sample_index = pc_obj.sample_offset
         glitches = len(tod.cuts.get_uncut())
         c_obj, pa = recoverScanCuts(tod, self.params)
-        if self.params.has_key("tag_cal"):
+        if "tag_cal" in self.params:
             _=recoverCalibration(tod,self.params, cuts=c_obj, pa=pa)
         self._initializeFiles(pa)
         # live = numpy.ones(len(pa.dets), dtype = 'bool')
@@ -301,7 +301,7 @@ class pathoList( object ):
             if len(filename) > 1:
                 for i in range(1,len(filename)):
                     d, h, k, t = reader(filename[i])
-                    for k in d.keys(): self.data[k] += d[k]
+                    for k in list(d.keys()): self.data[k] += d[k]
 
         self.selParams = {}
         self.keys.append("ctime")
@@ -310,7 +310,7 @@ class pathoList( object ):
         for name in self.data['todName']:
             self.data['ctime'].append(int(name.split('/')[-1].split('.')[0]))
         self.ndata = len(self.data['todName'])
-        for k in self.data.keys():
+        for k in list(self.data.keys()):
             self.data[k] = numpy.array(self.data[k])
 
 
@@ -319,7 +319,7 @@ class pathoList( object ):
         @Brief merge the self pathologies list with an external list keeping only unrepeated elements.
         """
         tod1 = self.data['todName']
-        keys = self.data.keys()
+        keys = list(self.data.keys())
         for i in range(pl2.ndata):
             if not(numpy.any(tod1 == pl2.data['todName'][i])):
                 for k in keys:
@@ -427,7 +427,7 @@ class pathoList( object ):
         if pwv:
             if doubleAxis:
                 pwv = False
-                print "ERROR: cannot plot PWV in double axis mode. Omitting"
+                print("ERROR: cannot plot PWV in double axis mode. Omitting")
             else:
                 ctime = numpy.array(self.data['ctime'], dtype = int)[selection]
                 ct = (ctime - 54000)/86400
@@ -437,7 +437,7 @@ class pathoList( object ):
                         night_ctime.append((c+1)*86400 + 3*3600)
                 ct_ini = numpy.array(night_ctime).min()
                 ct_end = numpy.array(night_ctime).max() + 86400
-                ct_pwv = range(ct_ini, ct_end, 86400)
+                ct_pwv = list(range(ct_ini, ct_end, 86400))
                 PWV = get_pwv(ct_pwv)
                 ct_date = []
                 for c in ct_pwv:
@@ -564,7 +564,7 @@ class pathoList( object ):
         if pwv:
             ct_ini = numpy.array(night_ctime).min()
             ct_end = numpy.array(night_ctime).max() + 86400
-            ct_pwv = range(ct_ini, ct_end, 86400)
+            ct_pwv = list(range(ct_ini, ct_end, 86400))
             PWV = get_pwv(ct_pwv)
             ct_date = []
             for c in ct_pwv:
@@ -624,7 +624,6 @@ class pathoList( object ):
         """
         @brief   Make histogram for the value for various statistics.
         @param   data      data vector (ndet long) to plot.
-
         @param  selection bool array with selection of detectors to include in the plot.
         @param  bins      number of bins to use.
         @param  title     string with title to use in figure.
@@ -663,9 +662,9 @@ class pathoList( object ):
         @params   show       wether to show the plot
         """
         if not(display): pylab.ioff()
-        assert numpy.any(numpy.array(self.data.keys()) == key)
-        if ~numpy.any(numpy.array(self.data.keys()) == 'Effective'):
-            print "ERROR: no 'Effective' field found. You can generate it as 'liveDets'*'fracTimeLive'"
+        assert numpy.any(numpy.array(list(self.data.keys())) == key)
+        if ~numpy.any(numpy.array(list(self.data.keys())) == 'Effective'):
+            print("ERROR: no 'Effective' field found. You can generate it as 'liveDets'*'fracTimeLive'")
             return
         if selection is None: selection = numpy.ones(self.ndata, dtype = bool)
         eff = self.data['Effective'][selection]
@@ -710,7 +709,7 @@ class pathoList( object ):
             f = open(filename, 'w')
             f.write('# PathoList statistics (mean and standard deviation)')
         l = '# %-20s %+12s %+12s %+12s'%('Key', 'Mean', 'Median', 'Std')
-        if verbose: print l
+        if verbose: print(l)
         if filename: f.write('\n%s\n'%l)
         for k in self.keys:
             if k != 'todName':
@@ -719,7 +718,7 @@ class pathoList( object ):
                                 self.data[k][selection*s].mean(),
                                 np.median(self.data[k][selection*s]),
                                 self.data[k][selection*s].std())
-                if verbose: print l
+                if verbose: print(l)
                 if filename:
                     f.write('%s\n'%l)
         l = 'Number of TODs: %d'%len(numpy.where(selection)[0])
@@ -733,7 +732,7 @@ class pathoList( object ):
                 effdets = dettime/obstime
                 l += "\n1 detector time: %12.1f hours"%dettime
                 l += "\nEffective detectors: %12.1f"%effdets
-        if verbose: print l
+        if verbose: print(l)
         if filename:
             f.write('\n%s\n'%l)
 
@@ -757,7 +756,7 @@ class pathoList( object ):
                 sel[todNames == name] = True
                 if verbose:
                     if ~numpy.any(todNames == name):
-                        print 'TOD %s not found'
+                        print('TOD %s not found')
         return sel
 
 
@@ -782,16 +781,16 @@ class pathoList( object ):
         selection = numpy.ones(len(self.data['todName']), dtype = 'bool')
         if preselection is not None: selection *= preselection
 
-        keys = self.selParams.keys()
+        keys = list(self.selParams.keys())
         for k in keys:
             if not isinstance(self.selParams[k],dict): continue
             if k in self.keys:
-                if "lt" in self.selParams[k].keys():
+                if "lt" in list(self.selParams[k].keys()):
                     selection *= (self.data[k] < self.selParams[k]['lt'])
-                if "gt" in self.selParams[k].keys():
+                if "gt" in list(self.selParams[k].keys()):
                     selection *= (self.data[k] > self.selParams[k]['gt'])
             else:
-                print 'WARNING: Selection key %s not found' % k
+                print('WARNING: Selection key %s not found' % k)
 
         return selection
 
@@ -804,7 +803,7 @@ class pathoList( object ):
         else: tods = other
         mine = []
         theirs = []
-        for o in xrange(len(tods)):
+        for o in range(len(tods)):
             i = numpy.where(self.data["todName"] == tods[o])[0]
             if len(i) > 0:
                 mine.append(i[0])
@@ -833,14 +832,14 @@ class pathoList( object ):
             if len(inds) > 1:
                 if verbose:
                     for j in inds:
-                        print "%s %d %d"%(self.data["todName"][j],
+                        print("%s %d %d"%(self.data["todName"][j],
                                           self.data["liveDets"][j],
-                                          self.data["darkDets"][j])
+                                          self.data["darkDets"][j]))
                 for j in inds[1:]:
                     self.removeIndex(j)
                 c += 1
             i += 1
-        print "Removed %d duplicates"%c
+        print("Removed %d duplicates"%c)
 
 
     def outputTODList(self, filename, selection = None):
@@ -857,10 +856,10 @@ class pathoList( object ):
 
         header = '# BEGIN HEADER\n'
         header += '#\n# TOD selection parameters:\n'
-        for k in self.selParams.keys():
+        for k in list(self.selParams.keys()):
             if not isinstance(self.selParams[k],dict): continue
             header += '#    %20s:'%k
-            for kk in self.selParams[k].keys():
+            for kk in list(self.selParams[k].keys()):
                     header += '    %30s = %12.4g\n' % (kk,float(self.selParams[k][kk]))
         header += '#\n# END HEADER\n'
         selTODs = self.data["todName"][selection].tolist()
@@ -910,9 +909,9 @@ class pathoList( object ):
         for h in self.header: f.write('#%s\n' % h)
         if addHeader:
             f.write('#\n# TOD selection parameters:\n')
-            for k in self.selParams.keys():
+            for k in list(self.selParams.keys()):
                 f.write('#    %20s:\n' % k)
-                for kk in self.selParams[k].keys():
+                for kk in list(self.selParams[k].keys()):
                     f.write('#    %30s = %8.3g\n' % (kk,float(self.selParams[k][kk])))
         f.write('#\n')
         f.write('# END HEADER\n')
@@ -966,7 +965,7 @@ def readAscii( filename ):
         ft_output.append(ft[i].strip())
     for l in f:
         ll = l.split()
-        for k in frmt.keys():
+        for k in list(frmt.keys()):
             data[k].append(eval(frmt[k]["type"])(ll[frmt[k]["column"]]))
     f.close()
     return data, header, names_output, ft_output
@@ -998,7 +997,7 @@ def printDictionary( dictio, tabLevel = 0, tabSize = 4, prefix = '', verbose = F
     @brief Visualize dictionary contents
     """
     output = ''
-    for k in dictio.keys():
+    for k in list(dictio.keys()):
         if isinstance(dictio[k], dict):
             output += "%s%s%-20s:\n"%(prefix,tabLevel*tabSize*' ', k)
             output += printDictionary(dictio[k], prefix = '#', tabLevel = tabLevel+1)
@@ -1018,7 +1017,7 @@ def printDictionary( dictio, tabLevel = 0, tabSize = 4, prefix = '', verbose = F
             output += "%s%s%-20s: %12s\n"%(prefix,tabLevel*tabSize*' ', k, l)
         else:
             output += "%s%s%-20s: %12s\n"%(prefix,tabLevel*tabSize*' ', k, dictio[k])
-    if verbose: print output
+    if verbose: print(output)
     return output
 
 def get_pwv(ctimes, saturate = True, time_diff = 3600.):
@@ -1083,7 +1082,7 @@ def recoverCalibration(tod, params, pa=None, cuts=None, **kwargs):
                                       tod = tod,
                                       structure = params.get("structure"))
         else:
-            print "Error: no cuts object found (as explicit argument or from depot)"
+            print("Error: no cuts object found (as explicit argument or from depot)")
             return
 
     # GET CALIBRATION WITH ATM CORRECTION
@@ -1100,11 +1099,11 @@ def recoverCalibration(tod, params, pa=None, cuts=None, **kwargs):
     liveSel = cuts.get_mask()
     sel = liveSel*respSel*stable#*(gains != 0)
     if sel.sum() == 0:
-        print "Unable to calibrate"
+        print("Unable to calibrate")
         return 0
 
     # Set the level
-    if not pathop["calibration"].has_key("level_type"):
+    if "level_type" not in pathop["calibration"]:
         pathop["calibration"]["level_type"] = "good"
 
     calib = np.zeros(pa.dets.size)
@@ -1127,7 +1126,7 @@ def recoverCalibration(tod, params, pa=None, cuts=None, **kwargs):
 
     calib *= tod.info.array_data["optical_sign"]
     # Store results
-    if params.has_key("tag_cal"):
+    if "tag_cal" in params:
         s = pa.liveSel
         calObj = moby2.Calibration(det_uid = pa.dets[s])
         calObj.set_property(["cal", "calRMS"], [calib[s], ffRMS[s]])
@@ -1142,15 +1141,15 @@ def recoverCalibration(tod, params, pa=None, cuts=None, **kwargs):
 def compute_calibration(gains, ff, resp, sel,
                         level_type="good",**kwargs):
 
-    if not kwargs.has_key("min_sel"): kwargs["min_sel"] = 100
-    if not kwargs.has_key("min_stable"): kwargs["min_stable"] = 40
+    if "min_sel" not in kwargs: kwargs["min_sel"] = 100
+    if "min_stable" not in kwargs: kwargs["min_stable"] = 40
 
     if level_type is "good":
         weights = None
     elif level_type is "stable":
         weights = resp*ff
     else:
-        raise "Error: Unknown level_type (should be either good or stable)"
+        raise ValueError("Error: Unknown level_type (should be either good or stable)")
 
     level, mask = pathologies.normalizeGains(gains, sel=sel,
                                              weights = weights, **kwargs)
@@ -1174,7 +1173,7 @@ def get_slope(x,y,xlim=[0,2.5],perc=90,plot=False,**kwargs):
     xsel = (x>xlim[0])*(x<xlim[1])
     ys = np.sort(y[xsel])
     err_sel = (y>ys[int(len(ys)*(1-perc/100.))])*(y<ys[int(len(ys)*(perc/100.))])
-    for it in xrange(5):
+    for it in range(5):
         slope,y0 = np.polyfit(x[xsel*err_sel],y[xsel*err_sel],1)
         model = x*slope+y0
         err = y-model
@@ -1196,7 +1195,7 @@ def plot_noise_vs_sky(sky,val,slope,y0,err_all,err_near,
     x_lim = np.array([0,8])
     fit_ends = x_lim*slope+y0
     if y_lim is None: y_lim = [0,fit_ends[1]*2]
-    print fign
+    print(fign)
     fig=pylab.figure(fign)
     pylab.plot(sky,val,".")
     pylab.plot(x_lim,fit_ends,"r")
@@ -1219,7 +1218,7 @@ def plot_noise_vs_sky(sky,val,slope,y0,err_all,err_near,
 
 def read_pickle(filename):
     f = open(filename)
-    p = cPickle.Unpickler(f)
+    p = pickle.Unpickler(f)
     data = p.load()
     f.close()
     return data
@@ -1369,7 +1368,7 @@ def get_stable(data,meta,ff,N_min=500,outdir=None,it=0,
 def normalizeAtms(atms,sels,stable):
     norm = []
     mask = []
-    for i in xrange(atms.shape[1]):
+    for i in range(atms.shape[1]):
         sel = np.array(sels[:,i],bool)
         n, m = normalizeAtm(atms[:,i],sel,stable)
         norm.append(n)
@@ -1416,7 +1415,7 @@ def findMode(x,window=1.2e-5,init=[0,7e-5],maxiter=20,minerr=1e-9):
     sel = (x>init[0])*(x<init[1])
     ss = window/2
     m0,s=medsig(x[sel])
-    for i in xrange(maxiter):
+    for i in range(maxiter):
         sel = (x>m0-ss)*(x<m0+ss)
         m,s=medsig(x[sel])
         #print m0,m,s
@@ -1424,7 +1423,7 @@ def findMode(x,window=1.2e-5,init=[0,7e-5],maxiter=20,minerr=1e-9):
             return m,s
         else:
             m0 = m
-    print "WARNING: Maximum iterations reaached finding distribution mode"
+    print("WARNING: Maximum iterations reaached finding distribution mode")
     return m,s
 
 def medsig(x):
