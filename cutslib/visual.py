@@ -1,3 +1,7 @@
+from __future__ import print_function
+from __future__ import absolute_import
+from past.builtins import basestring
+
 from moby2.libactpol import freq_space_waterfall
 from moby2.libactpol import time_space_waterfall
 from moby2.scripting import products
@@ -200,7 +204,7 @@ class freqSpaceWaterfall( object ):
         m.axes.set_aspect(rat)
         m.figure.set_size_inches(size[0], size[1], forward = True)
         m.set_clim(vmin = vmin, vmax = vmax)
-        if kargs.has_key("cmap"): cmap = kargs["cmap"]
+        if "cmap" in kargs: cmap = kargs["cmap"]
         else: cmap = pylab.cm.RdYlBu_r
         cmap.set_bad([0.3, 0.3, 0.3],1.)
         m.set_cmap(cmap)
@@ -488,7 +492,7 @@ class quality( object ):
         self.cols = np.array(c)
 
         sel = self.dets[(self.rows>13)*(self.rows<17)*(self.cols>13)*(self.cols<17)]
-        print len(sel)
+        print(len(sel))
 
         f = np.zeros(len(sel))
         for i in range(len(sel)):
@@ -501,7 +505,7 @@ class quality( object ):
         mask = generateArmonicMask(nu, self.sf, window = 6)
         sel = (nu > f0)*(nu < f1)
 
-        print "Start arrayQual calculation"
+        print("Start arrayQual calculation")
         self.arrayQual = np.zeros([tod.ncol, tod.nrow])
         for i in range(tod.ndet):
             p, nu, w = mobyUtils.power(tod.data[i], dt = tod.sampleTime)
@@ -612,8 +616,8 @@ def array_plots( param,
     save_name: if display == 'save', name of the output file
     """
     if det is None and array is None and tod is None:
-        print "List of (dets, season and array name) or tod object must be prov\
-ided"
+        print("List of (dets, season and array name) or tod object must be prov\
+ided")
         return 0
 
     det = np.asarray(det, dtype = int)
@@ -626,13 +630,13 @@ ided"
         season = tod.info.season
     else:
         if instrument is None:
-            print "Please provide the instrument if no TOD is provided"
+            print("Please provide the instrument if no TOD is provided")
             return 0
         if array is None:
-            print "Please provide the array if no TOD is provided"
+            print("Please provide the array if no TOD is provided")
             return 0
         if season is None:
-            print "Please provide the season if no TOD is provided"
+            print("Please provide the season if no TOD is provided")
             return 0
         array_data = products.get_array_data(
                                 {"instrument":instrument,
@@ -890,8 +894,8 @@ def tod3D(tod, dets=None, time_resolution=2., prange=[None,None],
     r = time_resolution / tres
     Nresamp = 2**np.ceil(np.log2(r))
     tod_ds = tod.copy(resample=Nresamp)
-    print "Downsampled tod has %i samples, with time resolution of %.2fs" %(
-        tod_ds.nsamps, (tod_ds.ctime[-1] - tod_ds.ctime[0]) / tod_ds.nsamps )
+    print("Downsampled tod has %i samples, with time resolution of %.2fs" %(
+        tod_ds.nsamps, (tod_ds.ctime[-1] - tod_ds.ctime[0]) / tod_ds.nsamps ))
 
 
     # Get focal plane infos
@@ -964,17 +968,17 @@ def tod3D(tod, dets=None, time_resolution=2., prange=[None,None],
                               pmax = pmax, pmin = pmin )
     colors = [ get_color( tod_ds.data[dets,i],
                           pmax = pmax, pmin = pmin )
-               for i in xrange(tod_ds.nsamps) ]
+               for i in range(tod_ds.nsamps) ]
     if sky_coords:
         # pos = x[:,0], y[:,0]
         patchlists = [ PatchCollection(
                 get_patches( (x[:,i],y[:,i]), colors[i], polfamily ) )
-                       for i in xrange(tod_ds.nsamps) ]
+                       for i in range(tod_ds.nsamps) ]
         ax1.add_collection(patchlists[0])
     else:
         pos = x, y
         patchlist = PatchCollection( get_patches( pos, colors[0], polfamily ) )
-        print patchlist.get_facecolor()
+        print(patchlist.get_facecolor())
         # p = patchlist[0]
         # ax1.add_patch(p)
         ax1.add_collection( patchlist )
@@ -1052,7 +1056,7 @@ def get_array_plot_lims(array, season):
         xmin, xmax = -0.34516751588843669, 0.39094596571401696
         ymin, ymax = 0.3670596582454384, 1.3154743040302765
     else:
-        print "Array must be from the list ['ar1', 'pa2', 'ar3', 'ar4', 'ar5', 'ar6']"
+        print("Array must be from the list ['ar1', 'pa2', 'ar3', 'ar4', 'ar5', 'ar6']")
 
     x_lim = ( xmin - (xmax-xmin)*0.1, xmax + (xmax-xmin)*0.1 )
     y_lim = ( ymin - (ymax-ymin)*0.1, ymax + (ymax-ymin)*0.1 )

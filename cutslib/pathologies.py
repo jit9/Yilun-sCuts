@@ -1,4 +1,9 @@
-import numpy, time, cPickle, os, matplotlib
+from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import division
+from past.builtins import basestring
+
+import numpy, time, pickle, os, matplotlib
 import scipy.stats as stat
 
 pylab = None
@@ -26,19 +31,17 @@ class Pathologies( object ):
     # Depot support
     _depot_structure = '{class}/{tag}/{first_five}/{tod_name}.pickle'
 
+
     def __init__( self, tod, params, calibrated = False, calibratedTOD = False, noExclude = False):
         """
         @brief Initialize the pathologies object.
-
         @param   tod          TOD object to analyze.
         @param   calibrated   set True if the data has been previously calibrated
                               BEFORE FINDING pathology statistics.
         @param   noExclude    if set, the previously cut detectors are not excluded.
         @param   flatfield      address to calibration dictionary (flat-field)
         @param   params       Pathology parameter dictionary defined as follows:
-
             findPathoParams: (define what needs to be calculated)
-
                 useCorr:      Find correlation with common mode
                 useNoiseFit:  Fit power law model to data to obtain knees and noise
                 useNormality: Find RMS, skewness and kurtosis in chunks
@@ -49,13 +52,10 @@ class Pathologies( object ):
                     window2:      Window size for median calculation
                     nSamples:     Number of samples for median comparison
                     skip:         Number of times to skip "window2" between samples
-
             makeSelParamsLive: (decide how to make (generate) live detector selections)
-
                 selType: Select between relative or absolute selections. The options
                          are 'relative', 'absolute', 'or' or 'and'. Live detectors only.
                          The dictionary fields are:
-
                     correlation:  selection type for correlation
                     driftError:   selection type for drift error
                     norm:         selection type for norm
@@ -64,9 +64,7 @@ class Pathologies( object ):
                     rms:          selection type for rms (noise from chunks)
                     skewness:     selection type for skewness
                     kurtosis:     selection type for kurtosis
-
                 relSigma: (Criteria for relative selections)
-
                     sigmaCorr:   dispertion of correlation with "live common mode"
                     sigmaDE:     dispertion of "driftError".
                     sigmaNorm:   dispertion of "data vector norm".
@@ -75,7 +73,6 @@ class Pathologies( object ):
                     sigmaRMS:    dispertion of "white noise rms" from chunks
                     sigmaSKEW:   dispertion of "skewness" for from chunks.
                     sigmaKURT:   dispertion of "kurtosis" for from chunks.
-
                 absCrit: (Criteria for absolute selections)
 
                     corrLimit:   lower limit for correlation with common mode
@@ -86,13 +83,10 @@ class Pathologies( object ):
                     rmsLimit:    [lower, upper] limits of RMS noise from chunks
                     skewLimit:   [lower, upper] limits of Skewness from chunks
                     kurtLimit:   [lower, upper] limits of Kurtosis from chunks
-
                 gainCrit: Maximum allowed dispersion of gains with respect to the
                           common modes before considering that the calibration is
                           unreliable.
-
             liveSelParams: (decide how to combine live selections)
-
                 correlation:   Use live common mode correlations
                 driftError:    Use drift error selection
                 norm:          Use norm of data vector
@@ -107,28 +101,21 @@ class Pathologies( object ):
                 jump:          Exclude detectors that suffered jumps
                 forceDark:     Force live detectors to NOT belong with the original set
                                of dark detectors.
-
-
             makeSelParamsDark: (decide how to make (generate) dark detector selections)
-
                 selType: Select between relative or absolute selections. The options
                          are 'relative', 'absolute', 'or' or 'and'. Live detectors only.
                          The dictionary fields are:
-
                     correlation:  selection type for correlation
                     driftError:   selection type for drift error
                     norm:         selection type for norm
                     gain:         selection type for gain versus dark common mode
                     rms:          selection type for rms (noise from chunks)
-
                 relSigma: (Criteria for relative selections)
-
                     sigmaCorr:   dispertion of correlation with "dark common mode"
                     sigmaDE:     dispertion of "driftError".
                     sigmaNorm:   dispertion of "data vector norm".
                     sigmaGain:   dispertion of "gain".
                     sigmaRMS:    dispertion of "white noise rms" from chunks
-
                 absCrit: (Criteria for absolute selections)
 
                     corrLimit:   lower limit for correlation with common mode
@@ -136,10 +123,7 @@ class Pathologies( object ):
                     normLimit:   upper limit for data norm
                     gainLimit:   maximum gain factor versus the common mode
                     rmsLimit:    [lower, upper] limits of RMS noise from chunks
-
-
             darkSelParams: (decide how to combine dark selections)
-
                 correlation:   Use common mode correlations
                 driftError:    Use drift error selection
                 norm:          Use norm of data vector
@@ -147,7 +131,6 @@ class Pathologies( object ):
                 rms:           Use white noise rms
                 forceDark:     Force live detectors to NOT belong with the original set
                                of dark detectors.
-
             partialCuts: (parameters related to partial cuts from chunks)
 
                 RMS:   wether to perform partial cuts based on RMS chunks (True or False)
@@ -216,20 +199,20 @@ class Pathologies( object ):
         """
         # Get lists of detectors
         exclude, dark, liveCandidates = get_detector_params(self.params["detectorLists"])
-        if exclude.has_key('det_uid'):
+        if 'det_uid' in exclude:
             self.exclude = self.tod.info.array_data.select_inner(
                 {'det_uid': exclude['det_uid']}, mask = True, det_uid = self.dets)
         else:
             self.exclude = self.tod.info.array_data.select_inner(
             {'row': exclude['rows'], 'col': exclude['cols']}, mask = True, det_uid = self.dets)
         if not(noExclude): self.exclude[list(self.tod.cuts.get_cut())] = True
-        if dark.has_key('det_uid'):
+        if 'det_uid' in dark:
             self.origDark = self.tod.info.array_data.select_inner(
                 {'det_uid': dark['det_uid']}, mask = True, det_uid = self.dets)
         else:
             self.origDark = self.tod.info.array_data.select_inner(
             {'row': dark['rows'], 'col': dark['cols']}, mask = True, det_uid = self.dets)
-        if liveCandidates.has_key('det_uid'):
+        if 'det_uid' in liveCandidates:
             self.liveCandidates = self.tod.info.array_data.select_inner(
                 {'det_uid': liveCandidates['det_uid']}, mask = True, det_uid = self.dets)
         else:
@@ -253,19 +236,19 @@ class Pathologies( object ):
         for C in p["liveSelParams"].keys():
             K = "%sLive"%C
             self.liveKeys.append(K)
-            if not(self.crit.has_key(K)): self.crit[K] = {}
+            if not(K in self.crit): self.crit[K] = {}
             self.crit[K].update(p["liveSelParams"][C])
             self.crit[K]["proc"] = True
-            if not(self.crit[K].has_key("values")):
+            if "values" not in self.crit[K]:
                 self.crit[K]["values"] = None
 
         for C in p["darkSelParams"].keys():
             K = "%sDark"%C
             self.darkKeys.append(K)
-            if not(self.crit.has_key(K)): self.crit[K] = {}
+            if not(K in self.crit): self.crit[K] = {}
             self.crit[K].update(p["darkSelParams"][C])
             self.crit[K]["proc"] = True
-            if not(self.crit[K].has_key("values")):
+            if "values" not in self.crit[K]:
                 self.crit[K]["values"] = None
 
         self.activeLiveKeys = []
@@ -293,7 +276,6 @@ class Pathologies( object ):
         it finds fits the noise and finds the 1/f knees for all of them. It finally selects
         the live and dark detectors as isotated normal distributions in the previous
         calculations.
-
         @param  kneeHardLimit Maximum allowable 1/f knee frequency.
         @param  retrend       Retrend TOD after analysis
         @param  verbose       Show resulting number of selected detectors
@@ -345,7 +327,7 @@ class Pathologies( object ):
         self.crit["jumpDark"]["values"] = self.crit["jumpLive"]["values"]
 
         # FIND AMPLITUDE
-        if self.crit.has_key('ampLive'):
+        if 'ampLive' in self.crit:
             self.crit["ampLive"]["values"] = self.tod.data.max(axis=1) - self.tod.data.min(axis=1)
 
         # FREQUENCY SPACE ANALYSIS
@@ -395,7 +377,7 @@ class Pathologies( object ):
                               respSel = self.calData["respSel"], flatfield = self.flatfield_object)
             self.preLiveSel[fbs] = res["preSel"][fbs]
             self.liveSel[fbs] = res["preSel"][fbs]
-            if res.has_key('darkRatio'):
+            if 'darkRatio' in res:
                 self.crit["darkRatioLive"]["values"][fbs] = res["darkRatio"][fbs]
             self.crit["corrLive"]["values"][fbs] = res["corr"][fbs]
             self.crit["gainLive"]["values"][fbs] = res["gain"][fbs]
@@ -713,7 +695,7 @@ class Pathologies( object ):
         """
         @brief  Apply cuts to tod.
         """
-        print 'tod.dark not updated!'
+        print('tod.dark not updated!')
         #self.tod.dark = self.dets[self.darkSel]
         #self.tod.ndark = len(self.tod.dark)
         c_obj = moby2.TODCuts.for_tod(self.tod, assign=False)
@@ -769,7 +751,7 @@ class Pathologies( object ):
         m = pylab.matshow(DATA[selection].transpose(), vmin = vmin, vmax = vmax)
         b = pylab.colorbar(shrink=0.8)
         if units is not None: b.set_label(units)
-        m.axes.set_aspect(float(len(self.dets[selection]))/float(numpy.shape(DATA)[1]))
+        m.axes.set_aspect(len(self.dets[selection])/numpy.shape(DATA)[1])
         m.figure.set_size_inches(9.5, 8, forward = True)
         if title is not None: pylab.title(title)
         pylab.xlabel('Detector Number')
@@ -833,7 +815,6 @@ class Pathologies( object ):
         """
         @brief   Plot detector # versus value for various statistics.
         @param   data      data vector (ndet long) to plot.
-
         @param  semilogy  use logaritmic scale in Y axis.
         @param  xlim      specify range in X axis: [xmin,xmax]
         @param  ylim      specify range in Y axis: [ymin,ymax]
@@ -875,7 +856,6 @@ class Pathologies( object ):
         """
         @brief   Plot the value for various statistics across the array.
         @param   data      data vector (ndet long) to plot.
-
         @param  selection bool array with selection of detectors to include in the plot.
         @param  vmin      minimum value in color range.
         @param  vmax      maximum value in color range.
@@ -911,7 +891,6 @@ class Pathologies( object ):
         """
         @brief   Make histogram for the value for various statistics.
         @param   data      data vector (ndet long) to plot.
-
         @param  selection bool array with selection of detectors to include in the plot.
         @param  bins      number of bins to use.
         @param  title     string with title to use in figure.
@@ -946,7 +925,7 @@ class Pathologies( object ):
         if live:
             sel = ~self.zeroSel*~self.origDark*~self.exclude
             for k in self.activeLiveKeys:
-                if not(self.crit[k]["proc"]) or not(self.crit[k].has_key("values")): continue
+                if (not self.crit[k]["proc"]) or ("values" not in self.crit[k]): continue
                 dat = self.crit[k]
                 r = numpy.array([dat["median"]-nsig*dat["sigma"],dat["median"]+nsig*dat["sigma"]])
                 fn = os.path.join(outdir,"hist_%s_%s.png"%(self.tod.info.name, k))
@@ -1080,7 +1059,7 @@ class Pathologies( object ):
             path = path[0:-1]
         # filename = "%s.pickle" % path
         f = file( path, 'w' )
-        p = cPickle.Pickler( f, 2 )
+        p = pickle.Pickler( f, 2 )
         p.dump( data )
         f.close()
 
@@ -1098,10 +1077,10 @@ class Pathologies( object ):
         if path[-1] == '/':
             path = path[0:-1]
         f = file( path, 'rb' )
-        p = cPickle.Unpickler( f )
+        p = pickle.Unpickler( f )
         data = p.load()
         f.close()
-        if data.has_key("todName"):
+        if "todName" in data:
             old = True
             todName = data.get("todName")
         else:
@@ -1136,14 +1115,14 @@ def nextregular(n):
     return n
 
 def checksize(n):
-    while not (n%16): n/=16
-    while not (n%13): n/=13
-    while not (n%11): n/=11
-    while not (n%9): n/=9
-    while not (n%7): n/=7
-    while not (n%5): n/=5
-    while not (n%3): n/=3
-    while not (n%2): n/=2
+    while not (n%16): n//=16
+    while not (n%13): n//=13
+    while not (n%11): n//=11
+    while not (n%9): n//=9
+    while not (n%7): n//=7
+    while not (n%5): n//=5
+    while not (n%3): n//=3
+    while not (n%2): n//=2
     return (1 if n == 1 else 0)
 
 
@@ -1154,10 +1133,10 @@ def printDictionary( dictio, tabLevel ):
     """
     for k in dictio.keys():
         if isinstance(dictio[k], dict):
-            print "%s%s:"%(tabLevel*4*' ', k)
+            print("%s%s:"%(tabLevel*4*' ', k))
             printDictionary(dictio[k], tabLevel+1)
         else:
-            print "%s%s:"%(tabLevel*4*' ', k), dictio[k]
+            print("%s%s:"%(tabLevel*4*' ', k), dictio[k])
 
 
 
@@ -1167,7 +1146,7 @@ def compareDictionaries( testDict, refDict):
     """
     same = True
     for k in refDict.keys():
-        same *= numpy.any(numpy.array(testDict.keys()) == k)
+        same *= numpy.any(numpy.array(list(testDict.keys())) == k)
         if not(same): return False
         elif isinstance(refDict[k], dict):
             same *= compareDictionaries(testDict[k], refDict[k])
@@ -1189,10 +1168,10 @@ def selectBySigma( data, preSelection, thrld ):
     n = len(datas)
     if n == 0:
         return preSelection, 0., 0.
-    q25 = datas[int(n/4)]
-    q75 = datas[int(n*3/4)]
+    q25 = datas[n//4]
+    q75 = datas[n*3//4]
     s = 0.741*(q75-q25)
-    m = datas[int(n/2)]
+    m = datas[n//2]
     if s == 0: return numpy.ones(len(data), dtype = bool), m, s
     else: return (data >= m-thrld*s)*(data <= m+thrld*s), m, s
 
@@ -1310,7 +1289,7 @@ class cutsSummary(object):
         pylab.figure(333,figsize=[15,5])
         m=pylab.matshow(self.sel[:,sel],fignum=0)
         m.axes.set_aspect(30)
-        m.axes.set_yticks(range(len(self.keys)))
+        m.axes.set_yticks(list(range(len(self.keys))))
         m.axes.set_yticklabels(self.keys)
         pylab.draw()
 
@@ -1388,7 +1367,7 @@ def get_detector_params(params):
         dark = moby2.util.MobyDict.from_file(params.get("dark"))
         # liveCandidates
         liveCandidates = moby2.util.MobyDict.from_file(params.get("live"))
-    else: raise "Unknown detector params source"
+    else: raise ValueError("Unknown detector params source")
     return (exclude, dark, liveCandidates)
 
 
@@ -1496,13 +1475,13 @@ def multiFreqCorrAnal(fdata, sel, df, nf, nsamps, scan_freq, par, parTag,
     fcm=[]; cm=[]; cmdt=[];
     fcmi=None; cmi = None; cmdti=None
     minFreqElem = 16
-    for i in xrange(Nwin):
+    for i in range(Nwin):
         n_l = int(round((fmin + i*fshift)/df))
         n_h = int(round((fmin + i*fshift + band)/df))
         if n_h - n_l < minFreqElem: n_h = n_l+minFreqElem
         if par[parTag].get("removeDark",False):
             if darkSel is None:
-                print "ERROR: no dark selection supplied"
+                print("ERROR: no dark selection supplied")
                 return 0
             fcmi, cmi, cmdti = getDarkModes(fdata, darkSel, [n_l,n_h],
                                             df, nf, nsamps, par, tod)
@@ -1567,7 +1546,7 @@ def getDarkModes(fdata,darkSel,frange,df,nf,nsamps,par,tod = None):
             fth = numpy.fft.rfft( thermometers, nf )[:,n_l:n_h]
             fc_inputs.extend(list(fth))
     elif par["darkModesParams"].get("useTherm", False) and tod is None:
-            print "WARNING: TOD requiered to obtain thermometer data"
+            print("WARNING: TOD requiered to obtain thermometer data")
     fc_inputs = np.array(fc_inputs)
     if par.get("useTaper",False):
         taper = get_sine2_taper(frange, edge_factor = 6)
@@ -1658,9 +1637,9 @@ def lowFreqAnal(fdata, sel, frange, df, nsamps, scan_freq, par,
         if lab.sum() > len(lab)*frac and lab.sum() < len(lab)*(1-frac):
             c0 = np.sort(nnorm[normSel][lab==0])
             c1 = np.sort(nnorm[normSel][lab==1])
-            mc0 = c0[len(c0)/2]; mc1 = c1[len(c1)/2];
-            sc0 = 0.741*(c0[(3*len(c0))/4] - c0[len(c0)/4])
-            sc1 = 0.741*(c1[(3*len(c1))/4] - c1[len(c1)/4])
+            mc0 = c0[len(c0)//2]; mc1 = c1[len(c1)//2];
+            sc0 = 0.741*(c0[(3*len(c0))//4] - c0[len(c0)//4])
+            sc1 = 0.741*(c1[(3*len(c1))//4] - c1[len(c1)//4])
             sep =  (mc0 + sigs*sc0 - (mc1 - sigs*sc1))*np.sign(mc1-mc0)
             if sep < 0.:
                 if mc1 > mc0:
@@ -1668,7 +1647,7 @@ def lowFreqAnal(fdata, sel, frange, df, nsamps, scan_freq, par,
                 else:
                     normSel[normSel] *= (lab==0)
         elif lab.sum() > 0:
-            if lab.sum() > len(lab)/2:
+            if lab.sum() > len(lab)//2:
                 normSel[normSel] *= (lab==1)
             else:
                 normSel[normSel] *= (lab==0)
@@ -1686,7 +1665,7 @@ def lowFreqAnal(fdata, sel, frange, df, nsamps, scan_freq, par,
         sl[ld] = True
         res["groups"] = {"G": G, "ind": ind, "ld": ld, "smap": smap}
     else:
-        raise "ERROR: Unknown preselection method"
+        raise ValueError("ERROR: Unknown preselection method")
     #if respSel is not None: sl *= respSel[sel]
     preSel = sel.copy()
     preSel[sel] = sl
@@ -1724,7 +1703,6 @@ def presel_by_median(cc, sel = None, **kwargs):
     minSel: minimum number of detectors preselected
     minFrac: determines the minimum number of detectors preselected by determining a
         fraction of the number of detectors available.
-
     Note: to go back to c9 you can set:
         superMinCorr = 0.5
         minSel = 0
@@ -1737,11 +1715,11 @@ def presel_by_median(cc, sel = None, **kwargs):
     minFrac = kwargs.get("minFrac",10)
     sl = (numpy.median(abs(cc),axis=0) > minCorr)*sel
     if kwargs.get("forceSel") is not None: sl *= kwargs.get("forceSel") # NOT PRETTY
-    if sl.sum() < np.max([cc.shape[0]/minFrac,minSel]):
-        print "ERROR: did not find any valid detectors for low frequency analysis."
+    if sl.sum() < np.max([cc.shape[0]//minFrac,minSel]):
+        print("ERROR: did not find any valid detectors for low frequency analysis.")
         sl = (numpy.median(abs(cc),axis=0) > superMinCorr)*sel
         if sl.sum() < minSel:
-            raise RuntimeError, "PRESELECTION FAILED, did not find any valid detectors for low frequency analysis."
+            raise RuntimeError("PRESELECTION FAILED, did not find any valid detectors for low frequency analysis.")
     else:
         sl = ((abs(cc[sl]).mean(axis=0)-1./len(cc[sl]))*len(cc[sl])/(len(cc[sl])-1) > minCorr)*sel
     return sl
@@ -1754,7 +1732,6 @@ def group_detectors(cc, sel = None, **kwargs):
         G: list of lists of detectors containing the indexes of the detectors in each group
         ind: index of the last group included in the live detector preselection
         ld: indexes of detectors from the main correlated groups
-
     Note: Indexes are provided according to the correlation matrix given
     """
     thr0 = kwargs.get("initCorr",0.99)
@@ -1785,7 +1762,7 @@ def group_detectors(cc, sel = None, **kwargs):
         # Find reference mode
         n0 = np.sum(np.abs(cco)>thr,axis=0)
         imax = np.argmax(n0)
-        if n0[imax] < np.min([Nmin,N/2]):
+        if n0[imax] < np.min([Nmin,N//2]):
             thr -= dthr
             continue
 
@@ -1865,7 +1842,7 @@ def highFreqAnal(fdata, sel, range, nsamps,
             f = float(hfd.shape[1])/nsamps
             t = int(T*f); p = int(pivot*f)
             prms = []; pskewt = []; pkurtt = []
-            for c in xrange(N):
+            for c in range(N):
                prms.append(hfd[:,c*t+p:(c+1)*t+p].std(axis=1))
                pskewt.append(stat.skewtest(hfd[:,c*t+p:(c+1)*t+p],axis=1))
                pkurtt.append(stat.kurtosistest(hfd[:,c*t+p:(c+1)*t+p],axis=1))
@@ -1895,12 +1872,12 @@ def fit_atm(fdata, sel, dt, df, noise, scanf,
     i_harm = np.array(np.round(np.arange(1,n_harm+1)*scanf/df), dtype=int)
     i_harmw = i_harm.copy()
     di = int(width/df)
-    for i in xrange(di):
+    for i in range(di):
         i_harmw = np.hstack([i_harmw,i_harm-(i+1)])
         i_harmw = np.hstack([i_harmw,i_harm+(i+1)])
     i_harmw.sort()
     # Iterate range fit
-    for it in xrange(its):
+    for it in range(its):
         fmax = kneeM-delta-fminA
         imin = int(fminA/df); imax = int(fmax/df)
         psr = ps[:,imin:imax]
@@ -1950,7 +1927,7 @@ def analyzeScan(az, dt = 0.002508,  N=50, vlim=0.01, qlim=0.01):
     lo, hi = ms.mquantiles(az, (qlim, 1-qlim))
     daz = np.diff(az)
     v_scan = np.r_[2*daz[0] - daz[1], daz]
-    v_smooth = np.convolve(v_scan, np.ones((N,))/N)[(N-1)/2:-(N-1)/2]
+    v_smooth = np.convolve(v_scan, np.ones((N,))/N)[(N-1)//2:-(N-1)//2]
     speed = numpy.median(abs(v_smooth))
     stop = abs(v_scan) < vlim*speed
     pick = abs(v_smooth) > 2*speed
@@ -2029,6 +2006,7 @@ def checkThermalDrift(tod, thermParams):
     return Temp, dTemp, temperatureCut
 
 
+
 def get_sine2_taper(frange, edge_factor = 6):
     # Generate a frequency space taper to reduce ringing in lowFreqAnal
     band = frange[1]-frange[0]
@@ -2059,7 +2037,6 @@ def normalizeGains(gains, sel = None, useMedian = False,
                    weights = None, min_sel = 1, **kwargs):
     """
     Normalize a 1-d vector of gains as a function of the gains of a subset of detectors
-
     Parameters:
         sel: selection of detectors used to reference the normalization
         useMedian: use the median instead of the mean to set the normalization
@@ -2069,7 +2046,6 @@ def normalizeGains(gains, sel = None, useMedian = False,
         weights: linear weights to average the gains of the reference detectors. This
                  option is not used if <useMedian> is True.
         min_sel: minimum number of valid detectors.
-
     Notes:
         MR1 cuts used weights = responsivity * flatfield, with the gains already multipied
         by the flatfield.
@@ -2083,8 +2059,8 @@ def normalizeGains(gains, sel = None, useMedian = False,
     if rejectOutliers:
         sgains = np.sort(gains[s])
         N = len(sgains)
-        med = sgains[N/2]
-        sig = 0.741*(sgains[(3*N)/4] - sgains[N/4])
+        med = sgains[N//2]
+        sig = 0.741*(sgains[(3*N)//4] - sgains[N//4])
         s *= np.abs(gains - med) < sig*outlierSigma
     if s.sum() < min_sel: return 1, False
     if useMedian: norm = np.median(gains[s])

@@ -40,7 +40,7 @@ List of output files:
     - gain^inv plot per tod
 """
 
-from util import mkdir, parse_tag, parse_depot, tag_to_afsv
+from .util import mkdir, parse_tag, parse_depot, tag_to_afsv
 from dotmap import DotMap
 import os.path as op
 
