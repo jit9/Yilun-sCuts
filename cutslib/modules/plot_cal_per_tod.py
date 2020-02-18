@@ -1,5 +1,5 @@
 """This script plots all planet tods calibration components"""
-import cPickle as pickle
+import pickle as pickle
 import numpy as np
 import moby2
 from moby2.analysis.tod_ana import visual as v

@@ -5,7 +5,7 @@ next iteration of cuts
 
 import fitsio
 import os.path as op
-import cPickle, numpy as np, os, sys
+import pickle, numpy as np, os, sys
 import moby2
 import pandas as pd
 from cutslib.visual import array_plots
@@ -75,7 +75,7 @@ def run(p):
     # load pickle file
     print('Loading data')
     with open(p.i.pickle_file, "r") as f:
-        pf = cPickle.Unpickler(f)
+        pf = pickle.Unpickler(f)
         data = pf.load()
     # get pwv for each of the tods
     loadings = get_pwv(data['name'], obs_catalog)

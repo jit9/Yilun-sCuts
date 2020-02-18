@@ -2,7 +2,7 @@ import os
 import moby2
 import sys
 import numpy as np
-import cPickle
+import pickle
 import pandas as pd
 from moby2.analysis.tod_ana import visual as v
 
@@ -22,7 +22,7 @@ def run(proj):
     tag_cuts = proj.tag
     tag_selected = proj.tag
 
-    if params.has_key('flatfield'):
+    if 'flatfield' in params:
         FF = moby2.util.MobyDict.from_file(params.get('flatfield'))
     tods, flag = np.loadtxt(
         os.path.join(params.get('depot'), 'SelectedTODs/%s/selectedTODs_uranus.txt' %tag_selected), dtype=str, usecols=[0,5]).T
@@ -33,7 +33,7 @@ def run(proj):
     df = df[df.flag==2]
 
     f = open(proj.o.cal.root+"/%s.pickle"%tag_calib,"r")
-    data = cPickle.load(f)
+    data = pickle.load(f)
     f.close()
     cal = data["cal"]
     peak_DAC = data["peak_DAC"]
@@ -43,7 +43,7 @@ def run(proj):
     df['ctime'] = data['ctime']
     df.index = pd.to_datetime(df.ctime, unit='s')
 
-    print "Start with %i selected TODs" %df.tods.size
+    print("Start with %i selected TODs" %df.tods.size)
     season = 's'+proj.i.season[-2:]
     array = 'PA'+proj.i.ar[-1]
     if int(proj.i.ar[-1]) >= 3:
@@ -58,20 +58,20 @@ def run(proj):
     # Reject day TODs, loading > 2.7 and TODs from the commissioning phase before the season
     df['loading'] = df.pwv / np.sin(df.alt)
     sel_day = np.logical_and( df.hour_utc > 11, df.hour_utc<23)
-    print "Discard %i TODs during daytime" %(sel_day.sum())
-    print "Discard %i TODs for lack of peak measurement" %( peak_DAC.sum(axis=0) == 0 ).sum()
-    print "Discard %i TODs due to loading > %.1f" %((df.loading>loading_max).sum(), loading_max)
-    print "Discard %i TODs for lack of loading" %((df.loading<1).sum())
-    print "Discard %i TODs before the beginning of the season" %((df.ctime<ctime_start).sum())
+    print("Discard %i TODs during daytime" %(sel_day.sum()))
+    print("Discard %i TODs for lack of peak measurement" %( peak_DAC.sum(axis=0) == 0 ).sum())
+    print("Discard %i TODs due to loading > %.1f" %((df.loading>loading_max).sum(), loading_max))
+    print("Discard %i TODs for lack of loading" %((df.loading<1).sum()))
+    print("Discard %i TODs before the beginning of the season" %((df.ctime<ctime_start).sum()))
     idx = ( peak_DAC.sum(axis=0) != 0 ) * (df.loading>0) * (df.ctime > ctime_start) * (df.loading < loading_max)# * ~sel_day
     df = df[idx]
-    print "Discard %i TODs in total, left with %i" %((~idx).sum(),df.tods.size)
+    print("Discard %i TODs in total, left with %i" %((~idx).sum(),df.tods.size))
     cal = cal[:,idx]
     peak_DAC = peak_DAC[:,idx]
 
     sel = array_data['nom_freq'] == int(proj.i.freq)
     peak_masked = np.ma.masked_equal(peak_DAC*cal,0)[:]
-    for i in xrange(peak_masked.shape[1]):
+    for i in range(peak_masked.shape[1]):
         outfile = proj.o.cal.array+'/{}_{}.png'.format(df.tods.iloc[i], tag_calib)
         print("Saving plot: %s" % outfile)
         peak = peak_masked[:,i]

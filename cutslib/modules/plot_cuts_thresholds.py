@@ -7,7 +7,7 @@ Options:
 """
 
 import moby2
-import cPickle
+import pickle
 import sys
 from matplotlib import pyplot as plt
 from scipy.stats import scoreatpercentile
@@ -30,7 +30,7 @@ def run(proj):
     array_name = proj.i.ar
     season = proj.i.season
     tag = proj.tag
-    data = cPickle.load(open(filename,'r'))
+    data = pickle.load(open(filename,'r'))
     if calibrate:
         data['rmsLive'] *= data['resp'] * data['ff'][:,np.newaxis]
         data['normLive'] *= data['resp'] * data['ff'][:,np.newaxis]
@@ -44,7 +44,7 @@ def run(proj):
     freqs = [proj.i.freq]
     sel_freqs = [array_data['nom_freq'] == f for f in freqs]
 
-    keys = [k for k in data.keys() if 'Live' in k]
+    keys = [k for k in list(data.keys()) if 'Live' in k]
 
     plt.ioff()
     plt.figure(figsize=(20,12))

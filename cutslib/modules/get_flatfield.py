@@ -5,7 +5,7 @@ next iteration of cuts
 
 import os.path as op
 import moby2.util
-import cPickle, numpy, os, sys
+import pickle, numpy, os, sys
 np=numpy
 
 def init(config):
@@ -23,7 +23,7 @@ def getArrayStats(gains, sels, ffpar, selTODs):
         sel = (numpy.abs(calib) < ffpar['gainLimit'])*(numpy.abs(calib) > 1./ffpar['gainLimit'])*selTODs
         if ffpar['useSel'] and len(sels[d]) > 0: sel *= numpy.array(sels[d])
         if numpy.array(sel, dtype = int).sum() < ffpar['minSamples']:
-            print "Failed minSample test %d"%d
+            print("Failed minSample test %d"%d)
             continue
         tmp = numpy.sort(calib[sel])
         n = len(calib[sel])
@@ -38,7 +38,7 @@ def getArrayStats(gains, sels, ffpar, selTODs):
 
 
 def normalizeGains(gains,sels,stable):
-    for i in xrange(gains.shape[1]):
+    for i in range(gains.shape[1]):
         sel = np.array(sels[:,i],bool)*stable
         if sel.sum() > 0: gains[:,i] /= np.median(gains[:,i][sel])
 
@@ -46,9 +46,9 @@ def run(proj):
     params = moby2.util.MobyDict.from_file(proj.i.cutparam)
     ffpar = params["ff_params"]
 
-    print 'Loading data'
+    print('Loading data')
     f = open(proj.i.pickle_file)
-    p = cPickle.Unpickler(f)
+    p = pickle.Unpickler(f)
     data = p.load()
     f.close()
 
@@ -68,23 +68,23 @@ def run(proj):
     else:
         selTODs = numpy.ones(len(data['name']), dtype = bool)
 
-    print "Using %d TODs for flatfield"%(selTODs.sum())
+    print("Using %d TODs for flatfield"%(selTODs.sum()))
 
     cutParams = moby2.util.MobyDict.from_file(proj.i.cutParam)
     old_ff_file = cutParams["pathologyParams"]["calibration"]["flatfield"]
 
     Ndets = data['gainLive'].shape[0]
     ff_old = moby2.detectors.FlatField.from_dict(old_ff_file)
-    cal0 = ff_old.get_property("cal",det_uid=range(Ndets),default=1.)[1]
-    calRMS0 = ff_old.get_property("cal",det_uid=range(Ndets),default=0.)[1]
-    stable0 = ff_old.get_property("stable",det_uid=range(Ndets),default=False)[1]
+    cal0 = ff_old.get_property("cal",det_uid=list(range(Ndets)),default=1.)[1]
+    calRMS0 = ff_old.get_property("cal",det_uid=list(range(Ndets)),default=0.)[1]
+    stable0 = ff_old.get_property("stable",det_uid=list(range(Ndets)),default=False)[1]
 
     gains = data["gainLive"].copy()
     sel = np.asarray(data['sel'],dtype=bool)*np.asarray(data['respSel'],dtype=bool)
     if ffpar.get("normalize",True):
         normalizeGains(gains, sel, stable0)
 
-    for it in xrange(10):
+    for it in range(10):
         m,s = getArrayStats(gains, sel, ffpar, selTODs)
         mm = m.copy()
         mm[m==0]=1
@@ -104,9 +104,9 @@ def run(proj):
     ff["det_uid"] = list(ld)
     if ffpar.get("updateStable",True): ff["stable"] = list(st[ld])
     else: ff["stable"] = list(stable0[ld])
-    if ffpar.has_key("maxRMS"):
+    if "maxRMS" in ffpar:
         good = s[ld]/m[ld] < ffpar["maxRMS"]
-        if ffpar.has_key("maxCal"):
+        if "maxCal" in ffpar:
             good *= cal0[ld]*m[ld] < ffpar["maxCal"]
         cal = cal0[ld]
         calRMS = calRMS0[ld]

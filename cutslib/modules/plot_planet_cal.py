@@ -10,7 +10,7 @@ from scipy import stats
 from moby2.util.database import TODList
 from matplotlib import pyplot as plt
 import ephem
-import sys, cPickle
+import sys, pickle
 import pyfits as pf
 
 T_URANUS = 177.6        #K CMB
@@ -52,7 +52,7 @@ def run(proj):
     tag_calib = proj.tag
     tag_cuts = proj.tag
     tag_selected = proj.tag
-    if params.has_key('flatfield'):
+    if 'flatfield' in params:
         FF = moby2.util.MobyDict.from_file(params.get('flatfield'))
     tods, az, flag = np.loadtxt(os.path.join(proj.depot,
         'SelectedTODs/%s/selectedTODs_uranus.txt' %tag_selected), dtype=str, usecols=[0,3,5]).T
@@ -61,7 +61,7 @@ def run(proj):
     df['az'] = np.asarray( az, dtype=float)
     df = df[df.flag==2]
 
-    print "Start with %i selected TODs" %df.tods.size
+    print("Start with %i selected TODs" %df.tods.size)
     season = 's'+proj.i.season[-2:]
     array = 'PA'+proj.i.ar[-1]
     if int(proj.i.ar[-1]) >= 3:
@@ -86,32 +86,32 @@ def run(proj):
         for idx, obs in enumerate(df.tods):
             obs = (obs.split('/')[-1])
             if ".zip" in obs: obs = obs[:-4]
-            print ""
-            print "%s - %i/%i" %(obs, idx, len(df.tods))
+            print("")
+            print("%s - %i/%i" %(obs, idx, len(df.tods)))
             try:
                 filename = path+obs+'_fp.fits'
-                print filename
+                print(filename)
                 data = pf.getdata(filename)
                 det_uid = data['det_uid']
                 peak_DAC[det_uid,idx] = data['peak_dac']
             except:
-                print 'No peak measurement'
+                print('No peak measurement')
                 pass
             filename = fb.filename_from_name(obs, single=True)
             try:
                 tod = moby2.scripting.get_tod(
                     {'filename':filename, 'read_data':False})
             except:
-                print "Can't load tod %s" %filename
+                print("Can't load tod %s" %filename)
                 continue
             alt[idx] = tod.alt.mean()
             pwv_, tdiff = apex_pwv.get_nearest(tod.info.ctime)
-            print "Apex tdiff = %i" %tdiff
+            print("Apex tdiff = %i" %tdiff)
             if np.abs(tdiff) < 600.:
                 pwv[idx] = pwv_
             else:
                 pwv_, tdiff = alma_pwv.get_nearest(tod.info.ctime)
-                print "ALMA tdiff = %i" %tdiff
+                print("ALMA tdiff = %i" %tdiff)
                 if np.abs(tdiff) < 600.:
                     pwv[idx] = pwv_
             hour_utc[idx] = ( tod.info.ctime % 86400. ) / 3600
@@ -120,10 +120,10 @@ def run(proj):
                 Cal = depot.read_object(
                     moby2.Calibration, tag=tag_calib, tod=tod)
                 cal[Cal.det_uid,idx] = np.abs(Cal.cal) * tod.info.runfile.ReadoutFilter().gain()
-                if params.has_key('flatfield'):
+                if 'flatfield' in params:
                     cal[FF['det_uid']] *= FF['cal']
             except:
-                print 'No cal for this TOD'
+                print('No cal for this TOD')
             try:
                 cuts = depot.read_object(moby2.TODCuts,
                                          tag=tag_cuts,
@@ -134,7 +134,7 @@ def run(proj):
                     dc = cuts.get_cut()
                     cal[dc,idx] = 0
             except:
-                print 'No cuts for this TOD'
+                print('No cuts for this TOD')
 
         data = {}
         data["cal"] = cal
@@ -145,7 +145,7 @@ def run(proj):
         data["ctime"] = ctime
         data["tods"] = tods
         f = open(proj.o.cal.root+"/%s.pickle"%tag_calib,"w")
-        p = cPickle.Pickler(f)
+        p = pickle.Pickler(f)
         p.dump(data)
         f.close()
         df['alt'] = data['alt']
@@ -154,9 +154,9 @@ def run(proj):
         df['ctime'] = data['ctime']
         df.index = pd.to_datetime(df.ctime, unit='s')
     else:
-        print "Data already exist, load them from pickle"
+        print("Data already exist, load them from pickle")
         f = open(proj.o.cal.root+"/%s.pickle"%tag_calib,"r")
-        data = cPickle.load(f)
+        data = pickle.load(f)
         f.close()
         cal = data["cal"]
         peak_DAC = data["peak_DAC"]
@@ -166,7 +166,7 @@ def run(proj):
         df['ctime'] = data['ctime']
         df.index = pd.to_datetime(df.ctime, unit='s')
 
-    if params.has_key('solid_angle'):
+    if 'solid_angle' in params:
         tods, omega = np.loadtxt(
             'SOLID_ANGLES/%s.txt' %tag_calib, dtype=str, usecols=[0,1]).T
         df2 = pd.DataFrame()
@@ -175,7 +175,7 @@ def run(proj):
         df = df.merge(df2, how='outer', on='tods')
         df.index = pd.to_datetime(df.ctime, unit='s')
 
-    if params.has_key('recal'):
+    if 'recal' in params:
         f = open(params.get('recal'), 'r')
         lines = f.readlines()
         f.close()
@@ -187,14 +187,14 @@ def run(proj):
     # Reject day TODs, loading > 2.7 and TODs from the commissioning phase before the season
     df['loading'] = df.pwv / np.sin(df.alt)
     sel_day = np.logical_and( df.hour_utc > 11, df.hour_utc<23)
-    print "Discard %i TODs during daytime" %(sel_day.sum())
-    print "Discard %i TODs for lack of peak measurement" %( peak_DAC.sum(axis=0) == 0 ).sum()
-    print "Discard %i TODs due to loading > %.1f" %((df.loading>loading_max).sum(), loading_max)
-    print "Discard %i TODs for lack of loading" %((df.loading<1).sum())
-    print "Discard %i TODs before the beginning of the season" %((df.ctime<ctime_start).sum())
+    print("Discard %i TODs during daytime" %(sel_day.sum()))
+    print("Discard %i TODs for lack of peak measurement" %( peak_DAC.sum(axis=0) == 0 ).sum())
+    print("Discard %i TODs due to loading > %.1f" %((df.loading>loading_max).sum(), loading_max))
+    print("Discard %i TODs for lack of loading" %((df.loading<1).sum()))
+    print("Discard %i TODs before the beginning of the season" %((df.ctime<ctime_start).sum()))
     idx = ( peak_DAC.sum(axis=0) != 0 ) * (df.loading>0) * (df.ctime > ctime_start) * (df.loading < loading_max) * ~sel_day
     df = df[idx]
-    print "Discard %i TODs in total, left with %i" %((~idx).sum(),df.tods.size)
+    print("Discard %i TODs in total, left with %i" %((~idx).sum(),df.tods.size))
     cal = cal[:,idx]
     peak_DAC = peak_DAC[:,idx]
 
@@ -210,7 +210,7 @@ def run(proj):
     else:
         beam_solid_angle = get_beam_solid_angle(array_name, season)
 
-    print beam_solid_angle
+    print(beam_solid_angle)
 
     T_diluted = T_URANUS * get_planet_solid_angle(df.ctime) / beam_solid_angle
     if any([ar in array_name for ar in ['PA3', 'PA4', 'PA5', 'PA6']]):
@@ -224,7 +224,7 @@ def run(proj):
     # Reject TODs that have too few peak measurements
     df['Ndets'] = (~peak_masked.mask).sum(axis=0)
     sel = df.Ndets > live_min
-    print "Discard %i TODs for lack of good detectors" %((~sel).sum())
+    print("Discard %i TODs for lack of good detectors" %((~sel).sum()))
     cal = cal[:,sel]
     peak_DAC = peak_DAC[:,sel]
     peak_masked = peak_masked[:,sel]
