@@ -1,5 +1,6 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import division
 from past.builtins import basestring
 
 import moby2
@@ -78,7 +79,7 @@ def recoverScanCuts(tod, params, full=False):
     # MERGE DETECTOR CUTS THAT DEPEND ON THE PARTIAL CUTS
     if cutParams.get('maxFraction') is not None:
         for det in tod.info.det_uid:
-            frac = np.asarray(c_obj.cuts[det].get_mask(),dtype=int).sum()/float(c_obj.nsamps)
+            frac = np.asarray(c_obj.cuts[det].get_mask(),dtype=int).sum()/c_obj.nsamps
             if frac > cutParams['maxFraction']:
                 det_cuts.set_always_cut(det)
                 pa.liveSel[det] = False
@@ -247,7 +248,7 @@ class reportPathologies( object ):
         frac = 0.0
         for det in d:
             frac += np.asarray(c_obj.cuts[det].get_mask(),dtype=int).sum()/ \
-                    float(c_obj.nsamps)/len(d)
+                    c_obj.nsamps/len(d)
         # GET TOD PARAMETERS
         length = (tod.ctime[-1] - tod.ctime[0])/60 # minutes
         Temp = pa.Temp
@@ -415,7 +416,7 @@ class pathoList( object ):
 
         #date = []
         #for name in self.data['todName']:
-        #    date.append(float(name.split('.')[0])/86400 + 2440587.5 - 4./24 - 1721424.5)
+        #    date.append(name.split('.')[0]/86400 + 2440587.5 - 4./24 - 1721424.5)
         #date = np.array(date)
         date = np.array(self.data['ctime'], dtype = float)/86400 + 2440587.5 - 4./24 - 1721424.5
 
@@ -428,7 +429,7 @@ class pathoList( object ):
                 print("ERROR: cannot plot PWV in double axis mode. Omitting")
             else:
                 ctime = np.array(self.data['ctime'], dtype = int)[selection]
-                ct = (ctime - 54000)/86400
+                ct = (ctime - 54000)//86400
                 night_ctime = []
                 for c in range(ct.min(),ct.max()+1):
                     if np.any(ct == c):
@@ -439,7 +440,7 @@ class pathoList( object ):
                 PWV = get_pwv(ct_pwv)
                 ct_date = []
                 for c in ct_pwv:
-                    ct_date.append(c/86400 + 2440587.5 - 1721424.5 - 3./24)
+                    ct_date.append(c//86400 + 2440587.5 - 1721424.5 - 3./24)
                 #for i in range(len(PWV)):
                 #    if PWV[i] == -1.0: PWV[i] = np.nan
 
@@ -538,13 +539,13 @@ class pathoList( object ):
         weights = weights[selection]
         data = np.array(self.data[keyword])[selection]
         ctime = np.array(self.data['ctime'], dtype = int)[selection]
-        ct = (ctime - 54000)/86400
+        ct = (ctime - 54000)//86400
         if includeCuts:
             data_cut = np.array(self.data[keyword])[~selection]
             ctime_cut = np.array(self.data['ctime'], dtype = int)[~selection]
             date_cut = []
             for c in ctime_cut:
-                date_cut.append(c/86400 + 2440587.5 - 1721424.5 - 3./24)
+                date_cut.append(c//86400 + 2440587.5 - 1721424.5 - 3./24)
 
         night_mean = []
         night_std  = []
@@ -566,14 +567,14 @@ class pathoList( object ):
             PWV = get_pwv(ct_pwv)
             ct_date = []
             for c in ct_pwv:
-                ct_date.append(c/86400 + 2440587.5 - 1721424.5 - 3./24)
+                ct_date.append(c//86400 + 2440587.5 - 1721424.5 - 3./24)
             #for i in range(len(PWV)):
             #    if PWV[i] == -1.0: PWV[i] = np.nan
 
 
         date = []
         for c in night_ctime:
-            date.append(c/86400 + 2440587.5 - 1721424.5 - 3./24)
+            date.append(c//86400 + 2440587.5 - 1721424.5 - 3./24)
 
 
         ax = pylab.subplot(111)
@@ -637,7 +638,7 @@ class pathoList( object ):
             dat = dat[(dat >= range[0])*(dat <= range[1])]
 
         if bins is None:
-            bins = int(len(dat)/100)
+            bins = len(dat)//100
 
         a = pylab.hist(dat, bins = bins, fc = color, normed = normed, alpha = alpha)
         if xlabel is not None: pylab.xlabel(xlabel)
@@ -1427,8 +1428,8 @@ def findMode(x,window=1.2e-5,init=[0,7e-5],maxiter=20,minerr=1e-9):
 def medsig(x):
     xsi = np.array(x).argsort()
     n = len(x)
-    m = x[xsi[int(n/2)]]
-    q25 = x[xsi[int(n/4)]]
-    q75 = x[xsi[int(3.*n/4.)]]
+    m = x[xsi[n//2]]
+    q25 = x[xsi[n//4]]
+    q75 = x[xsi[n*3//4)]]
     s = 0.741*(q75-q25)
     return m,s
