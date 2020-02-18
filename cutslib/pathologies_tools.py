@@ -1430,6 +1430,6 @@ def medsig(x):
     n = len(x)
     m = x[xsi[n//2]]
     q25 = x[xsi[n//4]]
-    q75 = x[xsi[n*3//4)]]
+    q75 = x[xsi[n*3//4]]
     s = 0.741*(q75-q25)
     return m,s
