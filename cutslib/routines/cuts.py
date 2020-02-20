@@ -9,11 +9,11 @@ import h5py
 import moby2
 from moby2.scripting import products
 from moby2.analysis import hwp
-from moby2.analysis.tod_ana import pathologies
 
 from todloop import Routine
 from profilehooks import profile
 
+from cutslib import pathologies
 from cutslib.tools import *
 
 

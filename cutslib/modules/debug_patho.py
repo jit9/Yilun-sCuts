@@ -5,10 +5,8 @@ website to manipulate and visualize"""
 import moby2
 import json, os.path as op, numpy as np
 from moby2.util.database import TODList
-from moby2.analysis.tod_ana import pathologies
-from cutslib.pathologies_tools import get_pwv
 from cutslib.pathologies import Pathologies
-Pathologies = pathologies.Pathologies
+from cutslib.pathologies_tools import get_pwv
 
 
 def init(config):

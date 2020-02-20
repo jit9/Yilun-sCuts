@@ -2,11 +2,11 @@
 wrapped in this framework for convenience"""
 import os
 import moby2
-from moby2.analysis.tod_ana import pathologies
 import pickle, numpy,sys, os
 from moby2.util.database import TODList
-from moby2.scripting.pathologies_tools import fix_tod_length, get_pwv
-Pathologies = pathologies.Pathologies
+from cutslib.pathologies_tools import fix_tod_length, get_pwv
+from cutslib.pathologies import Pathologies
+
 
 def init(config):
     pass

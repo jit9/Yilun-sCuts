@@ -1,5 +1,5 @@
 import os.path as op, sys, numpy as np
-from moby2.scripting.pathologies_tools import pathoList
+from cutslib.pathologies_tools import pathoList
 from moby2.util import MobyDict
 
 def init(config):

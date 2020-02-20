@@ -3,15 +3,15 @@ from __future__ import absolute_import
 from __future__ import division
 from past.builtins import basestring
 
-import moby2
+import numpy as np, os, sys, time, ephem, pickle
 import matplotlib, pylab
 from matplotlib import pyplot as plt
-from moby2.analysis.tod_ana import visual as v
+import moby2
+from cutslib import visual as v
 pylab.ion()
 from moby2.scripting import products
-from moby2.analysis.tod_ana import pathologies
 from moby2.util.database import TODList
-import numpy as np, os, sys, time, ephem, pickle
+from cutslib import pathologies
 pylab.ioff()
 
 

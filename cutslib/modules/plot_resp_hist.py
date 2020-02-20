@@ -2,15 +2,13 @@
 that has bias step calibration. I will estimate the percentage of the
 number with resp against the total tes detector in the given array"""
 
-import moby2
 import json, os.path as op, numpy as np
-from moby2.util.database import TODList
-from moby2.analysis.tod_ana import pathologies
-from cutslib.pathologies_tools import get_pwv
-from cutslib.pathologies import Pathologies
 import matplotlib.pyplot as plt
 
-Pathologies = pathologies.Pathologies
+import moby2
+from moby2.util.database import TODList
+from cutslib.pathologies_tools import get_pwv
+from cutslib.pathologies import Pathologies
 
 
 def init(config):

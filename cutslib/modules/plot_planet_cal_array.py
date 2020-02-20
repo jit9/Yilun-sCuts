@@ -4,12 +4,12 @@ import sys
 import numpy as np
 import pickle
 import pandas as pd
-from moby2.analysis.tod_ana import visual as v
+from cutslib import visual as v
 
 def init(config):
     global ctime_start, loading_max, path
     ctime_start = config.getint('ctime_start', 0)
-    loading_max = config.getfloat('loading_max', 10)    
+    loading_max = config.getfloat('loading_max', 10)
     path = config.get('planet_path')
 
 def run(proj):
@@ -49,7 +49,7 @@ def run(proj):
     if int(proj.i.ar[-1]) >= 3:
         array_name = array+"_"+str(proj.i.freq)
     else:
-        array_name = array    
+        array_name = array
     array_data =  moby2.scripting.products.get_array_data(
         {'instrument':'actpol','array_name':proj.i.ar,'season':proj.i.season})
     alma_pwv = moby2.aux_data.alma.WeatherChannel('pwv')
@@ -103,4 +103,3 @@ def run(proj):
                       title=df.tods.iloc[i] + " peak_DAC (uncalibrated) - %s"
                       % tag_calib, pmin=1e-10, display='save',
                       save_name=outfile)
-        
