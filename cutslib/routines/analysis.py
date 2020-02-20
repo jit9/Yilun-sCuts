@@ -13,7 +13,7 @@ import logging
 import moby2
 from todloop import Routine
 
-from .utils import *
+from cutslib.tools import *
 
 
 class AnalyzeScan(Routine):

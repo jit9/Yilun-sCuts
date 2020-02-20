@@ -14,7 +14,7 @@ from moby2.analysis.tod_ana import pathologies
 from todloop import Routine
 from profilehooks import profile
 
-from .utils import *
+from cutslib.tools import *
 
 
 class CutMCE(Routine):
