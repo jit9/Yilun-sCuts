@@ -37,3 +37,17 @@ def combine(ver):
         for f in files:
             rm_cmds.append("rm {}".format(f))
     return rm_cmds
+
+
+def promote():
+    """Promote the version of cuts param. It will automatically
+    infer the version number.
+    Example:
+        cuts results promote
+    """
+    # find latest version
+    # note that one digit is assumed here
+    versions = [int(k.split('_v')[-1][0]) for k in glob.glob("*.par")]
+    latest_ver = max(versions)
+    new_ver = "v%d" % (latest_ver+1)
+    return ["promote_version %s" % new_ver]

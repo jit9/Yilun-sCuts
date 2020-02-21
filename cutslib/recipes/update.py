@@ -2,6 +2,7 @@ from moby2.util import MobyDict
 import sys, os, time
 import argparse
 
+
 def submit(cutparam):
     # load base parameters
     par = MobyDict.from_file(cutparam)
@@ -35,7 +36,8 @@ def submit(cutparam):
         f.write( '#SBATCH --output=%s/slurmjob.log.%d\n' % (outdir, n))
         f.write( 'module load gcc\n' )
         f.write( 'module load openmpi\n' )
-        f.write( 'source activate py2\n' )
+        f.write( 'source activate myenv\n' )  #FIXME
+        f.write( 'cd %s\n' % os.path.dirname(cutparam))
         start, end = n*tpn, (n+1)*tpn
         for i in range(start, end):
             f.write('OMP_NUM_THREADS=20 update_crit -n %d --index %d -f %s & sleep 1\n' % (nproc, i, cutparam))
