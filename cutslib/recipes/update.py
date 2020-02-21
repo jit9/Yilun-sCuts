@@ -14,7 +14,7 @@ def submit(cutparam):
     nproc = tpn * nnode
 
     # output parameters
-    basedir = os.path.dirname(cutparam)
+    basedir = os.path.dirname(os.path.abspath(cutparam))
     outdir = os.path.join(basedir, par["outdir"])
     runtime = par.get("runtime")
     qos = par.get("qos")
