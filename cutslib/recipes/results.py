@@ -1,6 +1,6 @@
 import glob, os
 
-def combine(ver):
+def combine(cpar):
     """Combine splitted outputs into one. The splited files will
     be removed after this.
     Example:
@@ -8,8 +8,11 @@ def combine(ver):
     """
     tags = ["*.db", "done_list.txt", "error_list.txt"]
     rm_cmds = []
+    ver = cpar.split(".par")[0][-1]
+    cpar_dir = os.path.dirname(os.path.abspath(cpar))
+    run_dir = os.path.join(cpar_dir, f"run_v{ver}")
     for tag in tags:
-        files = glob.glob("run_{}/{}.*".format(ver, tag))
+        files = glob.glob(run_dir+"/{}.*".format(tag))
         for f in files: print(f)
         files = [f for f in files if os.path.basename(f).split('.')[-1]!='db']
         if len(files) == 0:
