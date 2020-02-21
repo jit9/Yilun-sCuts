@@ -315,7 +315,7 @@ class Pathologies( object ):
         self.calibrate2pW()
         resp = self.calData["resp"]; ff = self.calData["ff"]
         cal = resp*ff
-        if not(numpy.any(self.calData["calSel"])):
+        if not(np.any(self.calData["calSel"])):
             psLib.trace('moby', 0, "ERROR: no calibration for this TOD")
             return 1
         toc = time.time();
@@ -335,13 +335,13 @@ class Pathologies( object ):
         # FREQUENCY SPACE ANALYSIS
         trend = moby2.tod.detrend_tod(self.tod)
         nf = nextregular(self.tod.nsamps)
-        fdata = numpy.fft.rfft(self.tod.data, nf)
+        fdata = np.fft.rfft(self.tod.data, nf)
         dt = (self.tod.ctime[-1]-self.tod.ctime[0])/(self.tod.nsamps-1)
         df = 1./(dt*nf)
 
         # Low-frequency dark analysis
         res = multiFreqCorrAnal(fdata, dark, df, nf, self.ndata, self.scan_freq, par,
-                          "darkCorrPar")
+                                "darkCorrPar")
         self.preDarkSel = res["preSel"]
         self.crit["corrDark"]["values"] = res["corr"]
         self.crit["gainDark"]["values"] = res["gain"]
@@ -391,7 +391,7 @@ class Pathologies( object ):
             self.multiFreqData[fbn] = res["all_data"]
         self.res = res
         # Undo flatfield correction
-        self.crit["gainLive"]["values"] /= numpy.abs(ff)
+        self.crit["gainLive"]["values"] /= np.abs(ff)
 
         # Get slow Common Mode
         n_l = 1
@@ -403,10 +403,10 @@ class Pathologies( object ):
         self.dsDCM, _ = get_time_domain_modes(fcmD,n_l, self.tod.nsamps, df)
 
         # Add trend to CM
-        trL = numpy.array(trend).T[self.preLiveSel].mean(axis=0)
+        trL = np.array(trend).T[self.preLiveSel].mean(axis=0)
         trLt = trL[:,np.newaxis]
         moby2.tod.retrend_tod(trLt, data = self.dsCM)
-        trD = numpy.array(trend).T[self.preDarkSel].mean(axis=0)
+        trD = np.array(trend).T[self.preDarkSel].mean(axis=0)
         trDt = trD[:,np.newaxis]
         moby2.tod.retrend_tod(trDt, data = self.dsDCM)
 
@@ -435,21 +435,21 @@ class Pathologies( object ):
                                            [n_l,n_h], self.ndata, nmodes = par["HFLiveModes"],
                                            highOrder = True, preSel = self.preLiveSel,
                                            scanParams = self.scan)
-            self.crit["partialRMSLive"]["values"] = numpy.zeros([self.ndet,self.chunkParams["N"]])
-            self.crit["partialSKEWLive"]["values"] = numpy.zeros([self.ndet,self.chunkParams["N"]])
-            self.crit["partialKURTLive"]["values"] = numpy.zeros([self.ndet,self.chunkParams["N"]])
-            self.crit["partialSKEWPLive"]["values"] = numpy.zeros([self.ndet,self.chunkParams["N"]])
-            self.crit["partialKURTPLive"]["values"] = numpy.zeros([self.ndet,self.chunkParams["N"]])
+            self.crit["partialRMSLive"]["values"] = np.zeros([self.ndet,self.chunkParams["N"]])
+            self.crit["partialSKEWLive"]["values"] = np.zeros([self.ndet,self.chunkParams["N"]])
+            self.crit["partialKURTLive"]["values"] = np.zeros([self.ndet,self.chunkParams["N"]])
+            self.crit["partialSKEWPLive"]["values"] = np.zeros([self.ndet,self.chunkParams["N"]])
+            self.crit["partialKURTPLive"]["values"] = np.zeros([self.ndet,self.chunkParams["N"]])
             self.crit["partialRMSLive"]["values"][live] =  prms
             self.crit["partialSKEWLive"]["values"][live] = pskewt.T[:,0]
             self.crit["partialKURTLive"]["values"][live] = pkurtt.T[:,0]
             self.crit["partialSKEWPLive"]["values"][live] = pskewt.T[:,1]
             self.crit["partialKURTPLive"]["values"][live] = pkurtt.T[:,1]
         self.crit["rmsLive"]["values"] = rms
-        self.crit["skewLive"]["values"] = numpy.zeros(self.ndet)
-        self.crit["kurtLive"]["values"] = numpy.zeros(self.ndet)
-        self.crit["skewpLive"]["values"] = numpy.zeros(self.ndet)
-        self.crit["kurtpLive"]["values"] = numpy.zeros(self.ndet)
+        self.crit["skewLive"]["values"] = np.zeros(self.ndet)
+        self.crit["kurtLive"]["values"] = np.zeros(self.ndet)
+        self.crit["skewpLive"]["values"] = np.zeros(self.ndet)
+        self.crit["kurtpLive"]["values"] = np.zeros(self.ndet)
         self.crit["skewLive"]["values"][live] = skewt[0]
         self.crit["kurtLive"]["values"][live] = kurtt[0]
         self.crit["skewpLive"]["values"][live] = skewt[1]
@@ -471,7 +471,7 @@ class Pathologies( object ):
             self.crit.update({"atmKnee":{"values":knee}})
 
         # Bring dimensional observables back to RAW units
-        recal = numpy.abs(cal)
+        recal = np.abs(cal)
         recal[cal==0] = 1.
         self.crit["normLive"]["values"] /= recal
         self.crit["rmsLive"]["values"] /= recal
@@ -479,7 +479,7 @@ class Pathologies( object ):
         self.crit["MFELive"]["values"] /= recal
         if self.crit["partialRMSLive"]["values"] is not None:
             self.crit["partialRMSLive"]["values"] /= \
-                numpy.resize(recal,self.crit["partialRMSLive"]["values"].T.shape).T
+                np.resize(recal,self.crit["partialRMSLive"]["values"].T.shape).T
 
         # Retrend TOD
         if retrend:
@@ -517,11 +517,11 @@ class Pathologies( object ):
 
         # SELECT LIVE DETECTORS
         self.liveSel = ~self.zeroSel*~self.exclude
-        self.cutCounter = numpy.zeros(len(self.dets))
+        self.cutCounter = np.zeros(len(self.dets))
         self.cutCounter[self.zeroSel] += 1
         self.cutCounter[self.exclude] += 1
 
-        live = numpy.ones(len(self.dets), dtype = bool)
+        live = np.ones(len(self.dets), dtype = bool)
         live[1024:] = False
         if verbose:
             psLib.trace('moby', 0, 'Number of live detectors cut out of 1024:')
@@ -565,14 +565,14 @@ class Pathologies( object ):
 
     def _processSelection( self, key, initSel=None ):
         if initSel is None:
-            initSel = numpy.ones(self.ndet,dtype = bool)
+            initSel = np.ones(self.ndet,dtype = bool)
         p = self.crit[key]
         if p["values"] is None: return
 
         relSel, m, s = selectBySigma(p["values"], initSel, p['relSigma'])
         p.update({'median':m, 'sigma':s, 'relLims': (m-s*p['relSigma'], m+s*p['relSigma'])})
         if p["normalize"]:
-            mm = numpy.median(p["values"][initSel])
+            mm = np.median(p["values"][initSel])
             absSel = (p["values"]/mm >= p['absCrit'][0])*(p["values"]/mm <= p['absCrit'][1])
             p["abs_median"] = mm
         else:
@@ -600,7 +600,7 @@ class Pathologies( object ):
         # Default resposibity to median of stable detectors
         _, stable = self.flatfield_object.get_property( 'stable', det_uid = self.dets, default=False)
         if self.params["calibration"].get("forceNoResp",False):
-            rm = numpy.median(resp.cal[stable*respSel])
+            rm = np.median(resp.cal[stable*respSel])
             resp.cal[~respSel] = rm
         if self.flatfield_object.calRMS is not None:
             _, ffRMS = self.flatfield_object.get_property(
@@ -638,7 +638,7 @@ class Pathologies( object ):
         """
         if not(self.calibrated):
             resp, ff = self.getpWCalibration(flatfield = flatfield)[:2]
-            dcal = numpy.where(~self.origDark)[0]
+            dcal = np.where(~self.origDark)[0]
 
             # Downsampling effect
             aff = abs(ff[dcal])
@@ -658,7 +658,7 @@ class Pathologies( object ):
             if self.params['liveSelParams']['partialRMS'].get('calibrate',True):
                 if self.crit["partialRMSLive"]["values"] is not None:
                     self.crit["partialRMSLive"]["values"][dcal] *= \
-                        numpy.resize(cal,self.crit["partialRMSLive"]["values"][dcal].T.shape).T
+                        np.resize(cal,self.crit["partialRMSLive"]["values"][dcal].T.shape).T
             # for i in range(len(dcal)):
             #     aff = abs(ff[dcal[i]])
             #     cal = resp[dcal[i]]*aff
@@ -669,7 +669,7 @@ class Pathologies( object ):
             #     self.crit["MFELive"]["values"][dcal[i]] *= cal
             #     if self.crit["partialRMSLive"]["values"] is not None:
             #         self.crit["partialRMSLive"]["values"][dcal[i]] *= \
-            #             numpy.resize(cal,self.crit["partialRMSLive"]["values"][dcal[i]].T.shape).T
+            #             np.resize(cal,self.crit["partialRMSLive"]["values"][dcal[i]].T.shape).T
             self.calibrated = True
         else: psLib.trace('moby', 0, 'ERROR: pathologies already calibrated')
 
@@ -701,7 +701,7 @@ class Pathologies( object ):
         #self.tod.dark = self.dets[self.darkSel]
         #self.tod.ndark = len(self.tod.dark)
         c_obj = moby2.TODCuts.for_tod(self.tod, assign=False)
-        c_obj.set_always_cut( numpy.nonzero(~self.liveSel)[0] )
+        c_obj.set_always_cut( np.nonzero(~self.liveSel)[0] )
         if applyToTOD:
             self.tod.cuts.merge_tod_cuts(c_obj)
         return c_obj
@@ -710,14 +710,14 @@ class Pathologies( object ):
         """
         @brief  Apply partial cuts from RMS, SKEW and KURT
         """
-        SEL = numpy.ones([self.ndet, self.chunkParams['N']], dtype = bool)
+        SEL = np.ones([self.ndet, self.chunkParams['N']], dtype = bool)
         for k in self.activeLiveKeys:
             if (k.find("partial")==0):
                 SEL *= self.crit[k]["pSel"]
         T = self.chunkParams['T']/self.tod.info.downsample_level
         pivot = self.chunkParams['pivot']/self.tod.info.downsample_level
         N = self.chunkParams['N']
-        assert N == numpy.shape(SEL)[1]
+        assert N == np.shape(SEL)[1]
 
         c_obj = moby2.TODCuts.for_tod(self.tod, assign=False)
         for d in self.dets[self.liveSel]:
@@ -746,14 +746,14 @@ class Pathologies( object ):
         """
         import_pylab(interactive = interactive)
         if DATA.dtype == 'bool':
-            DATA = numpy.array(~DATA, dtype = int)
+            DATA = np.array(~DATA, dtype = int)
             vmin = 0; vmax = 1
 
-        if selection is None: selection = numpy.ones(self.ndet, dtype = bool)
+        if selection is None: selection = np.ones(self.ndet, dtype = bool)
         m = pylab.matshow(DATA[selection].transpose(), vmin = vmin, vmax = vmax)
         b = pylab.colorbar(shrink=0.8)
         if units is not None: b.set_label(units)
-        m.axes.set_aspect(len(self.dets[selection])/numpy.shape(DATA)[1])
+        m.axes.set_aspect(len(self.dets[selection])/np.shape(DATA)[1])
         m.figure.set_size_inches(9.5, 8, forward = True)
         if title is not None: pylab.title(title)
         pylab.xlabel('Detector Number')
@@ -768,7 +768,7 @@ class Pathologies( object ):
         """
         @brief  Visualize the location in the array of the detectors that would be cut or not
                 given a selection of good detectors.
-        @param  selection  Bool numpy array with False for detectors to be cut and True otherwise.
+        @param  selection  Bool np array with False for detectors to be cut and True otherwise.
         @param  title      Specify the title to use in the plot.
         @param  filename   Specify the file name where the figure should be saved as a ".png"
         @param  display    True for showing and False for not showing the plot on screen.
@@ -777,8 +777,8 @@ class Pathologies( object ):
         fig = pylab.figure(1, figsize=(6,6))
         ax = pylab.subplot(111)
         if self.ndet < self.tod.info.array_data['det_uid'].size:
-            x = self.tod.info.array_data['row']#numpy.arange(1056)/32
-            y = self.tod.info.array_data['col']#numpy.arange(1056)%32
+            x = self.tod.info.array_data['row']#np.arange(1056)/32
+            y = self.tod.info.array_data['col']#np.arange(1056)%32
             l0 = pylab.plot(x,y,'s', label = 'Unread detectors')
             pylab.setp(l0, 'markeredgecolor', 'k', \
                            'markeredgewidth', 1.5, \
@@ -866,9 +866,9 @@ class Pathologies( object ):
         import_pylab(interactive = interactive)
 
         if selection is None:
-            selection = numpy.ones(len(self.dets), dtype = 'bool')
+            selection = np.ones(len(self.dets), dtype = 'bool')
         data[~selection] = 0.0
-        mat = numpy.reshape(data, [self.Nrows,self.Ncols]).transpose()
+        mat = np.reshape(data, [self.Nrows,self.Ncols]).transpose()
         m = pylab.matshow(mat, vmin = vmin, vmax = vmax)
         pylab.xlabel('Columns')
         m.axes.xaxis.set_label_position( 'top' )
@@ -901,10 +901,10 @@ class Pathologies( object ):
 
         if selection is None:
             selection = ~self.zeroSel
-        dat = numpy.array(data)[selection].flatten()
+        dat = np.array(data)[selection].flatten()
 
         if drange is not None:
-            dat = dat[(dat >= drange[0])*(dat <= drange[1])*~numpy.isnan(dat)]
+            dat = dat[(dat >= drange[0])*(dat <= drange[1])*~np.isnan(dat)]
 
         if bins is None:
             bins = min(max(int(len(dat)/20),10),100)
@@ -927,7 +927,7 @@ class Pathologies( object ):
             for k in self.activeLiveKeys:
                 if (not self.crit[k]["proc"]) or ("values" not in self.crit[k]): continue
                 dat = self.crit[k]
-                r = numpy.array([dat["median"]-nsig*dat["sigma"],dat["median"]+nsig*dat["sigma"]])
+                r = np.array([dat["median"]-nsig*dat["sigma"],dat["median"]+nsig*dat["sigma"]])
                 fn = os.path.join(outdir,"hist_%s_%s.png"%(self.tod.info.name, k))
                 if dat["normalize"]: mm = dat["abs_median"]
                 else: mm = 1.
@@ -955,7 +955,7 @@ class Pathologies( object ):
         T = self.chunkParams['T']/self.tod.info.downsample_level
         N = self.chunkParams['N']
         tLiveTot = float(self.ndata)*len(self.dets[self.liveSel])
-        partialSel = numpy.ones([self.ndet, N], dtype = bool)
+        partialSel = np.ones([self.ndet, N], dtype = bool)
         for k in self.activeLiveKeys:
             if (k.find("partial")==0):
                 partialSel *= self.crit[k]["pSel"]
@@ -965,7 +965,7 @@ class Pathologies( object ):
 #            partialSel *= self.crit["partialSKEW"]["pSel"]
 #        if self.params['partialCuts']['partialKURT']:
 #            partialSel *= self.crit["partialKURT"]["pSel"]
-        tDead = float(numpy.sum(numpy.array(~partialSel[self.liveSel], dtype = int))*T)
+        tDead = float(np.sum(np.array(~partialSel[self.liveSel], dtype = int))*T)
         if tLiveTot > 0:
             fLive = (tLiveTot - tDead)/tLiveTot
         else: fLive = 0.0
@@ -1058,7 +1058,7 @@ class Pathologies( object ):
         if path[-1] == '/':
             path = path[0:-1]
         # filename = "%s.pickle" % path
-        f = file( path, 'w' )
+        f = open( path, 'wb' )
         p = pickle.Pickler( f, 2 )
         p.dump( data )
         f.close()
@@ -1076,7 +1076,7 @@ class Pathologies( object ):
         """
         if path[-1] == '/':
             path = path[0:-1]
-        f = file( path, 'rb' )
+        f = open( path, 'rb' )
         p = pickle.Unpickler( f )
         data = p.load()
         f.close()
@@ -1115,10 +1115,10 @@ def selectBySigma( data, preSelection, thrld ):
     @param  thrld         number of sigmas away from the mean to include in selection.
     """
     if data is None:
-        return numpy.ones(len(preSelection), dtype = bool), 0.0, 0.0
+        return np.ones(len(preSelection), dtype = bool), 0.0, 0.0
     if len(data[preSelection]) == 0:
         return preSelection, 0., 0.
-    datas = numpy.sort(data[preSelection].flatten())
+    datas = np.sort(data[preSelection].flatten())
     n = len(datas)
     if n == 0:
         return preSelection, 0., 0.
@@ -1126,7 +1126,7 @@ def selectBySigma( data, preSelection, thrld ):
     q75 = datas[n*3//4]
     s = 0.741*(q75-q25)
     m = datas[n//2]
-    if s == 0: return numpy.ones(len(data), dtype = bool), m, s
+    if s == 0: return np.ones(len(data), dtype = bool), m, s
     else: return (data >= m-thrld*s)*(data <= m+thrld*s), m, s
 
 
@@ -1144,15 +1144,15 @@ def _combineSelTypes( relSel, absSel, selType):
         return relSel*absSel
     else:
         psLib.trace("moby", 0, "ERROR: Unknown selection type")
-        return numpy.ones(len(relSel), dtype = bool)
+        return np.ones(len(relSel), dtype = bool)
 
 def _findExcessPartial( selection, threshold ):
     """
     @brief Find detectors with too many partial chunk cuts and select them to be cut.
     """
-    n = numpy.shape(selection)[1]
-    n_part = numpy.sum(numpy.array(~selection, dtype = int), axis = 1)
-    sel = (numpy.array(n_part, dtype = float)/n <= threshold)
+    n = np.shape(selection)[1]
+    n_part = np.sum(np.array(~selection, dtype = int), axis = 1)
+    sel = (np.array(n_part, dtype = float)/n <= threshold)
     return sel
 
 
@@ -1164,7 +1164,7 @@ class darkDets(object):
 
     def __init__(self, patho = None):
         if patho is not None:
-            self.darkDets = numpy.array(patho.dets[patho.darkSel], dtype = int)
+            self.darkDets = np.array(patho.dets[patho.darkSel], dtype = int)
         else: self.darkDets = None
 
     def applyToTOD( self, tod ):
@@ -1198,7 +1198,7 @@ class darkDets(object):
         dd.darkDets = []
         for l in f:
             dd.darkDets.append(int(l.split('\n')[0].strip()))
-        dd.darkDets = numpy.array(dd.darkDets, dtype = int)
+        dd.darkDets = np.array(dd.darkDets, dtype = int)
         f.close()
         return dd
 
@@ -1250,37 +1250,37 @@ class darkModes(object):
     def expandModes(self, tod):
         nmod, smod = self.modes.shape
         tmod = np.arange(smod+1)*self.dt
-        mod = numpy.hstack([self.modes,self.modes[:,0:1]])
+        mod = np.hstack([self.modes,self.modes[:,0:1]])
 
         st = (tod.ctime[-1] - tod.ctime[0]) / (tod.nsamps-1)
         tt = tod.ctime - tod.ctime[0]
 
         # first index of reconstructed mode
-        ind0 = numpy.max([int(self.offset/st) - tod.info.sample_index,0])
+        ind0 = np.max([int(self.offset/st) - tod.info.sample_index,0])
         # last sample of reconstructed mode
-        ind1 = numpy.min([int((smod)*self.dt/st) + ind0, tod.nsamps])
+        ind1 = np.min([int((smod)*self.dt/st) + ind0, tod.nsamps])
 
-        self.emodes = numpy.zeros((nmod,tod.nsamps))
+        self.emodes = np.zeros((nmod,tod.nsamps))
         from scipy.interpolate import interp1d
         intermode = interp1d(tmod,mod,"cubic")
         self.emodes[:,ind0:ind1] = intermode(tt[ind0:ind1])
-        self.emodes /= np.linalg.norm(self.emodes, axis=1)[:,numpy.newaxis]
+        self.emodes /= np.linalg.norm(self.emodes, axis=1)[:,np.newaxis]
 
     def deproject(self, tod, dets = None):
         if dets is None: dets = tod.det_uid
         if self.emodes is None: self.expandModes(tod)
         self.coeff = moby2.libactpol.data_dot_modes(tod.data,
-                                  numpy.array(dets,dtype="int32"),
-                                  numpy.asarray(self.emodes,dtype="float32"),
+                                  np.array(dets,dtype="int32"),
+                                  np.asarray(self.emodes,dtype="float32"),
                                   moby2.util.encode_c(tod.cuts))
         moby2.libactpol.remove_modes( tod.data,
-                                  numpy.array(dets, dtype='int32'),
+                                  np.array(dets, dtype='int32'),
                                   self.emodes.astype('float32'),
                                   self.coeff.astype('float64'))
 
         #for m in self.emodes:
-        #    coeff = numpy.dot(tod.data[dets],m)
-        #    tod.data[dets] -= numpy.outer(coeff,m)
+        #    coeff = np.dot(tod.data[dets],m)
+        #    tod.data[dets] -= np.outer(coeff,m)
 
     def write_to_path( self, path ):
         """
@@ -1293,7 +1293,7 @@ class darkModes(object):
         if path[-1] == '/':
             path = path[0:-1]
         f = open(path, 'wb')
-        numpy.save(f,self)
+        np.save(f,self)
         f.close()
         self.emodes = emodes
 
@@ -1306,7 +1306,7 @@ class darkModes(object):
             path = path[0:-1]
 #        filename = "%s/???" % path
         f = open(path, 'rb')
-        dm = numpy.load(f)
+        dm = np.load(f)
         f.close()
         return dm
 
@@ -1405,8 +1405,8 @@ def getDarkModes(fdata,darkSel,frange,df,nf,nsamps,par,tod = None):
             if len(np.diff(thermometer).nonzero()[0]) > 0:
                 thermometers.append(thermometer)
         if len(thermometers) > 0:
-            thermometers = numpy.array(thermometers)
-            fth = numpy.fft.rfft( thermometers, nf )[:,n_l:n_h]
+            thermometers = np.array(thermometers)
+            fth = np.fft.rfft( thermometers, nf )[:,n_l:n_h]
             fc_inputs.extend(list(fth))
     elif par["darkModesParams"].get("useTherm", False) and tod is None:
             print("WARNING: TOD requiered to obtain thermometer data")
@@ -1456,17 +1456,17 @@ def lowFreqAnal(fdata, sel, frange, df, nsamps, scan_freq, par,
         dark_coeff = []
 
         for m in fcmodes:
-            coeff = numpy.dot(lf_data.conj(),m)
-            lf_data -= numpy.outer(coeff.conj(),m)
+            coeff = np.dot(lf_data.conj(),m)
+            lf_data -= np.outer(coeff.conj(),m)
             dark_coeff.append(coeff)
 
         # Reformat dark coefficients
         if len(dark_coeff) > 0:
-            dcoeff = numpy.zeros([len(dark_coeff),ndet],dtype=complex)
+            dcoeff = np.zeros([len(dark_coeff),ndet],dtype=complex)
             dcoeff[:,sel] = np.array(dark_coeff)
 
         # Get Ratio
-        ratio = numpy.zeros(ndet,dtype=float)
+        ratio = np.zeros(ndet,dtype=float)
         data_norm[data_norm==0.] = 1.
         ratio[sel] = np.linalg.norm(lf_data,axis=1)/data_norm
 
@@ -1476,15 +1476,15 @@ def lowFreqAnal(fdata, sel, frange, df, nsamps, scan_freq, par,
         lf_data[:,i_harm] = 0.0
 
     # Get correlation matrix
-    c = numpy.dot(lf_data,lf_data.T.conjugate())
-    a = numpy.linalg.norm(lf_data,axis=1)
-    aa = numpy.outer(a,a)
+    c = np.dot(lf_data,lf_data.T.conjugate())
+    a = np.linalg.norm(lf_data,axis=1)
+    aa = np.outer(a,a)
     aa[aa==0.] = 1.
     cc = c/aa
 
     # Get Norm
     ppar = par.get("presel",{})
-    norm = numpy.zeros(ndet,dtype=float)
+    norm = np.zeros(ndet,dtype=float)
     fnorm = np.sqrt(np.abs(np.diag(c)))
     norm[sel] = fnorm*np.sqrt(2./nsamps)
     nnorm = norm/np.sqrt(nsamps)
@@ -1541,7 +1541,7 @@ def lowFreqAnal(fdata, sel, frange, df, nsamps, scan_freq, par,
 
     # Get Correlations
     u, s, v = np.linalg.svd( lf_data[sl], full_matrices=False )
-    corr = numpy.zeros(ndet)
+    corr = np.zeros(ndet)
     if par.get("doubleMode",False):
         corr[preSel] = np.sqrt(abs(u[:,0]*s[0])**2+abs(u[:,1]*s[1])**2)/fnorm[sl]
     else:
@@ -1551,7 +1551,7 @@ def lowFreqAnal(fdata, sel, frange, df, nsamps, scan_freq, par,
     #
     # data = CM * gain
     #
-    gain = numpy.zeros(ndet,dtype=complex)
+    gain = np.zeros(ndet,dtype=complex)
     gain[preSel] = np.abs(u[:,0])  #/np.mean(np.abs(u[:,0]))
     res.update({"preSel": preSel, "corr": corr, "gain": gain, "norm": norm,
                 "dcoeff": dcoeff, "ratio": ratio, "cc": cc, "normSel": normSel})
@@ -1567,21 +1567,21 @@ def highFreqAnal(fdata, sel, range, nsamps,
     ndet = len(sel)
     hf_data = fdata[sel,range[0]:range[1]]
     if nmodes > 0:
-        if preSel is None: preSel = numpy.ones(sel.sum(),dtype=bool)
+        if preSel is None: preSel = np.ones(sel.sum(),dtype=bool)
         else: preSel = preSel[sel]
-        c = numpy.dot(hf_data[preSel],hf_data[preSel].T.conjugate())
-        u, w, v = numpy.linalg.svd(c, full_matrices = 0)
-        kernel = v[:nmodes]/numpy.repeat([numpy.sqrt(w[:nmodes])],len(c),axis=0).T
-        modes = numpy.dot(kernel,hf_data[preSel])
-        coeff = numpy.dot(modes,hf_data.T.conj())
-        hf_data -= numpy.dot(coeff.T.conj(),modes)
-    rms = numpy.zeros(ndet)
-    rms[sel] = numpy.sqrt(numpy.sum(abs(hf_data)**2,axis=1)/hf_data.shape[1]/nsamps)
+        c = np.dot(hf_data[preSel],hf_data[preSel].T.conjugate())
+        u, w, v = np.linalg.svd(c, full_matrices = 0)
+        kernel = v[:nmodes]/np.repeat([np.sqrt(w[:nmodes])],len(c),axis=0).T
+        modes = np.dot(kernel,hf_data[preSel])
+        coeff = np.dot(modes,hf_data.T.conj())
+        hf_data -= np.dot(coeff.T.conj(),modes)
+    rms = np.zeros(ndet)
+    rms[sel] = np.sqrt(np.sum(abs(hf_data)**2,axis=1)/hf_data.shape[1]/nsamps)
     if highOrder:
-        #hfd = numpy.hstack([numpy.expand_dims(numpy.zeros(len(hf_data)),1),
+        #hfd = np.hstack([np.expand_dims(np.zeros(len(hf_data)),1),
         #                    hf_data[:,:-1],
-        #                    numpy.expand_dims(numpy.real(hf_data[:,-1]),1)])
-        #hfd = numpy.fft.irfft(hfd)*numpy.sqrt(2.*hf_data.shape[1]/nsamps)
+        #                    np.expand_dims(np.real(hf_data[:,-1]),1)])
+        #hfd = np.fft.irfft(hfd)*np.sqrt(2.*hf_data.shape[1]/nsamps)
         hfd, _ = get_time_domain_modes( hf_data, 1, nsamps)
         skewt = stat.skewtest(hfd,axis=1)
         kurtt = stat.kurtosistest(hfd,axis=1)
@@ -1592,13 +1592,13 @@ def highFreqAnal(fdata, sel, range, nsamps,
             f = float(hfd.shape[1])/nsamps
             t = int(T*f); p = int(pivot*f)
             prms = []; pskewt = []; pkurtt = []
-            for c in range(N):
+            for c in np.arange(N):
                prms.append(hfd[:,c*t+p:(c+1)*t+p].std(axis=1))
                pskewt.append(stat.skewtest(hfd[:,c*t+p:(c+1)*t+p],axis=1))
                pkurtt.append(stat.kurtosistest(hfd[:,c*t+p:(c+1)*t+p],axis=1))
-            prms = numpy.array(prms).T
-            pskewt = numpy.array(pskewt)
-            pkurtt = numpy.array(pkurtt)
+            prms = np.array(prms).T
+            pskewt = np.array(pskewt)
+            pkurtt = np.array(pkurtt)
             return (rms, skewt, kurtt, prms, pskewt, pkurtt)
         else:
             return (rms, skewt, kurtt)
@@ -1664,7 +1664,7 @@ def analyzeScan(az, dt = 0.002508,  N=50, vlim=0.01, qlim=0.01):
     daz = np.diff(az)
     v_scan = np.r_[2*daz[0] - daz[1], daz]
     v_smooth = np.convolve(v_scan, np.ones((N,))/N)[(N-1)//2:-(N-1)//2]
-    speed = numpy.median(abs(v_smooth))
+    speed = np.median(abs(v_smooth))
     stop = abs(v_scan) < vlim*speed
     pick = abs(v_smooth) > 2*speed
 
@@ -1679,24 +1679,24 @@ def analyzeScan(az, dt = 0.002508,  N=50, vlim=0.01, qlim=0.01):
     noscan = stop*(az>lo)*(az<hi)
 
     # Get scan frequency
-    faz = numpy.fft.rfft(az-az.mean())
-    fscan = numpy.where(abs(faz)==abs(faz).max())[0][0]/dt/len(az)
+    faz = np.fft.rfft(az-az.mean())
+    fscan = np.where(abs(faz)==abs(faz).max())[0][0]/dt/len(az)
 
     # Find turnarounds
-    az_min = numpy.median(az[stop*(az<lo)])
-    az_max = numpy.median(az[stop*(az>hi)])
+    az_min = np.median(az[stop*(az<lo)])
+    az_max = np.median(az[stop*(az>hi)])
     td = (abs(lo-az_min)+abs((az_max-hi)))
 
     # Find scan period parameters
     T_scan = int(1./fscan/dt) # number of samples in scan period
     T_ex = int(1.2*T_scan)
     onescan = az[~noscan][:T_ex]
-    az_min0 = numpy.min(onescan[ stop[~noscan][:T_ex] * (onescan<lo) * (onescan>lo-td) ])
-    az_max0 = numpy.max(onescan[ stop[~noscan][:T_ex] * (onescan>hi) * (onescan<hi+td) ])
-    imin0 = numpy.where(az==az_min0)[0][0]
-    imax0 = numpy.where(az==az_max0)[0][0]
-    pivot = numpy.min([imin0,imax0]) # Index of first scan minima or maxima
-    N_scan = (len(az)-pivot)/T_scan # Number of complete scan periods
+    az_min0 = np.min(onescan[ stop[~noscan][:T_ex] * (onescan<lo) * (onescan>lo-td) ])
+    az_max0 = np.max(onescan[ stop[~noscan][:T_ex] * (onescan>hi) * (onescan<hi+td) ])
+    imin0 = np.where(az==az_min0)[0][0]
+    imax0 = np.where(az==az_max0)[0][0]
+    pivot = np.min([imin0,imax0]) # Index of first scan minima or maxima
+    N_scan = (len(az)-pivot)//T_scan # Number of complete scan periods
 
     # Find cuts
     if hi - lo < 1. * np.pi / 180:
@@ -1731,7 +1731,7 @@ def checkThermalDrift(tod, thermParams):
         if len(np.diff(thermometer).nonzero()[0]) > 0:
             thermometers.append(thermometer)
     if len(thermometers) > 0:
-        thermometers = numpy.array(thermometers)
+        thermometers = np.array(thermometers)
         # Get thermometer statistics
         th_mean = moby2.tod.remove_mean(data=thermometers)
         th_trend = moby2.tod.detrend_tod(data=thermometers)
