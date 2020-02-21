@@ -1,6 +1,7 @@
+"""Cuts run related recipes"""
+
 from moby2.util import MobyDict
-import sys, os, time
-import argparse
+import os
 
 
 def submit(cutparam):
@@ -10,7 +11,7 @@ def submit(cutparam):
     # runtime parameters
     tpn = par.get("tpn", 20)  # task per node
     nnode = par.get("nnode", 1)
-    jobname = par.get("jobname", "update_crit")
+    jobname = par.get("jobname", "get_cuts")
     nproc = tpn * nnode
 
     # output parameters
@@ -40,7 +41,7 @@ def submit(cutparam):
         f.write( 'cd %s\n' % basedir)
         start, end = n*tpn, (n+1)*tpn
         for i in range(start, end):
-            f.write('OMP_NUM_THREADS=20 update_crit -n %d --index %d -f %s & sleep 1\n' % (nproc, i, cutparam))
+            f.write('OMP_NUM_THREADS=20 run_cuts -n %d --index %d -f %s & sleep 1\n' % (nproc, i, cutparam))
         f.write('wait\n')
         f.close()
         os.system("sbatch %s/submitjob.sh.%d\n" % (outdir, n))
