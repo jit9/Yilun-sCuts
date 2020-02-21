@@ -39,15 +39,30 @@ def combine(ver):
     return rm_cmds
 
 
-def promote():
+def promote(cpar):
     """Promote the version of cuts param. It will automatically
     infer the version number.
     Example:
-        cuts results promote
+        cuts results promote cutparams_v3.par
     """
-    # find latest version
-    # note that one digit is assumed here
-    versions = [int(k.split('_v')[-1][0]) for k in glob.glob("*.par")]
-    latest_ver = max(versions)
-    new_ver = "v%d" % (latest_ver+1)
-    return ["promote_version %s" % new_ver]
+    cmds = []
+    # get dirname
+    cpar_dir = os.path.dirname(os.path.abspath(cpar))
+
+    # get new version number
+    i_old = int(cpar.split('.par')[0][-1])  #FIXME
+    i_new = i_old+1
+
+    # create new cutparam
+    old_name = os.path.join(cpar_dir, f'cutparams_v{i_old}.par')
+    new_name = os.path.join(cpar_dir, f'cutparams_v{i_new}.par')
+    command = f"sed -e 's/_v{i_old}/_v{i_new}/g' {old_name} > {new_name}"
+    cmds.append(command)
+
+    # create new cutParam by copying
+    old_name = os.path.join(cpar_dir, f'cutParams_v{i_old}.par')
+    new_name = os.path.join(cpar_dir, f'cutParams_v{i_new}.par')
+    command = f'cp {old_name} {new_name}'
+    cmds.append(command)
+
+    return cmds

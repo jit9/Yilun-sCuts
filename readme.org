@@ -2,7 +2,7 @@
 Utility library for working with ACT cuts. As I get more familiar with 
 ACT cuts, this library may significantly change.
 
-Some notation that i used in these codes:
+Some notations that i used in these codes:
 - Routines: main building blocks of cuts pipeline
 - Modules: main building blocks of postprocessing pipeline
 - Recipes: quick command line tools for various routine work
@@ -24,31 +24,27 @@ exceptions that require manual installation
 ** Recipes
 Located in =cuts.recipes=. Notable mentions (such that i don't forget
 them myself):
-- =cuts.recipes.results=
-  - =combine=
-    Reduce the output of mpi-based cuts pipeline of a given version (i.e. v3):
-    #+BEGIN_SRC bash
-    cuts results combine v3
-    #+END_SRC
-  - =promote=
-    Promote the cuts parameters to a new version:
-    #+BEGIN_SRC bash
-    cuts results promote
-    #+END_SRC
-    This will find the latest cutparam_v{}.par file and promote it to
-    a higher level with replacement of all the version numbers inside.
-- =cuts.recipes.run=
-  - =submit=:
-    submit jobs (on tiger) for cuts pipeline with a given cutparam file (i.e. cutparam_v3.par)
-    #+BEGIN_SRC bash
-    cuts run submit cutparam_v3.par
-    #+END_SRC
-- =cuts.recipes.update=
-  - =submit=:
-    submit jobs (on tiger) for updating cut crits with a given cutparam file (i.e. cutparam_v3.par)
-    #+BEGIN_SRC bash
-    cuts update submit cutparam_v3.par
-    #+END_SRC
+- =cuts.recipes.results.combine=
+  Reduce the output of mpi-based cuts pipeline of a given version (i.e. v3):
+  #+BEGIN_SRC bash
+  cuts results combine v3
+  #+END_SRC
+- =cuts.recipes.results.promote=
+  Promote a given cuts parameter to a new version:
+  #+BEGIN_SRC bash
+  cuts results promote cutparams_v3.par
+  #+END_SRC
+  This will automatically replace of all the version numbers inside the file.
+- =cuts.recipes.run.submit=
+  submit jobs (on tiger) for cuts pipeline with a given cutparam file (i.e. cutparam_v3.par)
+  #+BEGIN_SRC bash
+  cuts run submit cutparam_v3.par
+  #+END_SRC
+- =cuts.recipes.update.submit=
+  submit jobs (on tiger) for updating cut crits with a given cutparam file (i.e. cutparam_v3.par)
+  #+BEGIN_SRC bash
+  cuts update submit cutparam_v3.par
+  #+END_SRC
 
 ** Modules:
 Notable mentions
