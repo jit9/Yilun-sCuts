@@ -51,27 +51,39 @@ def submit(cutparam):
         f.close()
         os.system("sbatch %s/submitjob.sh.%d\n" % (outdir, n))
 
-def list():
+def list(all=None):
     """List all the latest cuts parameters and the status of it"""
     # get cuts tags information
     for p in glob.glob(CUTS_DIR+"/*"):
         tag = os.path.basename(p)
         # get all cutparam
-        cpars = [os.path.basename(f) for f in glob.glob(p+"/cutparam*.par")]
-        # get latest version
-        ver_latest = max([int(c.split(".")[0][-1]) for c in cpars])
-        # get latest cutparam
-        cpar = "cutparams_v{}".format(ver_latest)
-        # get absolute path
-        cpar_path = os.path.join(p,cpar+".par")
-        # get summary of slurm job
-        slm_summary = get_slurm_summary(cpar_path)
-        # get slurm progress
-        n_tod = int(get_total_tod(cpar_path))
-        n_tod_done = int(get_done_tod(cpar_path, ver_latest))
-        progress = f"{n_tod_done}/{n_tod} {n_tod_done/n_tod*100:.1f}%"
-        # print out result
-        print(f"{tag:>10} {cpar:>15} {progress:>10} {slm_summary:>25} {cpar_path}")
+        cpars = [f.strip() for f in glob.glob(p+"/cutparam*.par")]
+        if all != "all":
+            # get latest version
+            ver_latest = max([int(c.split(".par")[0][-1]) for c in cpars])
+            # get latest cutparam
+            cpar = "cutparams_v{}".format(ver_latest)
+            # get absolute path
+            cpar_path = os.path.join(p,cpar+".par")
+            # get summary of slurm job
+            slm_summary = get_slurm_summary(cpar_path)
+            # get slurm progress
+            n_tod = int(get_total_tod(cpar_path))
+            n_tod_done = int(get_done_tod(cpar_path))
+            progress = f"{n_tod_done}/{n_tod} {n_tod_done/n_tod*100:.1f}%"
+            # print out result
+            print(f"{tag:>10} {cpar:>15} {progress:>10} {slm_summary:>25} {cpar_path}")
+        else:
+            for cpar_path in cpars:
+                cpar = os.path.basename(cpar_path)
+                # get summary of slurm job
+                slm_summary = get_slurm_summary(cpar_path)
+                # get slurm progress
+                n_tod = int(get_total_tod(cpar_path))
+                n_tod_done = int(get_done_tod(cpar_path))
+                progress = f"{n_tod_done}/{n_tod} {n_tod_done/n_tod*100:.1f}%"
+                # print out result
+                print(f"{tag:>10} {cpar:>15} {progress:>10} {slm_summary:>25} {cpar_path}")
 
 
 ####################
@@ -113,10 +125,11 @@ def get_total_tod(cpar_path):
     """Get the total number of TODs to be done"""
     return os.popen("cat %s | grep '^source_scans.*' | cut -d'\"' -f2 | xargs cat | wc -l" % cpar_path).read().strip()
 
-def get_done_tod(cpar_path, ver_latest):
+def get_done_tod(cpar_path):
     """Count the number of TODs completed"""
     # get run_dir
-    run_dir = os.path.join(os.path.dirname(cpar_path),"run_v%d"%ver_latest)
+    ver = cpar_path.split('.par')[0][-1]
+    run_dir = os.path.join(os.path.dirname(cpar_path),"run_v%s"%ver)
     if os.path.exists(run_dir):
         # note that this assumes that the data entry starts with 1
         return os.popen("cat %s/*.db* | grep '^1' | wc -l" % run_dir).read().strip()
