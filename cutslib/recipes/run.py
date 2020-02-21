@@ -1,10 +1,15 @@
 """Cuts run related recipes"""
 
-from moby2.util import MobyDict
-import os
+import os, glob
+from cutslib.environ import CUTS_DIR, CUTS_PYENV
 
+######################
+# interactive action #
+######################
 
 def submit(cutparam):
+    from moby2.util import MobyDict
+
     # load base parameters
     par = MobyDict.from_file(cutparam)
 
@@ -37,7 +42,7 @@ def submit(cutparam):
         f.write( '#SBATCH --output=%s/slurmjob.log.%d\n' % (outdir, n))
         f.write( 'module load gcc\n' )
         f.write( 'module load openmpi\n' )
-        f.write( 'source activate myenv\n' )  #FIXME
+        f.write( 'source activate %s\n' % CUTS_PYENV )  #FIXME
         f.write( 'cd %s\n' % basedir)
         start, end = n*tpn, (n+1)*tpn
         for i in range(start, end):
@@ -45,3 +50,75 @@ def submit(cutparam):
         f.write('wait\n')
         f.close()
         os.system("sbatch %s/submitjob.sh.%d\n" % (outdir, n))
+
+def list():
+    """List all the latest cuts parameters and the status of it"""
+    # get cuts tags information
+    for p in glob.glob(CUTS_DIR+"/*"):
+        tag = os.path.basename(p)
+        # get all cutparam
+        cpars = [os.path.basename(f) for f in glob.glob(p+"/cutparam*.par")]
+        # get latest version
+        ver_latest = max([int(c.split(".")[0][-1]) for c in cpars])
+        # get latest cutparam
+        cpar = "cutparams_v{}".format(ver_latest)
+        # get absolute path
+        cpar_path = os.path.join(p,cpar+".par")
+        # get summary of slurm job
+        slm_summary = get_slurm_summary(cpar_path)
+        # get slurm progress
+        n_tod = int(get_total_tod(cpar_path))
+        n_tod_done = int(get_done_tod(cpar_path, ver_latest))
+        progress = f"{n_tod_done}/{n_tod} {n_tod_done/n_tod*100:.1f}%"
+        # print out result
+        print(f"{tag:>10} {cpar:>15} {progress:>10} {slm_summary:>25} {cpar_path}")
+
+
+####################
+# utility function #
+####################
+
+def get_job_name(cpar_path):
+    """Get the slurm job name of a cutparam"""
+    return os.popen("cat %s | grep jobname | cut -d'\"' -f2 " % cpar_path).read().strip()
+
+def get_slurm_jobs(cpar_path):
+    """Get all slurm jobs info for a given cutparam"""
+    from cutslib.environ import CUTS_USER
+    # from moby2.util import MobyDict  # this is slower
+    # jobname = MobyDict.from_file(cpar_path).get("jobname")
+    jobname = get_job_name(cpar_path)
+    lines = os.popen("squeue -u %s " % CUTS_USER).read().strip().split('\n')
+    return [l.split() for l in lines[1:] if jobname in l]
+
+def get_slurm_summary(cpar_path):
+    """Get a text summary of the slurm job status"""
+    jobs = get_slurm_jobs(cpar_path)
+    tot = len(jobs)
+    n_run = 0
+    n_pd = 0
+    run_nodes = 0
+    pd_nodes = 0
+    for j in jobs:
+        if j[4] == "R":
+            n_run += 1
+            run_nodes += int(j[6])
+        elif j[4] == "PD":
+            n_pd += 1
+            pd_nodes += int(j[6])
+    return "R:j={};n={}|PD:j={};n={}".format(n_run,run_nodes,\
+                                             n_pd,pd_nodes)
+
+def get_total_tod(cpar_path):
+    """Get the total number of TODs to be done"""
+    return os.popen("cat %s | grep '^source_scans.*' | cut -d'\"' -f2 | xargs cat | wc -l" % cpar_path).read().strip()
+
+def get_done_tod(cpar_path, ver_latest):
+    """Count the number of TODs completed"""
+    # get run_dir
+    run_dir = os.path.join(os.path.dirname(cpar_path),"run_v%d"%ver_latest)
+    if os.path.exists(run_dir):
+        # note that this assumes that the data entry starts with 1
+        return os.popen("cat %s/*.db* | grep '^1' | wc -l" % run_dir).read().strip()
+    else:
+        return 0
