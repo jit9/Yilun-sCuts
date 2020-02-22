@@ -1076,10 +1076,11 @@ class Pathologies( object ):
         """
         if path[-1] == '/':
             path = path[0:-1]
-        f = open( path, 'rb' )
-        p = pickle.Unpickler( f )
-        data = p.load()
-        f.close()
+        with open( path, 'rb' ) as f:
+            try:
+                data = pickle.load(f)
+            except UnicodeDecodeError as e:
+                data = pickle.load(f, encoding='latin1')
         if "todName" in data:
             old = True
             todName = data.get("todName")
