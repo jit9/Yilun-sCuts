@@ -1,6 +1,7 @@
 * cutslib
 Utility library for working with ACT cuts. As I get more familiar with 
-ACT cuts, this library may significantly change.
+ACT cuts, this library may significantly change. Note that i have only
+tested these on tiger.
 
 Some notations that i used in these codes:
 - Routines: main building blocks of cuts pipeline
@@ -24,22 +25,29 @@ exceptions that require manual installation
 ** Recipes
 Located in =cuts.recipes=. Notable mentions (such that i don't forget
 them myself):
-- =cuts.recipes.results.combine=
-  Reduce the output of mpi-based cuts pipeline of a given version (i.e. v3):
+- =cuts.recipes.results.combine=:
+  reduce the output of mpi-based cuts pipeline of a given version (i.e. cutparams_v3.par):
   #+BEGIN_SRC bash
-  cuts results combine v3
+  cuts results combine cutparams_v3.par
   #+END_SRC
-- =cuts.recipes.results.promote=
-  Promote a given cuts parameter to a new version:
+  This will find the corresponding run directory, combine mpi sub-tasks and remove redundent files
+- =cuts.recipes.results.promote=:
+  promote a given cuts parameter to a new version:
   #+BEGIN_SRC bash
   cuts results promote cutparams_v3.par
   #+END_SRC
   This will automatically replace of all the version numbers inside the file.
-- =cuts.recipes.run.submit=
+- =cuts.recipes.run.submit=:
   submit jobs (on tiger) for cuts pipeline with a given cutparam file (i.e. cutparam_v3.par)
   #+BEGIN_SRC bash
   cuts run submit cutparam_v3.par
   #+END_SRC
+- =cuts.recipes.run.list=:
+  list all cutparams in all tags and their corresponding slurm jobs, tod completion status, very useful
+  #+BEGIN_SRC bash
+  cuts run list
+  #+END_SRC
+  To see more than the latest version use =cuts run list all=
 - =cuts.recipes.update.submit=
   submit jobs (on tiger) for updating cut crits with a given cutparam file (i.e. cutparam_v3.par)
   #+BEGIN_SRC bash
@@ -62,8 +70,10 @@ Notable mentions
   same as above but for each pwv bin
 - =plot_hits=:
   produce a hits map for the input TODs list
-- =plot_killed_array=:
+- =plot_array=:
   plot selected cuts crits (mean) on an array plot
+- =plot_killed_array=:
+  plot number of detectors alive after each cut crit
 - =plot_ld_loading=:
   plot number of live detectors as a function of optical loading
 - =plot_live_fraction=:
@@ -86,3 +96,54 @@ Notable mentions
 - =todlist_for_map=:
   generate the list of TODs that is available for mapping
 
+** Q&A
+*** 1. How is this different from moby2 cuts?
+Most of the relevant scripts for cuts in moby2 have been migrated here. The purpose is
+such that i can manage them easily without having to worry about compiling moby2, etc.
+*** 2. What has been migrated from moby2 specifically?
+- =moby2.analysis.tod_ana.pathologies= -> =cutslib.pathologies=
+- =moby2.scripting.pathologies_tools= -> =cutslib.pathologies_tools=
+- =moby2.analysis.tod_ana.visual= -> =cutslib.visual=
+- =bin/{get,process}_cuts= -> various routines
+*** 3. How to make =report.py= module work? What does it depend on externally?
+It generates pdf report during the post-processing of the cuts results. I implemented
+it using org format as it's more lucid than tex. The org document is converted to pdf
+using emacs. This means that you will need to have two things available: 1. latex:
+it is by default available on =tiger=, but it's lacking some of the libraries for the
+pdf to compile properly so you will have to make these libraries available somehow. 
+The two libraries that i found missing are =ulem= and =wrapfig=. What i did was to
+download these packages manually and place them in =~/texmf/tex/latex/ulem= and
+=~/texmf/tex/latex/wrapfig= respectively. Emacs is not by default available on tiger
+but you can easily load it as a module with =module load emacs= in your =.bashrc=.
+Then you should have everything you need to get report generated
+*** 4. How does recipe work?
+Recipe as in my notation is simply a binding from command-line tool to a function in
+the library. This is so that i can easily manage large number of cuts related command-line
+tools by categories and have them easily accessible with the =cuts= keyword. These recipes
+are defined in =cutslib.recipes=. An example collection of recipes is 
+=cutslib.recipes.results=. It contains some functions that help me manage the outputs from
+cuts pipeline. For example, there is a function to merge mpi sub-task output into a single
+one called =combine(cpar)=, where =cpar= refers to the path to a given cutparams file
+(i.e. cutparams_v0.par). This function is made directly accessible in the command-line 
+via
+#+BEGIN_SRC 
+cuts results combine cutparams_v0.par
+#+END_SRC
+Note that my convention is that each recipe function returns a list of commands to be
+executed in sequence. It can be useful in some occasions. 
+*** 5. Environment variables, how are they used?
+The environment variables can be used to define where the cuts depot is or where the 
+working directory of the cuts is, etc. The default values and the keys are described
+in =cutslib.environ=. These can be set in the =.bashrc= with
+#+BEGIN_SRC bash
+export CUTS_DEPOT="/path/to/depot"
+export CUTS_USER="somename"
+export CUTS_PYENV="myenv"
+#+END_SRC
+Note that by default i am assuming you are running on a local environment given by =CUTS_PYENV=.
+This is so that the python environment can be set properly before submitting slurm jobs. 
+
+** Useful links
+- ACT roundtable: [[https://actexperiment.info/roundtable]]
+- TOD visualizer: [[https://github.com/guanyilun/tod_viz]]
+- Emacs plugins for cuts: [[https://github.com/guanyilun/cuts.el]]
