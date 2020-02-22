@@ -12,7 +12,7 @@ def run(p):
     ff_dict = moby2.util.MobyDict.from_file(p.i.ff)
     dets = ff_dict['det_uid']
 
-    with open(p.i.pickle_file, "r") as f:
+    with open(p.i.pickle_file, "rb") as f:
         data = pickle.load(f)
 
     resp = np.ma.array(data['resp'], mask=~data['sel'].astype(bool))

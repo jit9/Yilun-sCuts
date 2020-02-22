@@ -65,11 +65,11 @@ def run(p):
         }
         outfile = op.join(p.o.root, 'hits.pkl')
         print("Saving data: %s" % outfile)
-        with open(outfile, "w") as f:
+        with open(outfile, "wb") as f:
             pickle.dump(hits_dict, f)
     else:  # if pickle file exists
         print("Found existing: %s" % pkl_file)
-        with open(pkl_file, "r") as f:
+        with open(pkl_file, "rb") as f:
             hits_dict = pickle.load(f)
         X,Y,H = hits_dict['X'], hits_dict['Y'], hits_dict['H']
     # plot hist

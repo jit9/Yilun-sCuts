@@ -17,7 +17,7 @@ def run(p):
     global xbins, ybins, xmin, xmax, ymin, ymax
     # load pickle file
     pickle_file = p.o.pickle_file
-    with open(pickle_file, "r") as f:
+    with open(pickle_file, "rb") as f:
         data = pickle.load(f)
     # calibrate rmsLive
     input_gain = data['resp'] * data['ff'][:,np.newaxis]

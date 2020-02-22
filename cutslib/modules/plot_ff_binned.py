@@ -74,7 +74,7 @@ def run(p):
     det_uid = np.asarray(ff['det_uid'], dtype=int)
     # load pickle file
     print('Loading data')
-    with open(p.i.pickle_file, "r") as f:
+    with open(p.i.pickle_file, "rb") as f:
         pf = pickle.Unpickler(f)
         data = pf.load()
     # get pwv for each of the tods

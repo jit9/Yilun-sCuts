@@ -144,7 +144,7 @@ def run(proj):
         data["hour_utc"] = hour_utc
         data["ctime"] = ctime
         data["tods"] = tods
-        f = open(proj.o.cal.root+"/%s.pickle"%tag_calib,"w")
+        f = open(proj.o.cal.root+"/%s.pickle"%tag_calib,"wb")
         p = pickle.Pickler(f)
         p.dump(data)
         f.close()
@@ -155,7 +155,7 @@ def run(proj):
         df.index = pd.to_datetime(df.ctime, unit='s')
     else:
         print("Data already exist, load them from pickle")
-        f = open(proj.o.cal.root+"/%s.pickle"%tag_calib,"r")
+        f = open(proj.o.cal.root+"/%s.pickle"%tag_calib,"rb")
         data = pickle.load(f)
         f.close()
         cal = data["cal"]
@@ -242,7 +242,7 @@ def run(proj):
 
     # load gm correction and apply it
     # gm = np.load("/home/yguan/work/cuts_analysis/data/gm_pa4_f150_s17_c11_v7_1.npy")
-    # pkl_file = cPickle.load(open(proj.i.pickle_file, "r"))
+    # pkl_file = cPickle.load(open(proj.i.pickle_file, "rb"))
     # tod_names = np.array(pkl_file['name'])
     # idx = np.where(tod_names[:,None] == df.tods.values)[0]
     # gm = gm[idx]

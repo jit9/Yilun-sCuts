@@ -30,7 +30,7 @@ def run(proj):
     array_name = proj.i.ar
     season = proj.i.season
     tag = proj.tag
-    data = pickle.load(open(filename,'r'))
+    data = pickle.load(open(filename,'rb'))
     if calibrate:
         data['rmsLive'] *= data['resp'] * data['ff'][:,np.newaxis]
         data['normLive'] *= data['resp'] * data['ff'][:,np.newaxis]

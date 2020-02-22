@@ -47,7 +47,7 @@ def run(proj):
     ffpar = params["ff_params"]
 
     print('Loading data')
-    f = open(proj.i.pickle_file)
+    f = open(proj.i.pickle_file, "rb")
     p = pickle.Unpickler(f)
     data = p.load()
     f.close()
