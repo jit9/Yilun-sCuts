@@ -5,7 +5,7 @@ website to manipulate and visualize"""
 import moby2
 import json, os.path as op, numpy as np
 from moby2.util.database import TODList
-from cutslib.pathologies import Pathologies
+from cutslib.pathologies import Pathologies, get_pathologies
 from cutslib.pathologies_tools import get_pwv
 
 
@@ -50,8 +50,8 @@ def run(p):
            op.isfile(depot.get_full_path(moby2.Calibration, tod=tod, tag=params["tag_cal"])):
 
             # load all relevant patholog results
-            patho = moby2.scripting.get_pathologies({'depot': p.depot,
-                                                     'tag': p.tag}, tod=tod)
+            patho = get_pathologies({'depot': p.depot,
+                                     'tag': p.tag}, tod=tod)
             cuts = depot.read_object(moby2.TODCuts, tod=tod, tag=p.tag)
             calo = depot.read_object(moby2.Calibration, tod=tod, tag=params["tag_cal"])
 

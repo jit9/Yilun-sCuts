@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import moby2
 from moby2.util.database import TODList
 from cutslib.pathologies_tools import get_pwv
-from cutslib.pathologies import Pathologies
+from cutslib.pathologies import Pathologies, get_pathologies
 
 
 def init(config):
@@ -58,8 +58,8 @@ def run(p):
         # check whether relevant files exist:
         if op.isfile(depot.get_full_path(Pathologies, tod=tod, tag=p.tag)):
             # load all relevant patholog results
-            patho = moby2.scripting.get_pathologies({'depot': p.depot,
-                                                     'tag': p.tag}, tod=tod)
+            patho = get_pathologies({'depot': p.depot,
+                                     'tag': p.tag}, tod=tod)
             # for the first data let's load the calibration data
             if i == 0:
                 # number to compare to

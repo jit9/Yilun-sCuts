@@ -5,7 +5,7 @@ import moby2
 import json, os.path as op, numpy as np
 from moby2.util.database import TODList
 from cutslib.pathologies_tools import get_pwv
-from cutslib.pathologies import Pathologies
+from cutslib.pathologies import Pathologies, get_pathologies
 
 
 def init(config):
@@ -74,8 +74,8 @@ def parse_stats(todname, p):
        # and op.isfile(depot.get_full_path(moby2.Calibration, tod=tod, tag=params["tag_cal"])):
 
         # load pathology and cuts
-        patho = moby2.scripting.get_pathologies({'depot': p.depot,
-                                                 'tag': p.tag}, tod=tod)
+        patho = get_pathologies({'depot': p.depot,
+                                 'tag': p.tag}, tod=tod)
         cuts = depot.read_object(moby2.TODCuts, tod=tod, tag=p.tag)
         lsel = np.zeros(patho.ndet)
         lsel[cuts.get_uncut()] = 1
