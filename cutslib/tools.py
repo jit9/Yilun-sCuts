@@ -140,7 +140,7 @@ def group_detectors(cc, sel = None, **kwargs):
 def get_sine2_taper(frange, edge_factor = 6):
     # Generate a frequency space taper to reduce ringing in lowFreqAnal
     band = frange[1]-frange[0]
-    edge = band/edge_factor
+    edge = band//edge_factor
     x = np.arange(edge, dtype=float) / (edge-1)
     taper = np.ones(band)
     taper[:edge] = np.sin(x*np.pi/2)**2
