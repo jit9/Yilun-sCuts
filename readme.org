@@ -48,12 +48,31 @@ them myself):
   cuts run list
   #+END_SRC
   To see more than the latest version use =cuts run list all=
-- =cuts.recipes.update.submit=
+- =cuts.recipes.update.submit=:
   submit jobs (on tiger) for updating cut crits with a given cutparam file (i.e. cutparam_v3.par)
   #+BEGIN_SRC bash
   cuts update submit cutparam_v3.par
   #+END_SRC
-
+- =cuts.recipes.dets.get_ff_unstable=:
+  get unstable detectors from the flatfield file in a given cutparam file (i.e.cutparams_v3.par)
+  #+BEGIN_SRC bash
+  cuts dets get_ff_unstable cutparams_v3.par
+  #+END_SRC
+- =cuts.recipes.dets.get_exclude=:
+  same as above but to get the excluded detectors
+  #+BEGIN_SRC bash
+  cuts dets get_exclude cutparams_v3.par
+  #+END_SRC
+- =cuts.recipes.dets.union=:
+  get the union of det_uid found in each of the input file
+  #+BEGIN_SRC bash
+  cuts dets union exclude.dict lowgain.dict unstable.dict
+  #+END_SRC
+- =cuts.recipes.dets.intersection=:
+  same as above but to find the intersection instead of the union
+  #+BEGIN_SRC bash
+  cuts dets intersection exclude.dict unstable.dict
+  #+END_SRC
 ** Modules:
 Notable mentions
 - =collect_crit=: 
