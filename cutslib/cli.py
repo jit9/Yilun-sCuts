@@ -17,7 +17,6 @@ def main():
         arguments = argv[2:]
 
     mod_name = "cutslib.recipes.%s" % recipe
-    print("Recipe: %s" % mod_name)
     mod = importlib.import_module(mod_name)
     if has_arguments:
         ret = getattr(mod, method)(*arguments)
@@ -26,6 +25,7 @@ def main():
 
     if isinstance(ret, list):
         print("======================")
+        print("Recipe: %s" % mod_name)
         print("Run: \n")
         for cmd in ret:
             print(cmd)
