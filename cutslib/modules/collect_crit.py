@@ -9,9 +9,11 @@ from cutslib.pathologies import Pathologies
 
 
 def init(config):
-    pass
+    global limit
+    limit = config.getint("limit", None)
 
 def run(p):
+    global limit
     # read parameters
     params = moby2.util.MobyDict.from_file(p.i.cutparam)
     depot = moby2.util.Depot(params.get('depot'))
@@ -44,6 +46,9 @@ def run(p):
                 "gainDark", "rmsDark", "jumpDark"]
     else:
         keys = params.get("keys")
+
+    if limit:
+        obsnames = obsnames[:limit]
 
     n = 0
     N = len(obsnames)
