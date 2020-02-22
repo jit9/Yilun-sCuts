@@ -130,7 +130,7 @@ def get_done_tod(cpar_path):
     # get run_dir
     ver = cpar_path.split('.par')[0][-1]
     run_dir = os.path.join(os.path.dirname(cpar_path),"run_v%s"%ver)
-    if os.path.exists(run_dir):
+    if os.path.exists(run_dir) and len(glob.glob("%s/*.db*"%run_dir)) > 0:
         # note that this assumes that the data entry starts with 1
         return os.popen("cat %s/*.db* | grep '^1' | sort | uniq | wc -l" % run_dir).read().strip()
     else:
