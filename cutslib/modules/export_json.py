@@ -125,7 +125,7 @@ def parse_stats(todname, p):
                     float(res['ff'][i]),
                     float(res['resp'][i])*1e16,
                     int(res['presel'][i]),
-                    res['pol_family'][i].decode('utf-8'),
+                    res['pol_family'][i],
                     int(res['bias_line'][i]),
                     int(res['optical_sign'][i]),
                     int(res['sel'][i]),

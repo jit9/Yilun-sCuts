@@ -235,9 +235,8 @@ def run(proj):
     s = stats.mstats.skewtest(peak_masked, axis=0)
     sel = (k.pvalue*s.pvalue) < gauss_test
     # peak_mean = np.ma.median(peak_masked, axis=0)
-
     p17, df['peak_mean'], p83 = stats.mstats.mquantiles(peak_masked,[0.17,0.5,0.83], axis=0)
-    df['peak_error'] = (p83-p17)/np.sqrt(df.Ndets)
+    df['peak_error'] = (p83-p17)/np.sqrt(df.Ndets).values
     #peak_error = np.ma.std(peak_masked, axis=0) / np.sqrt(Ndets)
 
     # load gm correction and apply it
