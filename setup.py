@@ -13,6 +13,7 @@ setup(
                       'configparser',
                       'pycook',
                       'seaborn',
+                      'ipdb',
                       'future', # from here onwards will be moby2 deps
                       'numpy',
                       'matplotlib',
