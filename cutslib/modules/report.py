@@ -102,7 +102,7 @@ def run(p):
     #############
     # changelog #
     #############
-    res['changelog'] = cutParam.get('changelog', '')
+    res['changelog'] = format_changelog(cutParam.get('changelog', ''))
 
     ############
     # tod list #
@@ -110,6 +110,7 @@ def run(p):
     source_scans = cutparam.get('source_scans')
     tod_list = TODList.from_file(source_scans)
     pr = pathoReport(filename=str(p.i.db))
+    pr.drop_duplicates()
     res['ntod'] = len(tod_list)
     res['nproc'] = len(pr.data)
     res['ngood'] = len(pr.data[pr.data.liveDets >= 100])
@@ -221,3 +222,14 @@ def run(p):
     cmd="emacs --batch %s -f org-latex-export-to-pdf" % outfile
     print(cmd)
     os.system(cmd)
+
+# utility function to format changelog for better displaying
+def format_changelog(changelog):
+    lines = changelog.split('\n')
+    output_lines = ""
+    for i,l in enumerate(lines):
+        if '- v' == l[:3]:
+            output_lines += l + "\n"
+        else:
+            output_lines += "  " + l + "\n"
+    return output_lines
