@@ -18,6 +18,22 @@ def get_ff_unstable(cpar):
     det_uid = list(np.array(ff['det_uid'])[idx])
     print("det_uid=%s" % det_uid)
 
+def get_exclude(cpar):
+    """get the excluded detectors from the cutparam file
+    Args:
+        cpar: path to the cutparams file
+    Example:
+        cuts dets get_exclude cutparams_v3.par
+    """
+    from moby2.util import MobyDict
+    import numpy as np, sys
+    cPar = cpar.replace("cutp","cutP")
+    ex_file = MobyDict.from_file(cPar).get_deep(('pathologyParams',
+                                                 'detectorLists',
+                                                 'exclude'))
+    ex = MobyDict.from_file(ex_file)
+    print("det_uid=%s" % ex['det_uid'])
+
 def union(*dicts):
     """merge det_uid in different files into one dict file by union
     Args:
