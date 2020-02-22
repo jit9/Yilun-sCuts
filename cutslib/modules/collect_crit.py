@@ -2,7 +2,7 @@
 wrapped in this framework for convenience"""
 import os
 import moby2
-import pickle, numpy,sys, os
+import pickle, numpy as np, sys, os
 from moby2.util.database import TODList
 from cutslib.pathologies_tools import fix_tod_length, get_pwv
 from cutslib.pathologies import Pathologies
@@ -71,7 +71,7 @@ def run(p):
             fix_tod_length(tod, pa.offsets)
             cuts = depot.read_object(moby2.TODCuts, tod=tod, tag=params["tag_out"])
             re, ff, _, re_sel, _, stable = pa.getpWCalibration()
-            lsel = numpy.zeros(pa.ndet)
+            lsel = np.zeros(pa.ndet)
             lsel[cuts.get_uncut()] = True
             sel.append(lsel)
             tods.append(tod.info.name)
@@ -80,24 +80,24 @@ def run(p):
             respSel.append(re_sel)
             cal.append(calo.get_property("cal", det_uid=tod.det_uid, default=1)[1])
             ctimes.append(tod.info.ctime)
-            alt.append(numpy.mean(tod.alt))
+            alt.append(np.mean(tod.alt))
 
     data = {}
     data['name'] = tods
-    data['sel'] = numpy.array(sel).T
+    data['sel'] = np.array(sel).T
     data["live"] = pa.liveCandidates
     data["dark"] = pa.origDark
     data["scan_freq"] = scanf
-    data["resp"] = numpy.array(resp).T
-    data["respSel"] = numpy.array(respSel).T
+    data["resp"] = np.array(resp).T
+    data["respSel"] = np.array(respSel).T
     data["ff"] = ff
-    data["cal"] = numpy.array(cal).T
+    data["cal"] = np.array(cal).T
     data["stable"] = stable
-    data["ctime"] = numpy.array(ctimes)
+    data["ctime"] = np.array(ctimes)
     data["pwv"] = get_pwv(data["ctime"])
     data["alt"] = alt
     for k in list(criteria.keys()):
-        data[k] = numpy.array(criteria[k]).T
+        data[k] = np.array(criteria[k]).T
     outfile = p.o.pickle_file
     print("Saving data: %s" % outfile)
     f = open(outfile, 'wb')
