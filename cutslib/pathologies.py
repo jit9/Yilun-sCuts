@@ -1781,3 +1781,12 @@ def normalizeGains(gains, sel = None, useMedian = False,
         norm = np.sum(w*gains[s])
     gains /= norm
     return norm, True
+
+# migrated from moby2.scripting.get_pathologies
+def get_pathologies(params, tod):
+    if "paramFile" in params:
+        cutParams = moby2.util.MobyDict.from_file(params["paramFile"])
+        pathop = cutParams['pathologyParams']
+    else: pathop = None
+    filename = moby2.scripting.products.get_product_filename(params, cls=Pathologies, tod=tod)
+    return Pathologies.read_from_path(filename, tod=tod, params=pathop)
