@@ -90,10 +90,10 @@ class pathoReport(object):
             del self.data_original
         print("%i TODs." %self.ndata)
 
-    def drop_duplicates():
+    def drop_duplicates(self):
         """Remove duplicates"""
-        pl.data.drop_duplicates(inplace=True)
-        pl.ndata = pl.data.shape[0]
+        self.data.drop_duplicates(inplace=True)
+        self.ndata = self.data.shape[0]
 
     def seasonplot(self, crit,
                    time_range = None,
