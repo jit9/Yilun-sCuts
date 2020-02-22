@@ -48,6 +48,12 @@ them myself):
   cuts run list
   #+END_SRC
   To see more than the latest version use =cuts run list all=
+- =cuts.recipes.run.errors=:
+  list all the errors generated during the run with a given cutparam file (i.e. cutparam_v3.par)
+  #+BEGIN_SRC bash
+  cuts run errors cutparam_v3.par
+  #+END_SRC
+  To see more than the latest version use =cuts run list all=
 - =cuts.recipes.update.submit=:
   submit jobs (on tiger) for updating cut crits with a given cutparam file (i.e. cutparam_v3.par)
   #+BEGIN_SRC bash
@@ -162,6 +168,35 @@ export CUTS_PYENV="myenv"
 Note that by default i am assuming you are running on a local environment given by =CUTS_PYENV=.
 This is so that the python environment can be set properly before submitting slurm jobs. 
 
+*** 6. How did i exclude detectors with unstable flatfield and low gain detector?
+As low gain detectors tend to result in low rms detectors which gets a
+large weight in the map-making process, they are often identified
+beforehand and excluded. Also, as the unstable detectors in the
+flatfield are by default not removed in the cuts pipeline, they will
+need to be excluded by hand. This question is to help me remember what
+i need to do to get both of them excluded. First, to get the detectors
+with unstable flatfield,
+#+BEGIN_SRC bash
+cuts dets get_ff_unstable cutparams_v3.par > unstable.dict
+#+END_SRC
+where cutparams_v3.par is an example cut parameter file of
+interests. To get the detectors with low gain (from flatfield), what i
+find easist is to run =export_json= module with =limit=1= option to
+generate a json file associated with one of the TODs in the list, and
+then pass this file to the TOD_viz visualizer (linked below).  In the
+visualizer, i will manually en-circle the group of outliers with
+abnormally low gain (in ff plot) using the interactive selection
+tool. The det_uids of the selected detectors will be printed in the
+browser console (pressing Ctrl+Shift+I to see it).  Suppose that i
+store the resulting list of detectors into a file called
+=lowgain.dict=. The last step is merge the =unstable.dict= and
+=lowgain.dict= into the existing excluded list. I will do
+#+BEGIN_SRC bash
+cuts dets get_exclude cutparams_v3.par > exclude.dict
+cuts dets union exclude.dict unstable.dict lowgain.dict > exclude_v2.dict
+#+END_SRC
+Then I will update the cutParam file to use =exclude_v2.dict= as the
+excluded detector list.
 ** Useful links
 - ACT roundtable: [[https://actexperiment.info/roundtable]]
 - TOD visualizer: [[https://github.com/guanyilun/tod_viz]]
