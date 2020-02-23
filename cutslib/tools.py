@@ -29,7 +29,7 @@ def power( x, dt = 1., nbin = 1, binsize = 0, detrend = False,
     """
 
     if binsize and nbin != 1:
-        raise ValueError, "Please specify either binsize or nbin, but not both"
+        raise ValueError("Please specify either binsize or nbin, but not both")
 
     nsamp = np.shape(x)[-1]
 
@@ -39,13 +39,13 @@ def power( x, dt = 1., nbin = 1, binsize = 0, detrend = False,
         nbin = int(nsamp/binsize)
 
     if nbin <= 0:
-        raise ValueError, "You have requested %d bins (len = %d)" % \
-            (nbin, nsamp)
+        raise ValueError("You have requested %d bins (len = %d)" % \
+            (nbin, nsamp))
 
     if detrend: detrendData(x, window = 200)
 
     if Bartlett + Hann + Welch > 1:
-        raise ValueError, "Please choose at most one type of window"
+        raise ValueError("Please choose at most one type of window")
 
     if Bartlett:
         window = 1 - abs((np.arange(binsize) - binsize/2.0)/(binsize/2.0))
@@ -245,7 +245,7 @@ def group_detectors(cc, sel = None, **kwargs):
         # Append new group result
         G.append(smap[g])
         ss[g] = True
-        #print len(g), thr
+        #print(len(g), thr)
         thr = thr0
 
     ind = 0
