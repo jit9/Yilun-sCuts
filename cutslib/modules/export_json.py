@@ -2,7 +2,7 @@
 website to manipulate and visualize"""
 
 import moby2
-import json, os.path as op, numpy as np
+import json, os.path as op, numpy as np, os
 from moby2.util.database import TODList
 from cutslib.pathologies_tools import get_pwv
 from cutslib.pathologies import Pathologies, get_pathologies
@@ -52,8 +52,14 @@ def run(p):
 
     # dump metadata as well
     outfile = op.join(p.o.patho.viz, "metadata.json")
-    while op.isfile(outfile):
-        outfile += ".new"
+    oldfile = outfile
+    existing = False
+    while op.isfile(oldfile):
+        oldfile += ".old"
+        existing = True
+    if existing:
+        print(f"Found existing: renaming existing file to {oldfile}")
+        os.system(f"mv {outfile} {oldfile}")
     print("Writing: %s" % outfile)
     with open(outfile,"w") as f:
         f.write(json.dumps(metadata))
