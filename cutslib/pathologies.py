@@ -16,7 +16,6 @@ def import_pylab(interactive = True):
 
 import moby2
 import moby2.util.log as psLib
-import moby2.analysis.tod_ana.correlations
 import scipy.stats.mstats as ms
 from moby2.scripting import products
 from scipy.cluster.vq import kmeans2
