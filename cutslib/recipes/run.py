@@ -93,6 +93,13 @@ def errors(cpar_path):
     os.system(f"cat {run_dir}/slurmjob.log.* | grep '.*Error:'")
 
 
+def logs(cpar_path):
+    ver = cpar_path.split(".par")[0][-1]  # FIXME
+    basedir = os.path.dirname(os.path.abspath(cpar_path))
+    run_dir = os.path.join(basedir, f"run_v{ver}")
+    os.system(f"tail -f {run_dir}/slurmjob.log.*")
+
+
 ####################
 # utility function #
 ####################
