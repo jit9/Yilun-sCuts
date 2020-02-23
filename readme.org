@@ -197,6 +197,19 @@ cuts dets union exclude.dict unstable.dict lowgain.dict > exclude_v2.dict
 #+END_SRC
 Then I will update the cutParam file to use =exclude_v2.dict= as the
 excluded detector list.
+*** 7. How to use =cuts.recipes.params.quickfix= to change some parameters?
+Before i forget, this is how to perform a quick command-line fix of cutparams
+#+BEGIN_SRC bash
+cuts params quickfix exclude \"exclude_v2.dict\" cutParams_v3.par > cutParams_v4.par
+#+END_SRC
+Note the escaped string here. For non-string expression,
+#+BEGIN_SRC bash
+cuts params quickfix forceNoResp False cutParams_v3.par > cutParams_v4.par
+#+END_SRC
+To edit in place, add =-i= at the end of statement
+#+BEGIN_SRC bash
+cuts params quickfix forceNoResp False cutParams_v3.par -i
+#+END_SRC
 ** Useful links
 - ACT roundtable: [[https://actexperiment.info/roundtable]]
 - TOD visualizer: [[https://github.com/guanyilun/tod_viz]]
