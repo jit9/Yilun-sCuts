@@ -1,7 +1,10 @@
-#!/home/yguan/anaconda2/bin/python
+#!/bin/env python
+from __future__ import print_function
+from __future__ import absolute_import
+from past.builtins import basestring
 
 USAGE = """
-%process_cuts [options] dir_file param_file 
+%process_cuts [options] dir_file param_file
 
 Obtain the cuts and pathologies analysis for a TOD.
 """
@@ -83,7 +86,7 @@ syncResult = os.path.exists(
     depot.get_full_path(moby2.tod.Sync, tag=params.get('tag_sync'), tod=obs) )
 skipSync = not params.get("removeSync",False) or (
     not params.get('forceSync',False) and syncResult )
-                                                    
+
 partialResult = os.path.exists(
     depot.get_full_path(moby2.TODCuts, tag=params.get('tag_partial'), tod=obs) )
 skipPartial = skipSync and not params.get("forcePartial",False) and partialResult
@@ -181,7 +184,7 @@ else:
 
     # CUT SOURCES
     sourceResult = os.path.exists(
-        depot.get_full_path(moby2.TODCuts, tag=params['tag_source'], tod=tod) ) 
+        depot.get_full_path(moby2.TODCuts, tag=params['tag_source'], tod=tod) )
 
     if 'hdf_source_cuts' in params and not sourceResult:
         f = h5py.File(params.get('hdf_source_cuts'), 'r', swmr=True)
@@ -190,7 +193,7 @@ else:
             # grp.attrs['_moby2_class_name'] ='tod_flags'
             # grp.attrs['_moby2_class_version'] = 1
             # if grp.attrs['sample_count'] != tod.nsamps:
-            #     grp.attrs['sample_count'] = tod.nsamps 
+            #     grp.attrs['sample_count'] = tod.nsamps
             flags_sources = moby2.tod.TODFlags.from_hdf(grp)
             pos_cuts_sources = flags_sources.get_cuts('cut')
             depot.write_object(pos_cuts_sources,
@@ -239,7 +242,7 @@ else:
     # CUT PLANETS
     if params.get("cut_planets",False):
         planetResult = os.path.exists(
-            depot.get_full_path(moby2.TODCuts, tag=params['tag_planet'], tod=tod) ) 
+            depot.get_full_path(moby2.TODCuts, tag=params['tag_planet'], tod=tod) )
         if planetResult:
             logger.trace(0, "Loading time stream cuts (%s)" % params['tag_planet'])
             pos_cuts_planets = depot.read_object(moby2.TODCuts,
@@ -274,7 +277,7 @@ else:
     # FIT/REMOVE SYNCHRONOUS PICKUP
     tic3 = time.time()
     scanFreq = moby2.tod.get_scan_info(tod).scan_freq
-    if params.get("removeSync",False) and (scanFreq != 0): 
+    if params.get("removeSync",False) and (scanFreq != 0):
         logger.trace(0, "Removing Sync")
         if skipSync:
             logger.trace(2, "Using old sync")
@@ -289,12 +292,12 @@ else:
                                make_dirs=True, force=True)
         ss.removeAll()
         del ss
-   
+
     # PARTIAL CUTS
     tic5 = time.time()
     if skipPartial:
         # Read existing result
-        cuts_partial = depot.read_object(moby2.TODCuts, 
+        cuts_partial = depot.read_object(moby2.TODCuts,
                                          tag=params.get('tag_partial'), tod=tod)
     else:
         # Generate and save new glitch cuts (note calbol may not be implemented...)
@@ -343,6 +346,6 @@ timefile = params.get('timefile')
 if timefile is not None:
     timefile = os.path.join(params.get("outdir","."),timefile)
     f = open(timefile, 'a')
-    f.write('%4.2f  %4.2f  %4.2f  %4.2f  %4.2f  %4.2f  %4.2f  '%(dt1, 
+    f.write('%4.2f  %4.2f  %4.2f  %4.2f  %4.2f  %4.2f  %4.2f  '%(dt1,
              dt2, dt3, dt4, dt5, dt6, dt7))
     f.close()
