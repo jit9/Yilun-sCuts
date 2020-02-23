@@ -4,9 +4,7 @@ from __future__ import division
 from past.builtins import basestring
 
 import numpy as np
-import numpy
-
-#import pyfftw
+# import pyfftw
 
 def power( x, dt = 1., nbin = 1, binsize = 0, detrend = False,
            Bartlett = False, Welch = False, Hann = False,
@@ -33,7 +31,7 @@ def power( x, dt = 1., nbin = 1, binsize = 0, detrend = False,
     if binsize and nbin != 1:
         raise ValueError, "Please specify either binsize or nbin, but not both"
 
-    nsamp = numpy.shape(x)[-1]
+    nsamp = np.shape(x)[-1]
 
     if binsize == 0:
         binsize = int(nsamp/nbin)             # length of a bin
@@ -50,13 +48,13 @@ def power( x, dt = 1., nbin = 1, binsize = 0, detrend = False,
         raise ValueError, "Please choose at most one type of window"
 
     if Bartlett:
-        window = 1 - abs((numpy.arange(binsize) - binsize/2.0)/(binsize/2.0))
+        window = 1 - abs((np.arange(binsize) - binsize/2.0)/(binsize/2.0))
     elif Hann:
-        window = 0.5*(1-numpy.cos(2*math.pi*(numpy.arange(binsize))/binsize))
+        window = 0.5*(1-np.cos(2*math.pi*(np.arange(binsize))/binsize))
     elif Welch:
-        window = 1 - pow((numpy.arange(binsize) - binsize/2.0)/(binsize/2.0), 2)
+        window = 1 - pow((np.arange(binsize) - binsize/2.0)/(binsize/2.0), 2)
     else:
-        window = 1.0*numpy.ones(binsize)
+        window = 1.0*np.ones(binsize)
 
 
     one_d = x.ndim == 1
@@ -73,17 +71,17 @@ def power( x, dt = 1., nbin = 1, binsize = 0, detrend = False,
         for b in xrange(2*nbin - 1):
             y = x[:,b*binsize/2 : b*binsize/2 + binsize].copy()
             detrendData(y, window = 200)
-            fx = numpy.fft.rfft(window[numpy.newaxis,:]*y,nt)
+            fx = np.fft.rfft(window[np.newaxis,:]*y,nt)
             power += (fx.real*fx.real + fx.imag*fx.imag)
-            #fx = numpy.fft.fft(window[numpy.newaxis,:]*y)
+            #fx = np.fft.fft(window[np.newaxis,:]*y)
             #fx = pyfftw.interfaces.numpy_fft.fft(window*y)
             #power += (fx.real*fx.real + fx.imag*fx.imag)[:,:binsize/2+1]
     else:
         y = x.copy()
         detrendData(y, window = 200)
-        fx = numpy.fft.rfft(window[numpy.newaxis,:]*y,nt)
+        fx = np.fft.rfft(window[np.newaxis,:]*y,nt)
         power = (fx.real*fx.real + fx.imag*fx.imag)
-        #fx = numpy.fft.fft(window[numpy.newaxis,:]*x)
+        #fx = np.fft.fft(window[np.newaxis,:]*x)
         #fx = pyfftw.interfaces.numpy_fft.fft(window*x)
         #power = (fx.real*fx.real + fx.imag*fx.imag)[:,:binsize/2+1]
 
@@ -101,7 +99,7 @@ def power( x, dt = 1., nbin = 1, binsize = 0, detrend = False,
     #power[-1] /= 2.
 
     nf = power.shape[-1]
-    nu = numpy.arange(nf) / float(nf) / (2*dt)
+    nu = np.arange(nf) / float(nf) / (2*dt)
     nu[0] = 0.5*nu[1]  # Make sure the x=0 isn't killing power
 
     if one_d:
@@ -120,13 +118,13 @@ def detrendData(y, window = 1000):
     one_d = y.ndim == 1
     if one_d: y.shape = (1,-1)
     if window > n/2: window = n/2
-    y0 = numpy.mean(y[:,:window],axis=1)
-    y1 = numpy.mean(y[:,-window:],axis=1)
+    y0 = np.mean(y[:,:window],axis=1)
+    y1 = np.mean(y[:,-window:],axis=1)
     m1 = (y1+y0)/2.0
-    m2 = numpy.mean(y,axis=1)
+    m2 = np.mean(y,axis=1)
     slope = (y1-y0)/(n-1)
-    x = numpy.arange(n)
-    y -= (y0 - m1 + m2)[:,numpy.newaxis].repeat(n,1) + slope[:,numpy.newaxis] * x[numpy.newaxis,:]
+    x = np.arange(n)
+    y -= (y0 - m1 + m2)[:,np.newaxis].repeat(n,1) + slope[:,np.newaxis] * x[np.newaxis,:]
     if one_d: y.shape = -1
 
 
@@ -331,11 +329,11 @@ def moments(data):
     """
     n = len(data[0])
     dat = data*data
-    m2 = numpy.sum(dat, axis = 1)/n
+    m2 = np.sum(dat, axis = 1)/n
     dat = dat*data
-    m3 = numpy.sum(dat, axis = 1)/n
+    m3 = np.sum(dat, axis = 1)/n
     dat = dat*data
-    m4 = numpy.sum(dat, axis = 1)/n
+    m4 = np.sum(dat, axis = 1)/n
     del dat
     var = m2
     skew = m3/m2**(3./2.)
@@ -349,12 +347,12 @@ def skewTest(skew, n):
     @brief Transforms the skewness to a normal distribution
     """
     n = float(n)
-    Y = skew*numpy.sqrt((n+1.)*(n+3.)/6./(n-2.))
+    Y = skew*np.sqrt((n+1.)*(n+3.)/6./(n-2.))
     b = 3.*(n**2+27.*n-70.)*(n+1.)*(n+3.)/(n-2.)/(n+5.)/(n+7.)/(n+9.)
-    w2 = numpy.sqrt(2.*(b-1.)) - 1.
-    delta = 1./numpy.sqrt(numpy.log(w2)/2.)
-    alfa = numpy.sqrt(2./(w2-1.))
-    return delta*numpy.log(Y/alfa + numpy.sqrt((Y/alfa)**2+1.))
+    w2 = np.sqrt(2.*(b-1.)) - 1.
+    delta = 1./np.sqrt(np.log(w2)/2.)
+    alfa = np.sqrt(2./(w2-1.))
+    return delta*np.log(Y/alfa + np.sqrt((Y/alfa)**2+1.))
 
 def kurtosisTest(kurt, n):
     """
@@ -364,11 +362,11 @@ def kurtosisTest(kurt, n):
     e = 3.*(n-1.)/(n+1.)
     v = 24.*n*(n-2.)*(n-3.)/(n+1.)**2/(n+3.)/(n+5.)
     mask = kurt != 0
-    x = (kurt[mask] - e)/numpy.sqrt(v)
-    b = 6.*(n**2-5.*n+2.)/(n+7.)/(n+9.)*numpy.sqrt(6.*(n+3.)*(n+5.)/n/(n-2.)/(n-3.))
-    A = 6.+8./b*(2./b+numpy.sqrt(1.+4./b**2))
-    kt = numpy.zeros(kurt.shape)
-    kt[mask] = ((1.-2./9./A)-((1.-2./A)/(1.+x*numpy.sqrt(2./(A-4.))))**(1./3.))/numpy.sqrt(2./9./A)
+    x = (kurt[mask] - e)/np.sqrt(v)
+    b = 6.*(n**2-5.*n+2.)/(n+7.)/(n+9.)*np.sqrt(6.*(n+3.)*(n+5.)/n/(n-2.)/(n-3.))
+    A = 6.+8./b*(2./b+np.sqrt(1.+4./b**2))
+    kt = np.zeros(kurt.shape)
+    kt[mask] = ((1.-2./9./A)-((1.-2./A)/(1.+x*np.sqrt(2./(A-4.))))**(1./3.))/np.sqrt(2./9./A)
     kt[~mask] = -1000
     return kt
 
@@ -380,17 +378,17 @@ def findNoiseLevel(data, nwin = 10, winsize = 1000):
     @param nwin      number of windows to use.
     @param winsize   number of elements in each window.
     """
-    ndet = numpy.size(data,0)
-    ndata = numpy.size(data,1)
+    ndet = np.size(data,0)
+    ndata = np.size(data,1)
     step = int(ndata/nwin)
     if nwin*winsize > ndata:
         winsize = step
-    noises = numpy.zeros(ndet)
+    noises = np.zeros(ndet)
     for i in range(ndet):
         ns = []
         for j in range(nwin):
-            ns.append(numpy.var(data[i][j*step:j*step+winsize]))
-        noises[i] = numpy.median(ns)
+            ns.append(np.var(data[i][j*step:j*step+winsize]))
+        noises[i] = np.median(ns)
     return noises
 
 
@@ -405,7 +403,7 @@ class cutsSummary(object):
         for k in self.keys:
             if pa.crit[k]["apply"]:
                 self.sel.append(pa.crit[k]["sel"])
-        self.sel = numpy.array(self.sel,dtype=int)
+        self.sel = np.array(self.sel,dtype=int)
     def plot(self, sel = None):
         import pylab
         if sel is None: sel = np.ones(self.sel.shape[1],dtype=bool)

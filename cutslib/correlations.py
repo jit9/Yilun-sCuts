@@ -3,8 +3,7 @@ from __future__ import absolute_import
 from __future__ import division
 from past.builtins import basestring
 
-import os, numpy, math, scipy.linalg, time, pickle
-np = numpy
+import os, numpy as np, math, scipy.linalg, time, pickle
 import moby2
 import moby2.util.log as psLib
 from scipy.stats import scoreatpercentile
@@ -16,14 +15,6 @@ def import_pylab():
     global pylab
     import pylab as pl
     pylab = pl
-
-#import actUtils
-#import mobyLib
-#import pyactpol
-#from moby.todUtils import TOD
-#from moby.todAnalysis import mbFilter
-#from moby.utilities import mobyUtils, constants
-#from moby.utilities.constants import *
 
 MIN_VICTIMS = 4
 # DIM_COL = 32
@@ -49,7 +40,7 @@ class correlationObject( object ):
         if dets is None:
             self.dets = tod.info.array_data['det_uid']
         else:
-            self.dets = numpy.array(dets)
+            self.dets = np.array(dets)
         self.Nrows = np.unique(tod.info.array_data['row']).size
         self.Ncols = np.unique(tod.info.array_data['col']).size
         self.rows = self.dets // self.Ncols
@@ -98,17 +89,17 @@ class correlationObject( object ):
         psLib.trace('moby', 1, 'Covariance calculation started')
         tic = time.time()
         data = self.tod.data[dets,nstart:nstart+ndata].copy()
-        self.cov = numpy.cov(data)
+        self.cov = np.cov(data)
         del data
         toc = time.time()
         dtime = (toc - tic)/60.0
         psLib.trace('moby', 1, 'Covariance done %g minutes' %dtime)
 
 
-        self.covDiag = numpy.sqrt(numpy.diag(self.cov))
-        self.varianceFigure = numpy.median(self.covDiag)
+        self.covDiag = np.sqrt(np.diag(self.cov))
+        self.varianceFigure = np.median(self.covDiag)
 
-        self.correlationFull = numpy.zeros([self.tod.det_uid.size, self.tod.det_uid.size])
+        self.correlationFull = np.zeros([self.tod.det_uid.size, self.tod.det_uid.size])
         for i in range(len(dets)):
             self.correlationFull[dets[i]][dets[i]] = self.cov[i][i]/self.covDiag[i]**2
             for j in range(i+1, len(dets)):
@@ -118,11 +109,11 @@ class correlationObject( object ):
         self.reformatMatrix(rowDominant = self.rowDominance)
 
         self.quality = 0.0
-        n = numpy.size(self.correlation, 1)
+        n = np.size(self.correlation, 1)
         for i in range(0, n-1):
             for j in range(i+1, n):
                 self.quality += self.correlation[i][j]**2
-        self.quality = numpy.sqrt(self.quality/(n*(n-1)/2.0))
+        self.quality = np.sqrt(self.quality/(n*(n-1)/2.0))
 
         self.log.append({'name':'findCorrelation'})
 
@@ -145,7 +136,7 @@ class correlationObject( object ):
         psLib.trace('moby', 1, 'Reformatting the correlation matrix')
 
 
-        dets = numpy.array(self.corrDets)
+        dets = np.array(self.corrDets)
         rows = dets // self.Ncols
         cols = dets % self.Ncols
 
@@ -174,7 +165,7 @@ class correlationObject( object ):
 
         self.num_index = len(index_list)
         psLib.trace('moby', 1, 'There are '+repr(self.num_index)+' live detectors')
-        self.correlation = numpy.zeros((self.num_index, self.num_index))
+        self.correlation = np.zeros((self.num_index, self.num_index))
         for i in range(0,self.num_index):
             for j in range(0,self.num_index):
                 index_i = index_list[i]
@@ -263,93 +254,6 @@ class correlationObject( object ):
             pylab.show()
         else: pylab.close()
         pylab.rcdefaults()
-
-
-    # def radialCorrelationBinning(self, \
-    #                              filename = 'radial_correlation.dat', \
-    #                              block_integers = False, \
-    #                              block_row = False, \
-    #                              block_col = False, \
-    #                              make_select = True):
-    #     '''
-    #     block_integers is a flag that blocks integral distances from the average
-    #     these are higher than the general correlation, likely from row/col correlations
-    #     '''
-    #     # Not updated fro moby2...
-    #     greatest = (self.Ncols-1)*(self.Ncols-1)+(self.Nrows-1)*(self.Nrows-1)
-
-    #     if make_select:
-    #         selection = numpy.zeros((self.tod.det_uid.size,self.tod.det_uid.size))
-
-    #     bin_dict = {}
-    #     dets, rows, cols = self.tod.listUncut()
-    #     psLib.trace('moby', 1, 'Binning the covariance radially')
-    #     ii = -1;
-    #     for i in dets:
-    #       ii += 1
-    #       jj = -1
-    #       for j in dets:
-    #           jj += 1
-    #           row1 = self.tod.rows[i]
-    #           row2 = self.tod.rows[j]
-    #           col1 = self.tod.cols[i]
-    #           col2 = self.tod.cols[j]
-    #           xsq = (row1-row2)*(row1-row2)
-    #           ysq = (col1-col2)*(col1-col2)
-    #           try:
-    #             cov_val = self.correlation[ii][jj]
-    #           except:
-    #             self.correlation[ii][jj]
-
-    #           row_test = True
-    #           if block_row:
-    #               row_test = (self.tod.rows[i] != self.tod.rows[j])
-    #           col_test = True
-    #           if block_col:
-    #               col_test = (self.tod.cols[i] != self.tod.cols[j])
-
-    #           if (self.tod.dets[row1, col1] != actUtils.NO_VALUE) and \
-    #              (self.tod.dets[row2, col2] != actUtils.NO_VALUE):
-    #               if cov_val != -1:
-    #                   if row_test and col_test:
-    #                       lenindex = int(xsq+ysq)
-
-    #                       #length = math.sqrt(float(lenindex))
-    #                       arc = math.atan2(float(col2-col1), float(row2-row1))
-    #                       #if make_select and (length != int(length)):
-    #                       selection[i][j] = arc
-
-    #                       if bin_dict.has_key(lenindex):
-    #                           bin_dict[lenindex].append(cov_val)
-    #                       else:
-    #                           bin_dict[lenindex] = [ cov_val ]
-
-    #     f_output = open(filename,'w')
-    #     for i in range(0, greatest+1):
-    #         if (bin_dict.has_key(i)):
-    #             length = math.sqrt(i)
-
-    #             integer_test = True
-    #             if block_integers:
-    #                 integer_test = (length != int(length))
-
-    #             if (integer_test):
-    #                  median = numpy.median(bin_dict[i])
-    #                  mean = numpy.mean(bin_dict[i])
-    #                  stdev = numpy.std(bin_dict[i])
-    #                  counts = len(bin_dict[i])
-    #                  output = repr(length)
-    #                  output += ' '+ repr(mean)
-    #                  output += ' '+ repr(median)
-    #                  output += ' '+ repr(stdev)
-    #                  output += ' '+ repr(counts)
-    #                  f_output.write(output+'\n')
-    #     if make_select:
-    #         return selection
-    #     else:
-    #         return None
-
-
 
     def radialCorrelationBinning( self, bins=100 ):
         """
@@ -525,15 +429,15 @@ class correlationObject( object ):
         if len(dets) == 0: dets = [0]
 
         if power == 0:
-            dets = numpy.array(dets, dtype='int32')
-            ##cm = numpy.empty(self.tod.ndata)
+            dets = np.array(dets, dtype='int32')
+            ##cm = np.empty(self.tod.ndata)
             if useMedian:
                 ##mobyLib.transposeMedian(self.tod.ctod, list(dets), cm)
                 cm = moby2.libactpol.data_median_axis0(self.tod.data, dets)
             else:
                 ##mobyLib.transposeMean(self.tod.ctod, list(dets), cm)
                 cm = moby2.libactpol.data_mean_axis0(self.tod.data, dets)
-            modes = modeSet(self.tod, cm.reshape([1,len(cm)])/numpy.linalg.norm(cm), dets)
+            modes = modeSet(self.tod, cm.reshape([1,len(cm)])/np.linalg.norm(cm), dets)
         else:
             modes = polyCommonMode(self.tod, dets, power)
         if filter is not None: modes.filterModes(filter)
@@ -555,13 +459,13 @@ class correlationObject( object ):
         if dets is None:
             dets = self.dets
 
-        norm = numpy.linalg.norm(mode)
+        norm = np.linalg.norm(mode)
 
         n = len(dets)
         if norm != 0:
             for i in dets:
                 if doFit:
-                    coeff = numpy.dot(self.tod.data[i], mode)/norm**2
+                    coeff = np.dot(self.tod.data[i], mode)/norm**2
                 else: coeff = 1.0
                 if kill:
                     self.tod.data[i] -=  mode*coeff
@@ -717,7 +621,7 @@ class darkCorrObj( correlationObject ):
         for row in  range(self.tod.nrow):
             li = self.tod.dark[self.tod.rows[self.tod.dark] == row]
             if len(li) > 1:
-                self.darkRowModes.append(numpy.mean(self.tod.data[li], axis = 0))
+                self.darkRowModes.append(np.mean(self.tod.data[li], axis = 0))
             elif len(li) == 1:
                 self.darkRowModes.append(self.tod.data[li])
         if filter is not None: self.darkRowModes.filterModes(filter)
@@ -737,7 +641,7 @@ class darkCorrObj( correlationObject ):
         for col in  range(self.tod.ncol):
             li = self.tod.dark[self.tod.cols[self.tod.dark] == col]
             if len(li) > 1:
-                self.darkColModes.append(numpy.mean(self.tod.data[li], axis = 0))
+                self.darkColModes.append(np.mean(self.tod.data[li], axis = 0))
             elif len(li) == 1:
                 self.darkColModes.append(self.tod.data[li])
         if filter is not None: self.darkColModes.filterModes(filter)
@@ -919,24 +823,24 @@ class liveCorrObj( correlationObject ):
             allrows = list(self.tod.rows[dets])
             allcols = list(self.tod.cols[dets])
 
-        row1 = numpy.min(allrows)
-        row2 = numpy.max(allrows)
+        row1 = np.min(allrows)
+        row2 = np.max(allrows)
         if row2 == 32:
             row2 = 31
         nrow = row2-row1+1
-        nRowBlock = int(numpy.round(nrow/squareSize))
+        nRowBlock = int(np.round(nrow/squareSize))
         if nRowBlock == 0:
             nRowBlock = 1
 
-        col1 = numpy.min(allcols)
-        col2 = numpy.max(allcols)
+        col1 = np.min(allcols)
+        col2 = np.max(allcols)
         ncol = col2-col1+1
-        nColBlock = int(numpy.round(ncol/squareSize))
+        nColBlock = int(np.round(ncol/squareSize))
         if nColBlock == 0:
             nColBlock = 1
 
         modes = modeSet(self.tod, [], alldets)
-        alldets = numpy.array(alldets)
+        alldets = np.array(alldets)
         while nRowBlock > 0:
             nr = nrow//nRowBlock
             r = list(range(row1,row1+nr))
@@ -957,10 +861,10 @@ class liveCorrObj( correlationObject ):
                 br, bc, dets = self.tod.listFromRowCol(br, bc)
                 sdets = []
                 for d in dets:
-                    if numpy.any(alldets == d): sdets.append(d)
+                    if np.any(alldets == d): sdets.append(d)
                 if len(sdets) > MIN_VICTIMS:
-                    sdets = numpy.array(sdets, dtype='int32')
-                    #cm = numpy.empty(self.tod.ndata)
+                    sdets = np.array(sdets, dtype='int32')
+                    #cm = np.empty(self.tod.ndata)
                     if useMedian:
                         cm = moby2.libactpol.data_median_axis0(self.tod.data, sdets)
                     else:
@@ -980,22 +884,22 @@ class liveCorrObj( correlationObject ):
         """
         sigma = float(sigma)
         dets, rows, cols = self.tod.listUncut()
-        dets = numpy.array(dets)
+        dets = np.array(dets)
         data2 = self.tod.data.copy()
         for i in dets:
             xx = self.tod.rows - self.tod.rows[i]
             yy = self.tod.cols - self.tod.cols[i]
             xx = xx[dets]
             yy = yy[dets]
-            w = numpy.exp(-(xx**2+yy**2)/sigma**2)
+            w = np.exp(-(xx**2+yy**2)/sigma**2)
             dets2 = dets[w>0.1]
             w = w[w>0.1]
-            mode = numpy.dot(data2[dets2].transpose(), w.transpose())
-            norm = numpy.linalg.norm(mode)
+            mode = np.dot(data2[dets2].transpose(), w.transpose())
+            norm = np.linalg.norm(mode)
             if norm == 0.:
                 psLib.trace('moby', 2, "WARNING, zero norm for detector %d" % i )
             else:
-                self.tod.data[i] -= mode * numpy.dot(data2[i], mode)/norm**2
+                self.tod.data[i] -= mode * np.dot(data2[i], mode)/norm**2
         del data2
 
 
@@ -1067,7 +971,7 @@ class liveCorrObj( correlationObject ):
         for row in range(self.Nrows):
             victims = list(self.dets[self.rows == row])
             if len(victims) > MIN_VICTIMS:
-                liveRowModes.append(numpy.sum(self.tod.data[victims], axis = 0))
+                liveRowModes.append(np.sum(self.tod.data[victims], axis = 0))
         if filter is not None: liveRowModes.filterModes(filter)
         liveRowModes.selectMainModes( nModes = nModes )
         return liveRowModes
@@ -1084,7 +988,7 @@ class liveCorrObj( correlationObject ):
         for col in range(self.Ncols):
             victims = list(self.dets[self.cols == col])
             if len(victims) > MIN_VICTIMS:
-                liveColModes.append(numpy.sum(self.tod.data[victims], axis = 0))
+                liveColModes.append(np.sum(self.tod.data[victims], axis = 0))
         if filter is not None: liveColModes.filterModes(filter)
         liveColModes.selectMainModes( nModes = nModes )
         return liveColModes
@@ -1142,7 +1046,7 @@ class modeSet( object ):
         @param dets   list of uncut detectors asociated to modes.
         """
 
-        self.modes = numpy.array(modes, dtype = 'float64').copy()
+        self.modes = np.array(modes, dtype = 'float64').copy()
         self.tod = tod
         self.dets = dets
         self.coeff = []
@@ -1165,18 +1069,18 @@ class modeSet( object ):
         @brief  Add a new mode to a set of modes.
         @param  mode  new mode to add (could also be a set of modes)
         """
-        mode = numpy.array(mode, dtype = 'float64')
-        if numpy.ndim(mode) == 1: mode = mode.reshape([1, len(mode)])
+        mode = np.array(mode, dtype = 'float64')
+        if np.ndim(mode) == 1: mode = mode.reshape([1, len(mode)])
         if len(self.modes) == 0:
             self.modes = mode
         else:
             if orthogonalize:
                 for m in mode:
-                    temp = m - numpy.dot(numpy.dot(self.modes, m), self.modes)
-                    temp /= numpy.linalg.norm(temp)
-                    self.modes = numpy.vstack((self.modes, temp))
+                    temp = m - np.dot(np.dot(self.modes, m), self.modes)
+                    temp /= np.linalg.norm(temp)
+                    self.modes = np.vstack((self.modes, temp))
             else:
-                self.modes = numpy.vstack((self.modes, mode))
+                self.modes = np.vstack((self.modes, mode))
 
     def removeModeSet( self, forceFit = True, dets = None, noise = None ):
         """
@@ -1203,7 +1107,7 @@ class modeSet( object ):
             noise.inverseFilterTOD()
             print('fitModes')
             self.fitModes(dets = useDets)
-            self.coeff = numpy.multiply( self.noiseCoeff, self.coeff )
+            self.coeff = np.multiply( self.noiseCoeff, self.coeff )
             self.tod.data[useDets] = data[:]
             del data
             #mobyLib.removeTODModes(self.tod.ctod, list(useDets), self.modes, self.coeff)
@@ -1212,7 +1116,7 @@ class modeSet( object ):
                 self.fitModes(dets = useDets)
             #mobyLib.removeTODModes(self.tod.ctod, list(useDets), self.modes, self.coeff)
         moby2.libactpol.remove_modes(
-            self.tod.data, numpy.array(useDets, dtype='int32'),
+            self.tod.data, np.array(useDets, dtype='int32'),
             self.modes.astype('float32'), self.coeff.astype('float64'))
         self.tod.abuses += [{'name':'removeMode', 'type':'ModeRemoval', 'detectors': useDets}]
         self.removed = True
@@ -1232,17 +1136,17 @@ class modeSet( object ):
         elif dets is not None: useDets = dets
         else: useDets = self.dets
 
-        #self.coeff = numpy.empty([len(useDets), len(self.modes)])
+        #self.coeff = np.empty([len(useDets), len(self.modes)])
         #mobyLib.dotProductTOD(self.tod.ctod, list(useDets), self.modes, self.coeff, useCuts)
         self.coeff = moby2.libactpol.data_dot_modes(
-            self.tod.data, numpy.array(useDets, dtype='int32'),
-            numpy.asarray(self.modes, dtype='float32'),
+            self.tod.data, np.array(useDets, dtype='int32'),
+            np.asarray(self.modes, dtype='float32'),
             moby2.util.encode_c(self.tod.cuts))
         if useCuts:
             if self.renorm is None: self.getRenorm()
             self.coeff /= self.renorm
-        self.coeff[numpy.where(numpy.isinf(self.coeff))] = 0.
-        self.coeff[numpy.where(numpy.isnan(self.coeff))] = 0.
+        self.coeff[np.where(np.isinf(self.coeff))] = 0.
+        self.coeff[np.where(np.isnan(self.coeff))] = 0.
 
     def getRenorm( self, all = False, dets = None ):
         """
@@ -1257,10 +1161,10 @@ class modeSet( object ):
         elif dets is not None: useDets = dets
         else: useDets = self.dets
 
-        ##self.renorm = numpy.empty([len(useDets), len(self.modes)])
+        ##self.renorm = np.empty([len(useDets), len(self.modes)])
         ##mobyLib.getModeRenorm(self.tod.ctod, list(useDets), self.modes, self.renorm)
         self.renorm = moby2.libactpol.data_dot_modes(
-            self.tod, numpy.array(useDets, dtype='int32'),
+            self.tod, np.array(useDets, dtype='int32'),
             self.modes.astype('float32'), self.tod.cuts._encode_c())
 
 
@@ -1272,20 +1176,20 @@ class modeSet( object ):
         N = self.modes.shape[0]
         if N < nModes: nModes = N
         if N == 0: return
-        elif N == 1: self.modes[0] /= numpy.linalg.norm(self.modes[0])
+        elif N == 1: self.modes[0] /= np.linalg.norm(self.modes[0])
         elif N > 20:
             if ndata is None or ndata > self.tod.nsamps: ndata = self.tod.nsamps
             try:
-                cov = numpy.cov(self.modes[:,:ndata])
-                u, w, v = numpy.linalg.svd(cov, full_matrices = 0)
+                cov = np.cov(self.modes[:,:ndata])
+                u, w, v = np.linalg.svd(cov, full_matrices = 0)
             except:
-                cov = numpy.cov(self.modes[:,-ndata:])
-                u, w, v = numpy.linalg.svd(cov, full_matrices = 0)
+                cov = np.cov(self.modes[:,-ndata:])
+                u, w, v = np.linalg.svd(cov, full_matrices = 0)
             self.kernel = v[:nModes]
-            for i in range(nModes): self.kernel[i] /= numpy.sqrt(w[i]*len(self.modes[0]))
-            self.modes = numpy.dot(self.kernel, self.modes)
+            for i in range(nModes): self.kernel[i] /= np.sqrt(w[i]*len(self.modes[0]))
+            self.modes = np.dot(self.kernel, self.modes)
         else:
-            u,w,v = numpy.linalg.svd(self.modes, full_matrices = 0)
+            u,w,v = np.linalg.svd(self.modes, full_matrices = 0)
             self.modes = v[0:nModes].copy()
 
         if plot:
@@ -1299,12 +1203,12 @@ class modeSet( object ):
         @param noise   noise object that contains the inverse noise spline fit.
         """
         delta = 1./self.tod.dt[-1]
-        if numpy.rank(self.modes) == 1:
-            self.noiseCoeff = numpy.zeros(len(self.dets))
+        if np.rank(self.modes) == 1:
+            self.noiseCoeff = np.zeros(len(self.dets))
             mobyLib.inverseFilterMode(noise.noise_container, self.modes.tolist(),
                                       list(self.dets), self.noiseCoeff, delta)
         else:
-            self.noiseCoeff = numpy.zeros([len(self.modes),len(self.dets)])
+            self.noiseCoeff = np.zeros([len(self.modes),len(self.dets)])
             for i in range(len(self.modes)):
                 mobyLib.inverseFilterMode(noise.noise_container, self.modes[i].tolist(),
                                           list(self.dets), self.noiseCoeff[i], delta)
@@ -1326,7 +1230,7 @@ class modeSet( object ):
                 for j in range(i+1, len(self.modes)):
                     if corr[i][j] == 1.0:
                         s.append(i)
-        self.modes = numpy.delete(self.modes, s, 0)
+        self.modes = np.delete(self.modes, s, 0)
 
 
 
@@ -1341,16 +1245,16 @@ class modeSet( object ):
             return
 
         if self.coeff == [] or forceFit \
-           or numpy.shape(self.coeff)[1] < self.tod.det_uid.size:
+           or np.shape(self.coeff)[1] < self.tod.det_uid.size:
             self.fitModes(all = True)
 
         rows, cols, dets = self.tod.listFromRowCol()
-        corr = numpy.zeros([self.tod.nrow, self.tod.ncol])
+        corr = np.zeros([self.tod.nrow, self.tod.ncol])
         for i in range(len(dets)):
-            mode = numpy.dot(self.coeff[i], self.modes)
-            modeNorm = numpy.linalg.norm(mode)
-            dataNorm = numpy.linalg.norm(self.tod.data[i])
-            corr[rows[i]][cols[i]] = numpy.dot(mode, self.tod.data[i]) / \
+            mode = np.dot(self.coeff[i], self.modes)
+            modeNorm = np.linalg.norm(mode)
+            dataNorm = np.linalg.norm(self.tod.data[i])
+            corr[rows[i]][cols[i]] = np.dot(mode, self.tod.data[i]) / \
                                      modeNorm / dataNorm
         if plot:
             import_pylab()
@@ -1375,16 +1279,16 @@ class modeSet( object ):
         if filt[0] > 0.5: self.__retrendModes()
         for i in range(len(self.modes)):
             self.modes[i] -= self.modes[i].mean()
-            self.modes[i] /= numpy.linalg.norm(self.modes[i])
+            self.modes[i] /= np.linalg.norm(self.modes[i])
 
 
     def getCoeffMatrix( self, modeIndex ):
         """
         @brief Gets mode coefficient array matrix for mode "modeIndex"
         """
-        co = numpy.zeros(1024)
+        co = np.zeros(1024)
         co[self.dets] = self.coeff.transpose()[modeIndex]
-        mat = numpy.reshape(co, [32, 32])
+        mat = np.reshape(co, [32, 32])
         return mat.transpose()
 
 
@@ -1416,20 +1320,20 @@ class modeSet( object ):
         @brief  Detrends the modes so that they can be filtered
         """
         if ~self.detrended:
-            if numpy.ndim(self.modes) == 1:
+            if np.ndim(self.modes) == 1:
                 ndata = len(self.modes)
-                self.ends = numpy.zeros(2)
-                self.ends[0] = numpy.median(self.modes[:window])
-                self.ends[1] = numpy.median(self.modes[-window:])
-                trend = numpy.arange(ndata)*(self.ends[1]-self.ends[0])/(ndata-1)
+                self.ends = np.zeros(2)
+                self.ends[0] = np.median(self.modes[:window])
+                self.ends[1] = np.median(self.modes[-window:])
+                trend = np.arange(ndata)*(self.ends[1]-self.ends[0])/(ndata-1)
                 self.modes -= trend - self.ends.mean()
             else:
                 ndata = len(self.modes[0])
-                self.ends = numpy.zeros([len(self.modes), 2])
-                x = numpy.arange(ndata)
+                self.ends = np.zeros([len(self.modes), 2])
+                x = np.arange(ndata)
                 for i in range(len(self.modes)):
-                    self.ends[i][0] = numpy.median(self.modes[i][:window])
-                    self.ends[i][1] = numpy.median(self.modes[i][-window:])
+                    self.ends[i][0] = np.median(self.modes[i][:window])
+                    self.ends[i][1] = np.median(self.modes[i][-window:])
                     trend = x*(self.ends[i][1]-self.ends[i][0])/(ndata-1)
                     self.modes[i] -= trend - self.ends[i].mean()
             self.detrended = True
@@ -1440,13 +1344,13 @@ class modeSet( object ):
         @brief  Recovers the trend of the modes after detrending them
         """
         if self.detrended:
-            if numpy.ndim(self.modes) == 1:
+            if np.ndim(self.modes) == 1:
                 ndata = len(self.modes)
-                trend = numpy.arange(ndata)*(self.ends[1]-self.ends[0])/(ndata-1)
+                trend = np.arange(ndata)*(self.ends[1]-self.ends[0])/(ndata-1)
                 self.modes += trend - self.ends.mean()
             else:
                 ndata = len(self.modes[0])
-                x = numpy.arange(ndata)
+                x = np.arange(ndata)
                 for i in range(len(self.modes)):
                     trend = x*(self.ends[i][1]-self.ends[i][0])/(ndata-1)
                     self.modes[i] += trend - self.ends[i].mean()
@@ -1501,7 +1405,7 @@ class modeSet( object ):
         @param   tod   Tod for which the correlation object was originally created.
         @param   path  Path where the data was stored.
         """
-        dets = numpy.arange(1024)
+        dets = np.arange(1024)
         ms = modeSet( tod, [], dets )
         if path[-1] == '/':
             path = path[0:-1]
@@ -1531,9 +1435,9 @@ class polyCommonMode( object ):
         self.power = power
 
         A = self.__generatePoly()
-        AA = numpy.dot(A, A.transpose())
-        b = numpy.dot(A, self.tod.data[dets])
-        self.modes =  numpy.linalg.solve(AA,b)
+        AA = np.dot(A, A.transpose())
+        b = np.dot(A, self.tod.data[dets])
+        self.modes =  np.linalg.solve(AA,b)
 
 
     def removeModes( self, dets = None):
@@ -1542,7 +1446,7 @@ class polyCommonMode( object ):
         if dets is None: dets = self.dets
 
         A = self.__generatePoly(dets = dets)
-        self.tod.data[dets] -= numpy.dot(A.transpose(), self.modes)
+        self.tod.data[dets] -= np.dot(A.transpose(), self.modes)
         self.tod.abuses += [{'name':'removeMode', 'type':'modeRemoval', 'detectors': dets}]
 
 
@@ -1556,7 +1460,7 @@ class polyCommonMode( object ):
         xx = xx[dets]
         yy = yy[dets]
         n = (self.power+1)*(self.power+2)/2
-        A = numpy.empty([n,len(dets)])
+        A = np.empty([n,len(dets)])
         k = 0
         for p in range(0,self.power+1):
             for i in range(0,p+1):
@@ -1571,9 +1475,9 @@ class polyCommonMode( object ):
         @param  filt  Filter to apply.
         """
         ndata = len(self.modes[0])
-        end0 = numpy.median(self.modes[0][:window])
-        end1 = numpy.median(self.modes[0][-window:])
-        trend = numpy.arange(ndata)*(end1-end0)/(ndata-1)
+        end0 = np.median(self.modes[0][:window])
+        end1 = np.median(self.modes[0][-window:])
+        trend = np.arange(ndata)*(end1-end0)/(ndata-1)
         ends_mean = (end0+end1)/2.
         self.modes[0] -= trend - ends_mean
 
@@ -1591,8 +1495,8 @@ def correlate( A ):
     @param   A   Matrix that contain the vectors to correlate.
     @return  Correlation matrix.
     """
-    mat = numpy.cov(A)
-    covDiag = numpy.sqrt(numpy.diag(mat))
+    mat = np.cov(A)
+    covDiag = np.sqrt(np.diag(mat))
     for i in range(len(A)):
         mat[i][i] /= covDiag[i]*covDiag[i]
         for j in range(i+1, len(A)):
@@ -1610,12 +1514,12 @@ def correlateMode( tod, mode):
     """
     assert len(mode == tod.nsamps)
 
-    modeNorm = numpy.linalg.norm(mode)
-    corr = numpy.zeros(tod.det_uid.size)
+    modeNorm = np.linalg.norm(mode)
+    corr = np.zeros(tod.det_uid.size)
     for i in range(tod.det_uid.size):
-        dataNorm = numpy.linalg.norm(tod.data[i])
+        dataNorm = np.linalg.norm(tod.data[i])
         if dataNorm != 0.0:
-            corr[i] = numpy.dot(mode, tod.data[i]) / modeNorm / dataNorm
+            corr[i] = np.dot(mode, tod.data[i]) / modeNorm / dataNorm
         else:
             corr[i] = 0.0
     return corr
@@ -1634,7 +1538,7 @@ def relativeCalibration( tod, apply = True ):
     cm.fitModes()
     tod.data[:] = data1[:]
     del data1
-    cal = numpy.ones(tod.det_uid.size)
+    cal = np.ones(tod.det_uid.size)
     cal[dets] /= cm.coeff/cm.coeff.mean()
     if apply:
         for i in dets: tod.data[i] *= cal[i]
