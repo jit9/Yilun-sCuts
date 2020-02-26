@@ -210,6 +210,28 @@ To edit in place, add =-i= at the end of statement
 #+BEGIN_SRC bash
 cuts params quickfix forceNoResp False cutParams_v3.par -i
 #+END_SRC
+*** 8. What's my typical workflow when running cuts? 
+This is to document my workflow in case i forget them:
+- switch to the right python environment (for my case =myenv=)
+- launch emacs with =emacs -nw=
+- launch the cuts-run plugin in emacs with =F7=
+To edit an existing cut version: 
+- press =o= / =O= to open the cutparams/cutParams file for editing
+To create a new version of cut:
+- press =P= to promote the version of cut and edit like above
+After editing:
+- press =S= to submit the job to slurm
+- press =L= to monitor the logs
+When the job is done:
+- press =[= to check the run folder
+- press =E= to check the error logs to makes sure no unexpected errors occurred
+- press =c= to reduce the mpi sub-tasks to a combined result
+Post-processing
+- press =f= to load up post-processing script
+- select post-processing modules to run with =c-c m=
+- press =F= to run the post-processing pipeline
+- rsync the report to a local machine to view the reports
+
 ** Useful links
 - ACT roundtable: [[https://actexperiment.info/roundtable]]
 - TOD visualizer: [[https://github.com/guanyilun/tod_viz]]
