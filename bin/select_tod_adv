@@ -1,3 +1,5 @@
+#!/bin/env python
+
 """This script aims to provide a more advanced tod selection
 algorithm that selects a particular region and include the uranus
 tods, it allows trimming the tods based on ra and dec.
@@ -52,6 +54,8 @@ npcat = fitsio.read(filename)
 npcat = npcat.byteswap().newbyteorder()
 catalog = pd.DataFrame.from_records(npcat)
 catalog.index = pd.to_datetime(catalog.date)
+
+import ipdb;ipdb.set_trace()
 
 # select tods based on the specified criteria
 # 1st iteration
