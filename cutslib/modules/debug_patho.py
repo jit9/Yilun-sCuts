@@ -51,7 +51,8 @@ def run(p):
 
             # load all relevant patholog results
             patho = get_pathologies({'depot': p.depot,
-                                     'tag': p.tag}, tod=tod)
+                                     'tag': p.tag,
+                                     'paramFile': p.i.cutParam}, tod=tod)
             cuts = depot.read_object(moby2.TODCuts, tod=tod, tag=p.tag)
             calo = depot.read_object(moby2.Calibration, tod=tod, tag=params["tag_cal"])
 
