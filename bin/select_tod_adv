@@ -55,7 +55,7 @@ npcat = npcat.byteswap().newbyteorder()
 catalog = pd.DataFrame.from_records(npcat)
 catalog.index = pd.to_datetime(catalog.date)
 
-import ipdb;ipdb.set_trace()
+# import ipdb;ipdb.set_trace()
 
 # select tods based on the specified criteria
 # 1st iteration

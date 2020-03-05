@@ -1,5 +1,5 @@
 # parameter file used with select_
-output_dir = "/scratch/gpfs/yilung/depot/TODLists"
+output_dir = "/projects/ACT/yilung/depot/TODLists"
 tag = '{season}_{array}_wide01hn'
 season = '2017'
 array = 'ar4'
