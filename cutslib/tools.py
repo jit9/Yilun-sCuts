@@ -413,3 +413,170 @@ class cutsSummary(object):
         m.axes.set_yticks(list(range(len(self.keys))))
         m.axes.set_yticklabels(self.keys)
         pylab.draw()
+
+
+# function to find glitches
+def find_glitches(tod, gp):
+    """find glitch cuts of a tod, the different between this
+    and the find glitch cut function in moby2 is that it can
+    work with MCE file more easily"""
+    import moby2.libactpol as libactpol
+    # define filter function
+    filtvec = moby2.tod.filters.sine2highPass(tod, fc=gp['highPassFc']) * \
+        moby2.tod.filters.gaussianFilter(tod, timeSigma=gp['tGlitch'])
+    # get glitch cuts
+    glitch_cuts = libactpol.get_glitch_cuts(
+        tod.data,
+        np.asarray(tod.det_uid, dtype='int32'),
+        np.asarray(filtvec, dtype='float32'),
+        gp['nSig'], gp['maxGlitch'], gp['minSeparation'])
+    return glitch_cuts
+
+# function to load mce data
+def load_mce_data(infile, dt=1):
+    """Wrap the MCeFile with a thin layer of TOD structure
+    so some of the tools for TOD works on MCEFile as well
+    """
+    mce = MCEFile(filename=infile)
+    tod = mce.Read()
+    tod.nsamps = tod.data.shape[-1]
+    tod.det_uid = np.arange(tod.data.shape[0])
+    # give a pseudo time
+    tod.ctime = np.arange(tod.nsamps,dtype=np.float32)*dt
+    tod.data = tod.data.astype(np.float32)
+    return tod
+
+################
+# cuts related #
+################
+
+# find cuts that affect multiple detectors
+def find_common_cuts(cuts, min_dets=5, nsamps=None):
+    """
+    Args:
+        cuts: list of cuts for each det
+        min_dets: minimum dets required for common cuts
+        nsamps (int): number of samples, default to max in cuts
+        """
+    # find the maximum sample in cuts if nsamps is not speficied
+    if not nsamps:
+        cuts_ends = [c[-1][-1] for c in cuts if len(c)!=0]
+        if len(cuts_ends) == 0:
+            return [],[]
+        nsamps = np.max([c[-1][-1] for c in cuts if len(c)!=0])
+
+    # make a mask
+    mask = np.zeros(nsamps, dtype=int)
+    for i, c in enumerate(cuts):
+        for dc in c:
+            mask[dc[0]:dc[1]] += 1
+    # find common cuts enforce min dets
+    t_ = np.where(mask > min_dets)[0]
+    ranges = find_ranges_from_list(t_)
+    dets = [find_dets_with_cut(cuts, r) for r in ranges]
+    return dets, ranges
+
+def find_ranges_from_list(lst, min_sep=1):
+    """Find ranges in the list, for example, the input
+    list can be [1,2,3,4,8,9,10]. This function will return
+    [[1,4],[8,10]].
+    """
+    ranges = []
+    for i in range(len(lst)):
+        if i == 0:
+            start_ = lst[i]
+        else:
+            new_ = lst[i]
+            if (new_ - prev_) > min_sep:
+                end_ = prev_
+                ranges.append([start_,end_])
+                start_ = new_
+            elif i == len(lst)-1:
+                end_ = new_
+                ranges.append([start_,end_])
+        prev_ = lst[i]
+    return ranges
+
+
+def find_dets_with_cut(cuts, target_cut):
+    """Find the dets that has certain target_cuts
+    Args:
+        cuts: cuts for all dets
+        target_cut: a cut to find among dets"""
+    dets = []
+    for i,c in enumerate(cuts):
+        if len(c) > 0:
+            for dc in c:
+                start_ = max([dc[0],target_cut[0]])
+                end_ = min([dc[-1],target_cut[-1]])
+                if end_ - start_ > 0:
+                    dets.append(i)
+                    break
+    return dets
+
+
+################
+# cuts and cal #
+################
+
+# calibration and sel tools
+def quick_cuts_and_cal(data, dt=1):
+    """Quick tool to find the cuts and cal for tod-like data
+    Args:
+        data: input tod-like data (ndets, nsamps)
+        dt: unit time
+    Rets:
+        cut, cal
+    """
+    ndets = data.shape[0]
+    nsamps = data.shape[1]
+    # remove mean and detrend
+    data_ = data.copy()
+    data_ -= np.mean(data_,axis=1)[:,None]
+    tools.detrendData(data_)
+    # fft
+    nu, fdata = cuts_rfft(data, dt)
+    # low freq
+    freq_sel = (nu > 0.01) * (nu < 0.05)
+    lf_data = fdata[:,freq_sel]
+    # get correlation matrix
+    cc = corr_mat(lf_data)
+    # preselection based on median
+    # presel = np.ones(ndets)
+    presel = tools.presel_by_median(cc)
+    # find common mode
+    u, s, v = np.linalg.svd(lf_data, full_matrices=False)
+    # gain
+    gain = u[:,0]
+    # gain_sel = np.ones(ndets)
+    gain_sel = (np.real(gain) > 0.01)
+    # high freq
+    freq_sel = (nu > 10) * (nu < 20)
+    hf_data = fdata[:,freq_sel]
+    rms = np.sqrt(np.sum(abs(hf_data)**2,axis=1)/hf_data.shape[1]/nsamps)
+    rms_sel = np.ones(ndets)
+    # rms_sel = rms < 8e3
+    # return np.array(presel*gain_sel*rms_sel,dtype=bool), 1./gain
+    return np.array(presel*gain_sel*rms_sel,dtype=bool), 1./rms
+
+def cuts_rfft(data, dt=1, use_regular=True):
+    """Quick tool to get rfft for tod-like data"""
+    if use_regular:
+        nf = tools.nextregular(data.shape[-1])
+    else:
+        nf = data.shape[-1]
+    fdata = np.fft.rfft(data, nf)
+    nf = fdata.shape[-1]
+    nu = np.arange(nf) / nf / (2*dt)
+    return nu, fdata
+
+# Get correlation matrix
+def corr_mat(fdata):
+    """calculate correlation matrix for tod-like data
+    in frequency space"""
+    c = np.dot(fdata,fdata.T.conjugate())
+    a = np.linalg.norm(fdata,axis=1)
+    aa = np.outer(a,a)
+    aa[aa==0.] = 1.
+    cc = c/aa
+    return cc
