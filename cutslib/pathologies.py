@@ -1527,6 +1527,9 @@ def lowFreqAnal(fdata, sel, frange, df, nsamps, scan_freq, par,
         sl = np.zeros(cc.shape[1],dtype=bool)
         sl[ld] = True
         res["groups"] = {"G": G, "ind": ind, "ld": ld, "smap": smap}
+    else par.get("presel",{}).get("method") is "none":
+        # if for some reason we want to skip the presel and select everything
+        sl = np.ones(cc.shape[1],dtype=bool)
     else:
         raise ValueError("ERROR: Unknown preselection method")
     #if respSel is not None: sl *= respSel[sel]
