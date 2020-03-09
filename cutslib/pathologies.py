@@ -1536,7 +1536,7 @@ def lowFreqAnal(fdata, sel, frange, df, nsamps, scan_freq, par,
     # Apply gain ratio in case of multichroic
     if (flatfield is not None) and ("scale" in flatfield.fields):
         scl = flatfield.get_property("scale",det_uid=np.where(sel)[0],
-                                                 default = 1.)
+                                     default = 1.)
         lf_data *= np.repeat([scl],lf_data.shape[1],axis=0).T
 
     # Get Correlations
@@ -1565,23 +1565,26 @@ def highFreqAnal(fdata, sel, range, nsamps,
     @brief Find noise RMS, skewness and kurtosis over a frequency band
     """
     ndet = len(sel)
+    # get the high frequency fourior modes
     hf_data = fdata[sel,range[0]:range[1]]
     if nmodes > 0:
         if preSel is None: preSel = np.ones(sel.sum(),dtype=bool)
         else: preSel = preSel[sel]
+        # find the correlation between different detectors
         c = np.dot(hf_data[preSel],hf_data[preSel].T.conjugate())
+        # find the first few common modes in the detectors and
+        # deproject them
         u, w, v = np.linalg.svd(c, full_matrices = 0)
         kernel = v[:nmodes]/np.repeat([np.sqrt(w[:nmodes])],len(c),axis=0).T
         modes = np.dot(kernel,hf_data[preSel])
         coeff = np.dot(modes,hf_data.T.conj())
         hf_data -= np.dot(coeff.T.conj(),modes)
+    # compute the rms for the detectors
     rms = np.zeros(ndet)
     rms[sel] = np.sqrt(np.sum(abs(hf_data)**2,axis=1)/hf_data.shape[1]/nsamps)
+    # if we are interested in high order effects, skew and kurtosis will
+    # be calculated here
     if highOrder:
-        #hfd = np.hstack([np.expand_dims(np.zeros(len(hf_data)),1),
-        #                    hf_data[:,:-1],
-        #                    np.expand_dims(np.real(hf_data[:,-1]),1)])
-        #hfd = np.fft.irfft(hfd)*np.sqrt(2.*hf_data.shape[1]/nsamps)
         hfd, _ = get_time_domain_modes( hf_data, 1, nsamps)
         skewt = stat.skewtest(hfd,axis=1)
         kurtt = stat.kurtosistest(hfd,axis=1)
@@ -1593,6 +1596,7 @@ def highFreqAnal(fdata, sel, range, nsamps,
             t = int(T*f); p = int(pivot*f)
             prms = []; pskewt = []; pkurtt = []
             for c in np.arange(N):
+               # calculating the statistics for each swing (scan chunk)
                prms.append(hfd[:,c*t+p:(c+1)*t+p].std(axis=1))
                pskewt.append(stat.skewtest(hfd[:,c*t+p:(c+1)*t+p],axis=1))
                pkurtt.append(stat.kurtosistest(hfd[:,c*t+p:(c+1)*t+p],axis=1))

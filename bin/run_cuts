@@ -146,7 +146,7 @@ config = {
     'glitchp': cutParam.get('glitchParams'),
     'include_mce': True,
     'depot': depot,
-    'no_noies': no_noise,
+    'no_noise': no_noise,
     'write_depot': True
 }
 loop.add_routine(CutPartial(**config))
