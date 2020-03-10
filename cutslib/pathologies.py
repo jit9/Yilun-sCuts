@@ -410,15 +410,15 @@ class Pathologies( object ):
         moby2.tod.retrend_tod(trDt, data = self.dsDCM)
 
         # Get Drift-Error
-        DE = highFreqAnal(fdata, live, [n_l,n_h], self.ndata, nmodes = par["DEModes"],
-                             highOrder = False, preSel = self.preLiveSel)
+        DE = highFreqAnal(fdata, live, [n_l,n_h], self.ndata, nmodes=par["DEModes"],
+                          highOrder=False, preSel=self.preLiveSel)
         self.crit["DELive"]["values"] = DE
 
         # Mid-frequency Analysis
         n_l = int(round(par["midFreqFilter"][0]/df))
         n_h = int(round(par["midFreqFilter"][1]/df))
-        MFE = highFreqAnal(fdata, live, [n_l,n_h], self.ndata, nmodes = par["MFEModes"],
-                             highOrder = False, preSel = self.preLiveSel)
+        MFE = highFreqAnal(fdata, live, [n_l,n_h], self.ndata, nmodes=par["MFEModes"],
+                           highOrder=False, preSel=self.preLiveSel)
         self.crit["MFELive"]["values"] = MFE
 
         # High-frequency analysis Live
@@ -427,8 +427,8 @@ class Pathologies( object ):
         n_h = nextregular(n_h-n_l) + n_l
         if not(par["getPartial"]):
             rms, skewt, kurtt = highFreqAnal(fdata, live, [n_l,n_h], self.ndata,
-                                           nmodes = par["HFLiveModes"],
-                                           highOrder = True, preSel = self.preLiveSel)
+                                             nmodes=par["HFLiveModes"],
+                                             highOrder=True, preSel=self.preLiveSel)
         else:
             rms, skewt, kurtt, prms, pskewt, pkurtt = highFreqAnal(fdata, live,
                                            [n_l,n_h], self.ndata, nmodes = par["HFLiveModes"],
@@ -503,8 +503,8 @@ class Pathologies( object ):
 
         if not(self.calibrated): self.calibrateValues()
         normalizeGains(self.crit["gainLive"]["values"],
-                       sel = self.calData["stable"]*self.preLiveSel,
-                       rejectOutliers = True, outlierSigma = 1.)
+                       sel=self.calData["stable"]*self.preLiveSel,
+                       rejectOutliers=True, outlierSigma=1.)
 
         # Make Live Selections
         for k in self.liveKeys:
@@ -713,7 +713,9 @@ class Pathologies( object ):
         for k in self.activeLiveKeys:
             if (k.find("partial")==0):
                 SEL *= self.crit[k]["pSel"]
-        # update period and pivot with downsample_level (usually 1)
+        # update period and pivot with downsample_level (usually 1).
+        # pivot is the first turnover, each chunk can be found
+        # by pivot+i*T, pivot+(i+1)*T
         T = self.chunkParams['T']//self.tod.info.downsample_level
         pivot = self.chunkParams['pivot']//self.tod.info.downsample_level
         N = self.chunkParams['N']
@@ -1523,13 +1525,13 @@ def lowFreqAnal(fdata, sel, frange, df, nsamps, scan_freq, par,
     if par.get("presel",{}).get("method","median") is "median":
         sl = presel_by_median(cc,sel=normSel[sel],
                               forceSel=respSel[sel],**par.get("presel",{}))
-        res["groups"] = None
+        # res["groups"] = None
     elif par.get("presel",{}).get("method") is "groups":
         G, ind, ld, smap = group_detectors(cc, sel=normSel[sel], **par.get("presel",{}))
         sl = np.zeros(cc.shape[1],dtype=bool)
         sl[ld] = True
-        res["groups"] = {"G": G, "ind": ind, "ld": ld, "smap": smap}
-    else par.get("presel",{}).get("method") is "none":
+        # res["groups"] = {"G": G, "ind": ind, "ld": ld, "smap": smap}
+    elif par.get("presel",{}).get("method") is "none":
         # if for some reason we want to skip the presel and select everything
         sl = np.ones(cc.shape[1],dtype=bool)
     else:
