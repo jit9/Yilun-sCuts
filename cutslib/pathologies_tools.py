@@ -47,7 +47,7 @@ def recoverScanCuts(tod, params, full=False):
         iv_cal = products.get_iv_calibration({"source":"data"}, tod.info)
         Rn_limits = params.get('fractionRn')
         Rn_pass = (Rn_limits[0] <= iv_cal.fraction_Rnormal) * \
-                        (iv_cal.fraction_Rnormal < Rn_limits[1])
+            (iv_cal.fraction_Rnormal < Rn_limits[1])
         pa.addCriterion('badRes', Rn_pass)
 
     # GET NEW PATHOLOGY SELECTIONS

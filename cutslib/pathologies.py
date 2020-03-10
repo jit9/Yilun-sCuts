@@ -713,8 +713,9 @@ class Pathologies( object ):
         for k in self.activeLiveKeys:
             if (k.find("partial")==0):
                 SEL *= self.crit[k]["pSel"]
-        T = self.chunkParams['T']/self.tod.info.downsample_level
-        pivot = self.chunkParams['pivot']/self.tod.info.downsample_level
+        # update period and pivot with downsample_level (usually 1)
+        T = self.chunkParams['T']//self.tod.info.downsample_level
+        pivot = self.chunkParams['pivot']//self.tod.info.downsample_level
         N = self.chunkParams['N']
         assert N == np.shape(SEL)[1]
 
@@ -1349,8 +1350,8 @@ def multiFreqCorrAnal(fdata, sel, df, nf, nsamps, scan_freq, par, parTag,
             fcmi, cmi, cmdti = getDarkModes(fdata, darkSel, [n_l,n_h],
                                             df, nf, nsamps, par, tod)
             fcm.append(fcmi); cm.append(cmi); cmdt.append(cmdti)
-        r = lowFreqAnal( fdata, sel, [n_l,n_h], df, nsamps, scan_freq, par.get(parTag,{}),
-                    fcmodes = fcmi, respSel = respSel, flatfield = flatfield )
+        r = lowFreqAnal(fdata, sel, [n_l,n_h], df, nsamps, scan_freq, par.get(parTag,{}),
+                        fcmodes=fcmi, respSel=respSel, flatfield=flatfield)
         psel.append(r["preSel"]); corr.append(r["corr"]); gain.append(np.abs(r["gain"]))
         norm.append(r["norm"]); darkRatio.append(r["ratio"])
         if full: all_data.append(r)
@@ -1489,6 +1490,7 @@ def lowFreqAnal(fdata, sel, frange, df, nsamps, scan_freq, par,
     norm[sel] = fnorm*np.sqrt(2./nsamps)
     nnorm = norm/np.sqrt(nsamps)
     nlim = ppar.get("normLimit",[0.,1e15])
+    # if only one value is given, treat it as an upper limit
     if np.ndim(nlim) == 0: nlim = [0,nlim]
     normSel = (nnorm > nlim[0])*(nnorm < nlim[1])
 
