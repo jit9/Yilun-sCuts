@@ -233,12 +233,13 @@ class Pathologies( object ):
         self.liveKeys = []
         self.darkKeys = []
 
-        #Live Criteria
+        # Live Criteria
         for C in p["liveSelParams"].keys():
             K = "%sLive"%C
             self.liveKeys.append(K)
             if not(K in self.crit): self.crit[K] = {}
             self.crit[K].update(p["liveSelParams"][C])
+            # implies that it is to be processed
             self.crit[K]["proc"] = True
             if "values" not in self.crit[K]:
                 self.crit[K]["values"] = None
@@ -490,7 +491,7 @@ class Pathologies( object ):
         return 0
 
 
-    def makeNewSelections( self, params = None,  verbose = False):
+    def makeNewSelections(self, params=None, verbose=False):
         """
         @brief  Make detector selections (whole and partial).
         @param  verbose       Show resulting number of selected detectors
@@ -506,6 +507,12 @@ class Pathologies( object ):
                        sel=self.calData["stable"]*self.preLiveSel,
                        rejectOutliers=True, outlierSigma=1.)
 
+        # Make selections for both live and dark detectors. Note that
+        # this is done to dets marked by "proc" only. Note also that
+        # even though preselection is passed it, it is only used when
+        # one uses 'relative' method or normalize the crit values, both
+        # of these are not used anymore as of s17
+        #
         # Make Live Selections
         for k in self.liveKeys:
             if self.crit[k]["proc"]: self._processSelection(k, self.preLiveSel)
@@ -514,12 +521,15 @@ class Pathologies( object ):
         for k in self.darkKeys:
             if self.crit[k]["proc"]: self._processSelection(k, self.preDarkSel)
 
-        # SELECT LIVE DETECTORS
-        self.liveSel = ~self.zeroSel*~self.exclude
+        # Select live detectors
+        self.liveSel = ~self.zeroSel*~self.exclude*self.preLiveSel
         self.cutCounter = np.zeros(len(self.dets))
         self.cutCounter[self.zeroSel] += 1
         self.cutCounter[self.exclude] += 1
 
+        # Note that this log section is potentially obsolete as we now
+        # have more than 1024 dets. This doesn't affect anything because
+        # it is only used for logging and debugging purpose
         live = np.ones(len(self.dets), dtype = bool)
         live[1024:] = False
         if verbose:
@@ -543,7 +553,7 @@ class Pathologies( object ):
                   '%-20s = %d'%("forceCalib_liveCuts",len(self.dets[self.calData["calSel"]])))
 
         # SELECT DARK DETECTORS
-        self.darkSel = ~self.zeroSel
+        self.darkSel = ~self.zeroSel*self.preDarkSel
 
         for k in self.activeDarkKeys:
             sel = self.crit[k]["sel"]
@@ -1357,35 +1367,44 @@ def multiFreqCorrAnal(fdata, sel, df, nf, nsamps, scan_freq, par, parTag,
         psel.append(r["preSel"]); corr.append(r["corr"]); gain.append(np.abs(r["gain"]))
         norm.append(r["norm"]); darkRatio.append(r["ratio"])
         if full: all_data.append(r)
+    # count the number of freq window in which each detector is
+    # voted as preselected
     spsel = np.sum(psel,axis=0)
+    # the best candidate has this number of votes
     Nmax = spsel.max()
-    #apsel = spsel == Nwin
-    #psel50 = spsel >= Nwin/2.
-    #for g in gain: g /= np.mean(g[apsel])
+    # finalize preselection list by looking for detectors
+    # preselected in more than half of the maximally selected
+    # detectors. Below are two other criteria used before
+    # 1) psel = spsel == Nwin
+    # 2) psel50 = spsel >= Nwin/2.
     psel50 = spsel >= Nmax/2.
+
+    # normalize gain
     for g,s in zip(gain,psel): g /= np.mean(g[psel50*s])
     gain = np.array(gain)
+    # give a default gain of 0 for invalid data
     gain[np.isnan(gain)] = 0.
-    #sg = np.sort(gain,axis=0)
-    #gm = sg[Nwin/2]
-    #gs = 0.741*(sg[(3*Nwin)/4] - sg[Nwin/4])
-    #gs[gs==0] = 1.
-    #gain_mask = np.abs(gain - np.repeat([gm],Nwin,axis=0)) > np.repeat([gs],Nwin,axis=0)
-    #mgain = ma.MaskedArray(gain,gain_mask)
+
+    # use mean as representative values for gain
     mgain = ma.MaskedArray(gain,~np.array(psel))
     mgain_mean = mgain.mean(axis=0)
+    # use max as representative values for corr
     mcorr = ma.MaskedArray(corr,~np.array(psel))
-    #mcorr_mean = mcorr.mean(axis=0)
     mcorr_max = mcorr.max(axis=0)
+    # use mean as representative values for norm
     mnorm = ma.MaskedArray(norm,~np.array(psel))
     mnorm_mean = mnorm.mean(axis=0)
+
+    # export the values
     res = {"preSel": psel50, "corr": mcorr_max.data, "gain": mgain_mean.data,
-          "norm": mnorm_mean.data, "all_data": all_data}
+           "norm": mnorm_mean.data, "all_data": all_data}
+
     if par[parTag].get("removeDark",False):
         mdarkRatio = ma.MaskedArray(darkRatio,~np.array(psel))
         mdarkRatio_mean = mdarkRatio.mean(axis=0)
         res['darkRatio'] = mdarkRatio_mean.data
     return res
+
 
 def getDarkModes(fdata,darkSel,frange,df,nf,nsamps,par,tod = None):
     """
@@ -1400,7 +1419,7 @@ def getDarkModes(fdata,darkSel,frange,df,nf,nsamps,par,tod = None):
     if par["darkModesParams"].get("useDarks", False):
         dark_signal = fdata[darkSel,n_l:n_h].copy()
         fc_inputs.extend(list(dark_signal))
-    # TEST CRYOSTAT TEMPERATURE
+    # Test cryostat temperature
     if par["darkModesParams"].get("useTherm", False) and tod is not None:
         thermometers = []
         for channel in par['thermParams']['channel']:
@@ -1547,19 +1566,18 @@ def lowFreqAnal(fdata, sel, frange, df, nsamps, scan_freq, par,
         lf_data *= np.repeat([scl],lf_data.shape[1],axis=0).T
 
     # Get Correlations
-    u, s, v = np.linalg.svd( lf_data[sl], full_matrices=False )
+    u, s, v = np.linalg.svd( lf_data, full_matrices=False )
     corr = np.zeros(ndet)
     if par.get("doubleMode",False):
-        corr[preSel] = np.sqrt(abs(u[:,0]*s[0])**2+abs(u[:,1]*s[1])**2)/fnorm[sl]
+        corr = np.sqrt(abs(u[:,0]*s[0])**2+abs(u[:,1]*s[1])**2)/fnorm
     else:
-        corr[preSel] = np.abs(u[:,0])*s[0]/fnorm[sl]
+        corr = np.abs(u[:,0])*s[0]/fnorm
 
     # Get Gains
     #
     # data = CM * gain
     #
-    gain = np.zeros(ndet,dtype=complex)
-    gain[preSel] = np.abs(u[:,0])  #/np.mean(np.abs(u[:,0]))
+    gain = np.abs(u[:,0])
     res.update({"preSel": preSel, "corr": corr, "gain": gain, "norm": norm,
                 "dcoeff": dcoeff, "ratio": ratio, "cc": cc, "normSel": normSel})
     return res
