@@ -33,7 +33,7 @@ class Pathologies( object ):
     _depot_structure = '{class}/{tag}/{first_five}/{tod_name}.pickle'
 
 
-    def __init__( self, tod, params, calibrated = False, calibratedTOD = False, noExclude = False):
+    def __init__(self, tod, params, calibrated=False, calibratedTOD=False, noExclude=False):
         """
         @brief Initialize the pathologies object.
         @param   tod          TOD object to analyze.
@@ -194,7 +194,7 @@ class Pathologies( object ):
         self.chunkParams = None
         self.report = None
 
-    def setParams( self, noExclude = False):
+    def setParams(self, noExclude=False):
         """
         Update parameters in pathologies object
         """
@@ -228,7 +228,7 @@ class Pathologies( object ):
             self.params['findPathoParams']['thermParams']['T_max'] = T_set + 5 * dT_max
 
 
-    def initializeCriteria( self ):
+    def initializeCriteria(self):
         p = self.params
         self.liveKeys = []
         self.darkKeys = []
@@ -265,12 +265,12 @@ class Pathologies( object ):
             if self.crit[k]["apply"]:
                 self.activeDarkKeys.append(k)
 
-    def addCriterion( self, key, selection, apply = True ):
+    def addCriterion(self, key, selection, apply=True):
         self.liveKeys.append(key)
         self.crit[key] = {"sel": selection, "apply": apply, "proc": False}
         if apply: self.activeLiveKeys.append(key)
 
-    def findPathologies( self, retrend = False, verbose = False,):
+    def findPathologies(self, retrend=False, verbose=False):
         """
         @brief Finds the common mode for both live and dark detectors and calculates the
         standard deviation of the detectors around the common modes, normalized by their
@@ -287,8 +287,8 @@ class Pathologies( object ):
         par = self.params['findPathoParams']
 
         # ANALYZE SCAN
-        self.scan = analyzeScan( np.unwrap(self.tod.az), self.sampleTime,
-                                **self.params.get("scanParams",{}) )
+        self.scan = analyzeScan(np.unwrap(self.tod.az), self.sampleTime,
+                                **self.params.get("scanParams", {}))
         self.scan_freq = self.scan["scan_freq"]
         self.chunkParams = {'T': self.scan["T"]*self.tod.info.downsample_level,
                             'pivot': self.scan["pivot"]*self.tod.info.downsample_level,
@@ -320,7 +320,6 @@ class Pathologies( object ):
             return 1
         toc = time.time();
         psLib.trace('moby', 2, "It took %f seconds to calibrate"%(toc-tic))
-
 
         # FIND JUMPS
         self.crit["jumpLive"]["values"] = moby2.libactpol.find_jumps(self.tod.data,
@@ -368,10 +367,7 @@ class Pathologies( object ):
         self.crit["corrLive"]["values"] = np.zeros(self.ndet,dtype=float)
         self.crit["gainLive"]["values"] = np.zeros(self.ndet,dtype=float)
         self.crit["normLive"]["values"] = np.zeros(self.ndet,dtype=float)
-        #self.darkCoeff = np.zeros(self.ndet,dtype=complex)
-        #self.darkRatio = np.zeros(self.ndet,dtype=float)
-        #self.preSelGroups = {}
-        #self.preCC = {}
+
         self.multiFreqData = {}
         for fbs,fbn in zip(self.fbandSel,self.fbands):
             res = multiFreqCorrAnal(fdata, fbs, df, nf, self.ndata, self.scan_freq, par,
@@ -384,12 +380,10 @@ class Pathologies( object ):
             self.crit["corrLive"]["values"][fbs] = res["corr"][fbs]
             self.crit["gainLive"]["values"][fbs] = res["gain"][fbs]
             self.crit["normLive"]["values"][fbs] = res["norm"][fbs]
-            # self.darkCoeff[fbs] = res["dcoeff"].squeeze()[fbs]
-            # self.darkRatio[fbs] = res["ratio"][fbs]
-            # self.preSelGroups[fbn] = res["groups"]
-            # self.preCC[fbn] = res["cc"]
+
             self.multiFreqData[fbn] = res["all_data"]
         self.res = res
+
         # Undo flatfield correction
         self.crit["gainLive"]["values"] /= np.abs(ff)
 
@@ -577,9 +571,9 @@ class Pathologies( object ):
             psLib.trace('moby', 0, '%-20s = %d'%('# Dark Detectors', len(self.dets[self.darkSel])))
 
 
-    def _processSelection( self, key, initSel=None ):
+    def _processSelection(self, key, initSel=None):
         if initSel is None:
-            initSel = np.ones(self.ndet,dtype = bool)
+            initSel = np.ones(self.ndet, dtype=bool)
         p = self.crit[key]
         if p["values"] is None: return
 
@@ -604,7 +598,7 @@ class Pathologies( object ):
             p["sel"] = _combineSelTypes( relSel, absSel, p['selType'])
 
 
-    def getpWCalibration(self, flatfield = None):
+    def getpWCalibration(self, flatfield=None):
         """
         @brief  Get responsivities and flatfield for calibration
         """
@@ -635,7 +629,7 @@ class Pathologies( object ):
                         "stable": stable}
         return resp.cal, ff, ffRMS, respSel, ffSel, stable
 
-    def calibrate2pW( self, flatfield = None, full = False):
+    def calibrate2pW(self, flatfield=None, full=False):
         """
         @brief  Calibrate TOD to pW using responsivity and flatfield
         """
@@ -650,7 +644,7 @@ class Pathologies( object ):
                                           factor[s].astype('float32'))
             self.calibratedTOD = True
 
-    def calibrateValues( self, flatfield = None):
+    def calibrateValues(self, flatfield=None):
         """
         @brief   Apply calibration to those statistics that depend on data units.
         @param   flatfield  Calibration filename
@@ -678,26 +672,14 @@ class Pathologies( object ):
                 if self.crit["partialRMSLive"]["values"] is not None:
                     self.crit["partialRMSLive"]["values"][dcal] *= \
                         np.resize(cal,self.crit["partialRMSLive"]["values"][dcal].T.shape).T
-            # for i in range(len(dcal)):
-            #     aff = abs(ff[dcal[i]])
-            #     cal = resp[dcal[i]]*aff
-            #     self.crit["gainLive"]["values"][dcal[i]] *= aff
-            #     self.crit["normLive"]["values"][dcal[i]] *= cal
-            #     self.crit["rmsLive"]["values"][dcal[i]] *= cal
-            #     self.crit["DELive"]["values"][dcal[i]] *= cal
-            #     self.crit["MFELive"]["values"][dcal[i]] *= cal
-            #     if self.crit["partialRMSLive"]["values"] is not None:
-            #         self.crit["partialRMSLive"]["values"][dcal[i]] *= \
-            #             np.resize(cal,self.crit["partialRMSLive"]["values"][dcal[i]].T.shape).T
             self.calibrated = True
         else: psLib.trace('moby', 0, 'ERROR: pathologies already calibrated')
 
 
-    def makeAzCuts( self, applyToTOD = False ):
+    def makeAzCuts(self, applyToTOD=False):
         """
         @brief  Apply azimuth cuts to TOD
         """
-#        if self.scan is None:
         sampleTime = ( (self.tod.ctime[-1]-self.tod.ctime[0])
                        / self.tod.nsamps )
         self.scan = analyzeScan(np.unwrap(self.tod.az), sampleTime,
@@ -712,7 +694,7 @@ class Pathologies( object ):
 
         return c_obj
 
-    def makeCuts( self, applyToTOD = False ):
+    def makeCuts(self, applyToTOD=False):
         """
         @brief  Apply cuts to tod.
         """
@@ -725,7 +707,7 @@ class Pathologies( object ):
             self.tod.cuts.merge_tod_cuts(c_obj)
         return c_obj
 
-    def makePartialCuts( self, applyToTOD = False ):
+    def makePartialCuts(self, applyToTOD=False):
         """
         @brief  Apply partial cuts from RMS, SKEW and KURT
         """
@@ -754,15 +736,15 @@ class Pathologies( object ):
             self.tod.cuts.merge_tod_cuts(c_obj)
         return c_obj
 
-    def showParams( self ):
+    def showParams(self):
         """
         @brief   Show parameters
         """
         printDictionary(self.params, 0)
 
 
-    def viewChunksData( self, DATA, title = None, vmin = None, vmax = None, filename = None,
-                        selection = None, display = True, units = None, interactive = True):
+    def viewChunksData(self, DATA, title=None, vmin=None, vmax=None, filename=None,
+                       selection=None, display=True, units=None, interactive=True):
         """
         @brief   Produce 2D plot of chunk data
         """
@@ -785,8 +767,8 @@ class Pathologies( object ):
         else: pylab.clf()
 
 
-    def viewSelection( self, selection, title = None, filename = None, display = True,
-                       interactive = True):
+    def viewSelection(self, selection, title=None, filename=None, display=True,
+                      interactive=True):
         """
         @brief  Visualize the location in the array of the detectors that would be cut or not
                 given a selection of good detectors.
@@ -831,9 +813,11 @@ class Pathologies( object ):
         else: pylab.clf()
 
 
-    def comparativePlot( self, data, semilogy = False, xlim = None, ylim = None, \
-                         title = None, ylabel = None, filename = None, display = True,
-                         interactive = True):
+
+
+    def comparativePlot(self, data, semilogy=False, xlim=None, ylim=None,
+                        title=None, ylabel=None, filename=None, display=True,
+                        interactive=True):
         """
         @brief   Plot detector # versus value for various statistics.
         @param   data      data vector (ndet long) to plot.
@@ -872,9 +856,9 @@ class Pathologies( object ):
             pylab.clf()
 
 
-    def plotArrayVector(self, data, selection = None, vmin = None, vmax = None,
-                        title = None, filename = None, display = True, units = None,
-                        interactive = True):
+    def plotArrayVector(self, data, selection=None, vmin=None, vmax=None,
+                        title=None, filename=None, display=True, units=None,
+                        interactive=True):
         """
         @brief   Plot the value for various statistics across the array.
         @param   data      data vector (ndet long) to plot.
@@ -907,9 +891,9 @@ class Pathologies( object ):
             pylab.clf()
 
 
-    def histogram(self, data, selection = None, bins = None, drange = None, \
-                  title = None, xlabel = None, filename = None, display = True,
-                  interactive = True):
+    def histogram(self, data, selection=None, bins=None, drange=None,
+                  title=None, xlabel=None, filename=None, display=True,
+                  interactive=True):
         """
         @brief   Make histogram for the value for various statistics.
         @param   data      data vector (ndet long) to plot.
@@ -939,7 +923,7 @@ class Pathologies( object ):
             if not(interactive): pylab.show()
         else: pylab.clf()
 
-    def makeHistograms(self, outdir = "./", live = True, dark = True, nsig = 5):
+    def makeHistograms(self, outdir="./", live=True, dark=True, nsig=5):
         """
         @brief Makes histograms of all statistical values of active criteria
         """
@@ -966,7 +950,7 @@ class Pathologies( object ):
                 self.histogram(dat["values"]/mm, drange=r, filename = fn, display = False,
                                title = k, selection = self.origDark)
 
-    def quickReport( self, verbose = True ):
+    def quickReport(self, verbose=True):
         """
         @brief  Give: Number of live detectors.
                       Fraction of uncut live time.
@@ -981,12 +965,7 @@ class Pathologies( object ):
         for k in self.activeLiveKeys:
             if (k.find("partial")==0):
                 partialSel *= self.crit[k]["pSel"]
-#        if self.params['partialCuts']['partialRMS']:
-#            partialSel *= self.crit["partialRMS"]["pSel"]
-#        if self.params['partialCuts']['partialSKEW']:
-#            partialSel *= self.crit["partialSKEW"]["pSel"]
-#        if self.params['partialCuts']['partialKURT']:
-#            partialSel *= self.crit["partialKURT"]["pSel"]
+
         tDead = float(np.sum(np.array(~partialSel[self.liveSel], dtype = int))*T)
         if tLiveTot > 0:
             fLive = (tLiveTot - tDead)/tLiveTot
@@ -995,12 +974,12 @@ class Pathologies( object ):
             psLib.trace('moby', 0, 'Quick Cut Report:\n'
                                    '     # Live Detectors:    %4d\n'
                                    '     # Dark Detectors:    %4d\n'
-                                   '     Fraction Live Time: %5.3f\n'%(nLive, nDark, fLive))
+                                   '     Fraction Live Time: %5.3f\n' % (nLive, nDark, fLive))
         return nLive, nDark, fLive
 
 
 
-    def makeReport( self, filename ):
+    def makeReport(self, filename):
         """
         @brief   Generates a report with various statistical indicators.
         """
@@ -1065,7 +1044,7 @@ class Pathologies( object ):
         else:                      psLib.trace('moby', 0, '        zeroSel: live')
 
 
-    def writeToPath( self, path ):
+    def writeToPath(self, path):
         """
         @brief Stores the pathologies object in Path.
         @param  path   directory path where to store the data object.
@@ -1089,7 +1068,7 @@ class Pathologies( object ):
         del tod
 
     @staticmethod
-    def readFromPath( path, tod = None, params = None ):
+    def readFromPath(path, tod=None, params=None):
         """
         @brief  Reloads a stored pathologies object.
         @param  path   Path to the directory where the data is stored.
@@ -1130,7 +1109,7 @@ class Pathologies( object ):
     write_to_path = writeToPath
 
 
-def selectBySigma( data, preSelection, thrld ):
+def selectBySigma(data, preSelection, thrld):
     """
     @brief  Select the detectors that fall inside a normal distribution within a given standard deviation from the mean. The distribution mean and
             standard deviation are calculated given an initial set of detectors.
@@ -1153,7 +1132,7 @@ def selectBySigma( data, preSelection, thrld ):
     else: return (data >= m-thrld*s)*(data <= m+thrld*s), m, s
 
 
-def _combineSelTypes( relSel, absSel, selType):
+def _combineSelTypes(relSel, absSel, selType):
     """
     @brief Combine relative and partial cuts
     """
@@ -1169,7 +1148,7 @@ def _combineSelTypes( relSel, absSel, selType):
         psLib.trace("moby", 0, "ERROR: Unknown selection type")
         return np.ones(len(relSel), dtype = bool)
 
-def _findExcessPartial( selection, threshold ):
+def _findExcessPartial(selection, threshold):
     """
     @brief Find detectors with too many partial chunk cuts and select them to be cut.
     """
@@ -1202,7 +1181,6 @@ class darkDets(object):
         """
         if path[-1] == '/':
             path = path[0:-1]
-#        filename = "%s/darkDets.txt" % path
         f = open(path, 'w')
         for d in self.darkDets:
             f.write('%d\n'%d)
@@ -1215,7 +1193,6 @@ class darkDets(object):
         """
         if path[-1] == '/':
             path = path[0:-1]
-#        filename = "%s/darkDets.txt" % path
         f = open(path, 'r')
         dd = darkDets()
         dd.darkDets = []
@@ -1293,17 +1270,13 @@ class darkModes(object):
         if dets is None: dets = tod.det_uid
         if self.emodes is None: self.expandModes(tod)
         self.coeff = moby2.libactpol.data_dot_modes(tod.data,
-                                  np.array(dets,dtype="int32"),
-                                  np.asarray(self.emodes,dtype="float32"),
-                                  moby2.util.encode_c(tod.cuts))
-        moby2.libactpol.remove_modes( tod.data,
-                                  np.array(dets, dtype='int32'),
-                                  self.emodes.astype('float32'),
-                                  self.coeff.astype('float64'))
-
-        #for m in self.emodes:
-        #    coeff = np.dot(tod.data[dets],m)
-        #    tod.data[dets] -= np.outer(coeff,m)
+                                                    np.array(dets,dtype="int32"),
+                                                    np.asarray(self.emodes,dtype="float32"),
+                                                    moby2.util.encode_c(tod.cuts))
+        moby2.libactpol.remove_modes(tod.data,
+                                     np.array(dets, dtype='int32'),
+                                     self.emodes.astype('float32'),
+                                     self.coeff.astype('float64'))
 
     def write_to_path( self, path ):
         """
@@ -1327,7 +1300,6 @@ class darkModes(object):
         """
         if path[-1] == '/':
             path = path[0:-1]
-#        filename = "%s/???" % path
         f = open(path, 'rb')
         dm = np.load(f)
         f.close()
@@ -1416,7 +1388,7 @@ def multiFreqCorrAnal(fdata, sel, df, nf, nsamps, scan_freq, par, parTag,
     return res
 
 
-def getDarkModes(fdata,darkSel,frange,df,nf,nsamps,par,tod = None):
+def getDarkModes(fdata, darkSel, frange, df, nf, nsamps, par, tod=None):
     """
     @brief Get dark or thermal modes from dark detectors and thermometer
            data.
@@ -1465,7 +1437,7 @@ def getDarkModes(fdata,darkSel,frange,df,nf,nsamps,par,tod = None):
 
 
 def lowFreqAnal(fdata, sel, frange, df, nsamps, scan_freq, par,
-                fcmodes=None, respSel = None, flatfield = None):
+                fcmodes=None, respSel=None, flatfield=None):
     """
     @brief Find correlations and gains to the main common mode over a frequency range
     """
@@ -1565,7 +1537,7 @@ def lowFreqAnal(fdata, sel, frange, df, nsamps, scan_freq, par,
         sl = np.ones(cc.shape[1],dtype=bool)
     else:
         raise ValueError("ERROR: Unknown preselection method")
-    #if respSel is not None: sl *= respSel[sel]
+    # if respSel is not None: sl *= respSel[sel]
     preSel = sel.copy()
     preSel[sel] = sl
 
@@ -1584,9 +1556,7 @@ def lowFreqAnal(fdata, sel, frange, df, nsamps, scan_freq, par,
         corr = np.abs(u[:,0])*s[0]/fnorm
 
     # Get Gains
-    #
     # data = CM * gain
-    #
     gain = np.abs(u[:,0])
     res.update({"preSel": preSel, "corr": corr, "gain": gain, "norm": norm,
                 "dcoeff": dcoeff, "ratio": ratio, "cc": cc, "normSel": normSel})
@@ -1694,7 +1664,7 @@ def fit_atm(fdata, sel, dt, df, noise, scanf,
     kneeA[sel] = knee
     return mA, levelA, kneeA
 
-def analyzeScan(az, dt = 0.002508,  N=50, vlim=0.01, qlim=0.01):
+def analyzeScan(az, dt=0.002508, N=50, vlim=0.01, qlim=0.01):
     """
     @brief Find scan parameters and cuts
     """
@@ -1782,9 +1752,10 @@ def checkThermalDrift(tod, thermParams):
 
 
 # Gain normalization code
-def normalizeGains(gains, sel = None, useMedian = False,
-                   rejectOutliers = False, outlierSigma = 2.,
-                   weights = None, min_sel = 1, **kwargs):
+
+def normalizeGains(gains, sel=None, useMedian=False,
+                   rejectOutliers=False, outlierSigma=2.,
+                   weights=None, min_sel=1, **kwargs):
     """
     Normalize a 1-d vector of gains as a function of the gains of a subset of detectors
     Parameters:
