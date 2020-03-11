@@ -429,12 +429,11 @@ class Pathologies( object ):
         if not(par["getPartial"]):
             rms, skewt, kurtt = highFreqAnal(fdata, live, [n_l,n_h], self.ndata,
                                              nmodes=par["HFLiveModes"],
-                                             highOrder=True, preSel=self.preLiveSel)
+                                             highOrder=True)
         else:
-            rms, skewt, kurtt, prms, pskewt, pkurtt = highFreqAnal(fdata, live,
-                                           [n_l,n_h], self.ndata, nmodes = par["HFLiveModes"],
-                                           highOrder = True, preSel = self.preLiveSel,
-                                           scanParams = self.scan)
+            rms, skewt, kurtt, prms, pskewt, pkurtt = \
+            highFreqAnal(fdata, live, [n_l,n_h], self.ndata, nmodes=par["HFLiveModes"],
+                         highOrder=True, scanParams=self.scan)
             self.crit["partialRMSLive"]["values"] = np.zeros([self.ndet,self.chunkParams["N"]])
             self.crit["partialSKEWLive"]["values"] = np.zeros([self.ndet,self.chunkParams["N"]])
             self.crit["partialKURTLive"]["values"] = np.zeros([self.ndet,self.chunkParams["N"]])
@@ -455,9 +454,9 @@ class Pathologies( object ):
         self.crit["skewpLive"]["values"][live] = skewt[1]
         self.crit["kurtpLive"]["values"][live] = kurtt[1]
 
-        # High-frequency analysis Dark
-        rms = highFreqAnal(fdata, dark, [n_l,n_h], self.ndata, nmodes = par["HFDarkModes"],
-                             highOrder = False, preSel = self.preDarkSel)
+        # High-frequency analysis: Dark detectors
+        rms = highFreqAnal(fdata, dark, [n_l,n_h], self.ndata, nmodes=par["HFDarkModes"],
+                           highOrder=False)
         self.crit["rmsDark"]["values"] = rms
 
         # Atmosphere -- 1/f analysis
@@ -497,7 +496,7 @@ class Pathologies( object ):
         @param  verbose       Show resulting number of selected detectors
         @param  params        Dictionary with specific parameters (see __init__ for details.
         """
-        # Update parameters
+        # Update parameters if needed
         if params is not None:
             self.params.update(params)
             self.initializeCriteria()
@@ -530,29 +529,35 @@ class Pathologies( object ):
         # Note that this log section is potentially obsolete as we now
         # have more than 1024 dets. This doesn't affect anything because
         # it is only used for logging and debugging purpose
-        live = np.ones(len(self.dets), dtype = bool)
+        live = np.ones(len(self.dets), dtype=bool)
         live[1024:] = False
         if verbose:
             psLib.trace('moby', 0, 'Number of live detectors cut out of 1024:')
             psLib.trace('moby', 0, '%-20s = %d'%('zero_cuts',len(self.dets[self.zeroSel*live])))
             psLib.trace('moby', 0, '%-20s = %d'%('exclude',len(self.dets[self.exclude*live])))
 
+        # For each crit labeled with apply=True, add to the output sel list
+        # and count the number of detectors that failed the cut
         for k in self.activeLiveKeys:
             self.liveSel *= self.crit[k]["sel"]
             self.cutCounter[~self.crit[k]["sel"]] += 1
             if verbose: psLib.trace('moby', 0,
                   '%-15s_cuts = %d'%(k,len(self.dets[~self.crit[k]["sel"]*live])))
 
+        # Check whether the scatter of gain is larger than a pre-defined threshold.
+        # Note that this is no longer used furthur down the pipeline
         if self.crit["gainLive"]["apply"]:
             if self.crit["gainLive"]["sigma"] > self.params['otherParams']['gainCrit']:
                 self.gainCut = True
 
+        # If we want to exclude detectors without a proper calibration
+        # This will likely be enforced in s17 onwards
         if self.params["otherParams"]["forceCalib"]:
             self.liveSel *= self.calData["calSel"]
             if verbose: psLib.trace('moby', 0,
                   '%-20s = %d'%("forceCalib_liveCuts",len(self.dets[self.calData["calSel"]])))
 
-        # SELECT DARK DETECTORS
+        # Select dark detectors
         self.darkSel = ~self.zeroSel*self.preDarkSel
 
         for k in self.activeDarkKeys:
@@ -578,6 +583,8 @@ class Pathologies( object ):
         p = self.crit[key]
         if p["values"] is None: return
 
+        # relative cut: only used when cut method is 'relative'
+        # though it's always computed
         relSel, m, s = selectBySigma(p["values"], initSel, p['relSigma'])
         p.update({'median':m, 'sigma':s, 'relLims': (m-s*p['relSigma'], m+s*p['relSigma'])})
         if p["normalize"]:
@@ -588,6 +595,9 @@ class Pathologies( object ):
             absSel = (p["values"] >= p['absCrit'][0])*(p["values"] <= p['absCrit'][1])
 
         if (key.find("partial") == 0):
+            # for partial crit, in addition to combine rel and abs
+            # cuts the detector with a larger than a pre-defined
+            # fraction of data cut is marked as entirely cut.
             p["pSel"] = _combineSelTypes( relSel, absSel, p['selType'])
             p["sel"] = _findExcessPartial( p["pSel"], self.params['otherParams']['maxFracCut'])
         else:
@@ -1584,8 +1594,8 @@ def lowFreqAnal(fdata, sel, frange, df, nsamps, scan_freq, par,
 
 
 def highFreqAnal(fdata, sel, range, nsamps,
-                 nmodes=0, highOrder = False, preSel = None,
-                 scanParams = None):
+                 nmodes=0, highOrder=False, preSel=None,
+                 scanParams=None):
     """
     @brief Find noise RMS, skewness and kurtosis over a frequency band
     """
@@ -1610,14 +1620,14 @@ def highFreqAnal(fdata, sel, range, nsamps,
     # if we are interested in high order effects, skew and kurtosis will
     # be calculated here
     if highOrder:
-        hfd, _ = get_time_domain_modes( hf_data, 1, nsamps)
+        hfd, _ = get_time_domain_modes(hf_data, 1, nsamps)
         skewt = stat.skewtest(hfd,axis=1)
         kurtt = stat.kurtosistest(hfd,axis=1)
         if scanParams is not None:
             T = scanParams["T"]
             pivot = scanParams["pivot"]
             N = scanParams["N"]
-            f = float(hfd.shape[1])/nsamps
+            f = hfd.shape[1]/nsamps
             t = int(T*f); p = int(pivot*f)
             prms = []; pskewt = []; pkurtt = []
             for c in np.arange(N):
