@@ -24,7 +24,11 @@ def submit(cutparam):
     outdir = os.path.join(basedir, par["outdir"])
     runtime = par.get("runtime")
     qos = par.get("qos")
-    partition = par.get("partition", "serial")
+    nomp = par.get("nomp", 1)
+    # partition = par.get("partition", "serial")
+    # total task per node including nomp
+    # note there is a maximum of 64 logical cores in della
+    ttpn = tpn * nomp
 
     # find list of tods to process
     if not(os.path.isdir(outdir)): os.makedirs(outdir)
@@ -34,11 +38,11 @@ def submit(cutparam):
         f = open( '%s/submitjob.sh.%d' % (outdir, n), 'w' )
         f.write( '#!/bin/sh\n' )
         f.write( '#SBATCH -N 1\n')
-        f.write( '#SBATCH --ntasks-per-node=40\n')
+        f.write( '#SBATCH --ntasks-per-node=32\n')
         f.write( '#SBATCH -J %s%d\n' % (jobname,n))
         f.write( '#SBATCH -t %s\n' % runtime )
         f.write( '#SBATCH --qos %s\n' % qos )
-        f.write( '#SBATCH --partition %s\n' % partition)
+        # f.write( '#SBATCH --partition %s\n' % partition)
         f.write( '#SBATCH --output=%s/slurmjob.log.%d\n' % (outdir, n))
         f.write( 'module load gcc\n' )
         f.write( 'module load openmpi\n' )
@@ -46,7 +50,7 @@ def submit(cutparam):
         f.write( 'cd %s\n' % basedir)
         start, end = n*tpn, (n+1)*tpn
         for i in range(start, end):
-            f.write('OMP_NUM_THREADS=20 run_cuts -n %d --index %d -f %s & sleep 1\n' % (nproc, i, cutparam))
+            f.write('OMP_NUM_THREADS=%d run_cuts -n %d --index %d -f %s & sleep 1\n' % (nomp, nproc, i, cutparam))
         f.write('wait\n')
         f.close()
         os.system("sbatch %s/submitjob.sh.%d\n" % (outdir, n))
