@@ -6,7 +6,7 @@ class Module:
     def __init__(self, config):
         self.include_time = config.get("include_time", None)
 
-    def run(proj):
+    def run(self, proj):
         include_time = self.include_time
 
         params = MobyDict.from_file(proj.i.cutparam)

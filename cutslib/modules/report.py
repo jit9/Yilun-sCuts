@@ -225,13 +225,13 @@ class Module:
         print(cmd)
         os.system(cmd)
 
-    # utility function to format changelog for better displaying
-    def format_changelog(changelog):
-        lines = changelog.split('\n')
-        output_lines = ""
-        for i,l in enumerate(lines):
-            if '- v' == l[:3]:
-                output_lines += l + "\n"
-            else:
-                output_lines += "  " + l + "\n"
-        return output_lines
+# utility function to format changelog for better displaying
+def format_changelog(changelog):
+    lines = changelog.split('\n')
+    output_lines = ""
+    for i,l in enumerate(lines):
+        if '- v' == l[:3]:
+            output_lines += l + "\n"
+        else:
+            output_lines += "  " + l + "\n"
+    return output_lines

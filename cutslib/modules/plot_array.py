@@ -31,6 +31,10 @@ class Module:
         self.de_h = config.getfloat("de_h", None)
 
     def run(self, p):
+        calibrate = self.calibrate
+        targets = self.targets
+        shared_depot = self.shared_depot
+        estimator_name = self.estimator_name
         gain_l = self.gain_l
         gain_h = self.gain_h
         corr_l = self.corr_l

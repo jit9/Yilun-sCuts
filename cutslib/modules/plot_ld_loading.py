@@ -17,8 +17,8 @@ from cutslib.pathologies_tools import pathoList, get_pwv
 class Module:
     def __init__(self, config):
         # allow optionally specify an alternative cuts_db
-        cuts_db = config.get('cuts_db', None)
-        obs_catalog = config.get('obs_catalog', None)
+        self.cuts_db = config.get('cuts_db', None)
+        self.obs_catalog = config.get('obs_catalog', None)
 
     def run(self, p):
         cuts_db = self.cuts_db
