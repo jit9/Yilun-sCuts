@@ -515,7 +515,13 @@ class Pathologies( object ):
             if self.crit[k]["proc"]: self._processSelection(k, self.preDarkSel)
 
         # Select live detectors
-        self.liveSel = ~self.zeroSel*~self.exclude*self.preLiveSel
+        # If usePresel is set to False, the pre-selection will not be used for cut
+        # by default the pre-selection is used
+        usePresel = params.get_deep(('otherParams','usePresel'), True)
+        if usePresel:
+            self.liveSel = ~self.zeroSel*~self.exclude*self.preLiveSel
+        else:
+            self.liveSel = ~self.zeroSel*~self.exclude
         self.cutCounter = np.zeros(len(self.dets))
         self.cutCounter[self.zeroSel] += 1
         self.cutCounter[self.exclude] += 1
