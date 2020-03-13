@@ -4,27 +4,29 @@ of time."""
 
 from cutslib.pathologyReport import pathoReport
 
-def init(config):
-    global targets, add_pwv
-    targets = config.get("targets", None)
-    add_pwv = config.getboolean("add_pwv", False)
+class Module:
+    def __init__(self, config):
+        self.targets = config.get("targets", None)
+        self.add_pwv = config.getboolean("add_pwv", False)
 
-def run(p):
-    global targets, add_pwv
-    pr = pathoReport(filename=str(p.i.db))
-    if add_pwv:
-        pr.addPWV()
+    def run(self, p):
+        targets = self.targets
+        add_pwv = self.add_pwv
 
-    # if targets are not specified, all are calculated
-    if not targets:
-        targets = ['corrLive', 'rmsLive', 'kurtLive', 'skewLive',
-                   'normLive', 'darkRatioLive', 'MFELive',
-                   'gainLive', 'DELive', 'jumpLive']
+        pr = pathoReport(filename=str(p.i.db))
+        if add_pwv:
+            pr.addPWV()
 
-    for target in targets:
-        outfile = p.o.patho.season.root+"/%s.png" % target
-        print("Saving plot: %s" % outfile)
-        try:
-            pr.seasonplot(crit=target, filename=outfile)
-        except KeyError:
-            print("Key %s not found!" % target)
+        # if targets are not specified, all are calculated
+        if not targets:
+            targets = ['corrLive', 'rmsLive', 'kurtLive', 'skewLive',
+                       'normLive', 'darkRatioLive', 'MFELive',
+                       'gainLive', 'DELive', 'jumpLive']
+
+        for target in targets:
+            outfile = p.o.patho.season.root+"/%s.png" % target
+            print("Saving plot: %s" % outfile)
+            try:
+                pr.seasonplot(crit=target, filename=outfile)
+            except KeyError:
+                print("Key %s not found!" % target)

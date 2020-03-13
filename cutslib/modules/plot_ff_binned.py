@@ -11,6 +11,73 @@ import pandas as pd
 from cutslib.visual import array_plots
 
 
+class Module:
+    def __init__(self, config):
+        self.obs_catalog = config.get("obs_catalog", None)
+        self.gain_limit = config.getfloat("gain_limit", 10.)
+        self.sigmas = config.getfloat("sigmas", 5.)
+        self.min_samples = config.getint("min_samples", 50)
+        self.use_sel = config.getboolean("use_sel", True)
+        self.pmin = config.getfloat("pmin", 0.6)
+        self.pmax = config.getfloat("pmax", 1.3)
+
+    def run(self, p):
+        obs_catalog = self.obs_catalog
+        gain_limit = self.gain_limit
+        sigmas = self.sigmas
+        min_samples = self.min_samples
+        use_sel = self.use_sel
+        pmin = self.pmin
+        pmax = self.pax
+
+        # load parameters
+        params = moby2.util.MobyDict.from_file(p.i.cutparam)
+        cutParam = moby2.util.MobyDict.from_file(p.i.cutParam)
+        ffpar = params["ff_params"]
+        ff_name = cutParam.get_deep(('pathologyParams','calibration','flatfield'))
+        ff = moby2.util.MobyDict.from_file(ff_name)
+        # get det_uid from input flatfield
+        det_uid = np.asarray(ff['det_uid'], dtype=int)
+        # load pickle file
+        print('Loading data')
+        with open(p.i.pickle_file, "rb") as f:
+            pf = pickle.Unpickler(f)
+            data = pf.load()
+        # get pwv for each of the tods
+        loadings = get_pwv(data['name'], obs_catalog)
+        gains = data["gainLive"].copy()
+        sel = np.asarray(data['sel'],dtype=bool)*np.asarray(data['respSel'],dtype=bool)
+        # create bins of loadings
+        # [0,1), [1,2), [2,3), [3,4)
+        nbins = 4
+        lbins = np.arange(nbins+1)
+        lbins_l = lbins[:-1]
+        lbins_h = lbins[1:]
+        # produce flatfield for each bin
+        for i in range(nbins):
+            # get bin edges
+            bin_l, bin_h = lbins_l[i], lbins_h[i]
+            # get list of tods inside this bin
+            tod_sel = (loadings >= bin_l) * (loadings < bin_h)
+            m, s = getArrayStats(gains, sel, tod_sel, use_sel, gain_limit,
+                                 min_samples, sigmas)
+            # set color range
+            if not pmin:
+                pmin = m.min()
+            if not pmax:
+                pmax = m.max()
+            # plot flatfield on the array and save figure
+            outfile = op.join(p.o.ff, "ff_binned_%d.png" % i)
+            print("Saving plot: %s" % outfile)
+            array_plots(m[det_uid],det_uid,season=p.i.season,array=p.i.ar,fr=p.i.freq,
+                        pmin=pmin,pmax=pmax,display='save',save_name=outfile,
+                        title="Flatfield: loading bin [%.1f,%.1f)" % (bin_l,bin_h))
+
+####################
+# utility function #
+####################
+
+
 def get_pwv(tod_list, obs_catalog):
     # load catalog to get loadings
     npcat = fitsio.read(obs_catalog)
@@ -50,59 +117,3 @@ def getArrayStats(gains, sels, selTODs, use_sel=True, gain_limit=10,
         means[d] = np.median(calib[sel])
         stds[d] = calib[sel].std()
     return means, stds
-
-
-def init(config):
-    global obs_catalog, gain_limit, sigmas, min_samples, use_sel, pmin, pmax
-    obs_catalog = config.get("obs_catalog", None)
-    gain_limit = config.getfloat("gain_limit", 10.)
-    sigmas = config.getfloat("sigmas", 5.)
-    min_samples = config.getint("min_samples", 50)
-    use_sel = config.getboolean("use_sel", True)
-    pmin = config.getfloat("pmin", 0.6)
-    pmax = config.getfloat("pmax", 1.3)
-
-def run(p):
-    global obs_catalog, gain_limit, sigmas, min_samples, use_sel, pmin, pmax
-    # load parameters
-    params = moby2.util.MobyDict.from_file(p.i.cutparam)
-    cutParam = moby2.util.MobyDict.from_file(p.i.cutParam)
-    ffpar = params["ff_params"]
-    ff_name = cutParam.get_deep(('pathologyParams','calibration','flatfield'))
-    ff = moby2.util.MobyDict.from_file(ff_name)
-    # get det_uid from input flatfield
-    det_uid = np.asarray(ff['det_uid'], dtype=int)
-    # load pickle file
-    print('Loading data')
-    with open(p.i.pickle_file, "rb") as f:
-        pf = pickle.Unpickler(f)
-        data = pf.load()
-    # get pwv for each of the tods
-    loadings = get_pwv(data['name'], obs_catalog)
-    gains = data["gainLive"].copy()
-    sel = np.asarray(data['sel'],dtype=bool)*np.asarray(data['respSel'],dtype=bool)
-    # create bins of loadings
-    # [0,1), [1,2), [2,3), [3,4)
-    nbins = 4
-    lbins = np.arange(nbins+1)
-    lbins_l = lbins[:-1]
-    lbins_h = lbins[1:]
-    # produce flatfield for each bin
-    for i in range(nbins):
-        # get bin edges
-        bin_l, bin_h = lbins_l[i], lbins_h[i]
-        # get list of tods inside this bin
-        tod_sel = (loadings >= bin_l) * (loadings < bin_h)
-        m, s = getArrayStats(gains, sel, tod_sel, use_sel, gain_limit,
-                             min_samples, sigmas)
-        # set color range
-        if not pmin:
-            pmin = m.min()
-        if not pmax:
-            pmax = m.max()
-        # plot flatfield on the array and save figure
-        outfile = op.join(p.o.ff, "ff_binned_%d.png" % i)
-        print("Saving plot: %s" % outfile)
-        array_plots(m[det_uid],det_uid,season=p.i.season,array=p.i.ar,fr=p.i.freq,
-                    pmin=pmin,pmax=pmax,display='save',save_name=outfile,
-                    title="Flatfield: loading bin [%.1f,%.1f)" % (bin_l,bin_h))

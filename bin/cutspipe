@@ -26,14 +26,11 @@ p = proj.init(cutparam, output_dir)
 init_func = {}
 run_func = {}
 for m in modules:
-    mod = importlib.import_module("cutslib.modules.{}".format(m))
-    init_func[m] = mod.init
-    run_func[m] = mod.run
-
-# initialize pipeline
-for m in modules:
+    mod_name = config[m].get("module", m)
+    mod = importlib.import_module("cutslib.modules.{}".format(mod_name))
     print("Initializing module: %s" % m)
-    init_func[m](config[m])
+    mod = mod.Module(config[m])
+    run_func[m] = mod.run
 
 # run pipeline
 for m in modules:
