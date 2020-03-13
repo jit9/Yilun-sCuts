@@ -31,6 +31,7 @@ def run(p):
     print("Collecting Criteria for %d files"%len(obsnames))
     tods = []
     sel = []
+    psel = []
     scanf = []
     resp = []
     respSel = []
@@ -76,9 +77,14 @@ def run(p):
             fix_tod_length(tod, pa.offsets)
             cuts = depot.read_object(moby2.TODCuts, tod=tod, tag=params["tag_out"])
             re, ff, _, re_sel, _, stable = pa.getpWCalibration()
+            # get final cut
             lsel = np.zeros(pa.ndet)
             lsel[cuts.get_uncut()] = True
             sel.append(lsel)
+            # get preselection
+            presel = pa.preLiveSel
+            psel.append(presel)
+            # get other tod info
             tods.append(tod.info.name)
             scanf.append(pa.scan_freq)
             resp.append(re)
@@ -90,6 +96,7 @@ def run(p):
     data = {}
     data['name'] = tods
     data['sel'] = np.array(sel).T
+    data['psel'] = np.array(psel).T
     data["live"] = pa.liveCandidates
     data["dark"] = pa.origDark
     data["scan_freq"] = scanf
