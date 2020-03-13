@@ -640,8 +640,8 @@ class Pathologies( object ):
         s = ~self.origDark
         if not(self.calibratedTOD):
             moby2.libactpol.apply_calibration(self.tod.data,
-                                          s.nonzero()[0].astype('int32'),
-                                          factor[s].astype('float32'))
+                                              s.nonzero()[0].astype('int32'),
+                                              factor[s].astype('float32'))
             self.calibratedTOD = True
 
     def calibrateValues(self, flatfield=None):
@@ -1360,7 +1360,6 @@ def multiFreqCorrAnal(fdata, sel, df, nf, nsamps, scan_freq, par, parTag,
     # 1) psel = spsel == Nwin
     # 2) psel50 = spsel >= Nwin/2.
     psel50 = spsel >= Nmax/2.
-
     # normalize gain
     for g,s in zip(gain,psel): g /= np.mean(g[psel50*s])
     gain = np.array(gain)
@@ -1441,6 +1440,7 @@ def lowFreqAnal(fdata, sel, frange, df, nsamps, scan_freq, par,
     """
     @brief Find correlations and gains to the main common mode over a frequency range
     """
+    # this has shape (nsel, nfreq)
     lf_data = fdata[sel,frange[0]:frange[1]].copy()
     ndet = len(sel)
     dcoeff = None
@@ -1480,6 +1480,7 @@ def lowFreqAnal(fdata, sel, frange, df, nsamps, scan_freq, par,
         lf_data[:,i_harm] = 0.0
 
     # Get correlation matrix
+    # shape is (nsel, nsel)
     c = np.dot(lf_data,lf_data.T.conjugate())
     a = np.linalg.norm(lf_data,axis=1)
     aa = np.outer(a,a)
@@ -1498,6 +1499,7 @@ def lowFreqAnal(fdata, sel, frange, df, nsamps, scan_freq, par,
     normSel = (nnorm > nlim[0])*(nnorm < nlim[1])
 
     # Check if norms are divided in 2 groups. Use the higher norms
+    # this is no longer used as of s17
     sigs = ppar.get("sigmaSep",None)
     if sigs is not None:
         cent, lab = kmeans2(nnorm[normSel],2)
