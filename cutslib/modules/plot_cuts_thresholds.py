@@ -14,7 +14,7 @@ from scipy.stats import scoreatpercentile
 import numpy as np
 
 def init(config):
-    global calibrate, gain_adj, corr_l, rms_adj, norm_adj, de_adj, mfe_adj, jump_adj
+    global calibrate, gain_adj, corr_l, rms_adj, norm_adj, de_adj, mfe_adj, jump_adj, show_presel
     calibrate = config.getboolean("calibrate", False)
     gain_adj = config.getfloat("gain_adj", 5)
     corr_l = config.getfloat("corr_l", 0.8)
@@ -23,9 +23,10 @@ def init(config):
     de_adj = config.getfloat("de_adj", 20)
     mfe_adj = config.getfloat("mfe_adj", 20)
     jump_adj = config.getfloat("jump_adj", 3)
+    show_presel = config.getboolean("show_presel", True)
 
 def run(proj):
-    global calibrate, gain_adj, corr_l, rms_adj, norm_adj, de_adj, mfe_adj, jump_adj
+    global calibrate, gain_adj, corr_l, rms_adj, norm_adj, de_adj, mfe_adj, jump_adj, show_presel
     filename = proj.i.pickle_file
     array_name = proj.i.ar
     season = proj.i.season
@@ -45,14 +46,23 @@ def run(proj):
     sel_freqs = [array_data['nom_freq'] == f for f in freqs]
 
     keys = [k for k in list(data.keys()) if 'Live' in k]
+    # get pre-selection
+    psel = data['psel']
 
+    ########
+    # Plot #
+    ########
     plt.ioff()
     plt.figure(figsize=(20,12))
+
     # Gain
     plt.subplot(331)
+
     d = data['gainLive']
     p1,p5,p95,p99 = scoreatpercentile(d[d!=0], [1,5,95,99])
     for f, sel in zip(freqs,sel_freqs):
+        if show_presel:
+            sel = psel*sel[:,None]
         d = data['gainLive'][sel]
         adj = gain_adj
         h, b, e = plt.hist(d[np.isfinite(d)], bins=np.logspace(np.log10(p5/adj),np.log10(p95*adj),100), alpha=0.5, label='%i' %f)
@@ -70,6 +80,8 @@ def run(proj):
     d = data['corrLive']
     p1,p5,p10 = scoreatpercentile(d[d!=0], [1,5,10])
     for f, sel in zip(freqs,sel_freqs):
+        if show_presel:
+            sel = psel*sel[:,None]
         d = data['corrLive'][sel]
         h,b,e=plt.hist(d[np.isfinite(d)], bins=np.linspace(corr_l,1,100), alpha=0.5, label='%i' %f)
     plt.text(p10, h.max()/2, 'p10 = %.4f'%p10, color='g', ha='right')
@@ -96,6 +108,8 @@ def run(proj):
     d = data['rmsLive']
     p1,p5,p95,p99 = scoreatpercentile(d[d!=0], [1,5,95,99])
     for f, sel in zip(freqs,sel_freqs):
+        if show_presel:
+            sel = psel*sel[:,None]
         d = data['rmsLive'][sel]
         adj = rms_adj
         h,b,e=plt.hist(d[np.isfinite(d)], bins=np.logspace(np.log10(p5/adj),np.log10(p95*adj),100), alpha=0.5, label='%i' %f)
@@ -113,6 +127,8 @@ def run(proj):
     d = data['normLive']
     p1,p5,p95,p99 = scoreatpercentile(d[d!=0], [1,5,95,99])
     for f, sel in zip(freqs,sel_freqs):
+        if show_presel:
+            sel = psel*sel[:,None]
         d = data['normLive'][sel]
         adj = norm_adj
         h,b,e=plt.hist(d[np.isfinite(d)], bins=np.logspace(np.log10(p5/adj),np.log10(p95*adj),100), alpha=0.5, label='%i' %f)
@@ -130,6 +146,8 @@ def run(proj):
     d = data['DELive']
     p1,p5,p95,p99 = scoreatpercentile(d[d!=0], [1,5,95,99])
     for f, sel in zip(freqs,sel_freqs):
+        if show_presel:
+            sel = psel*sel[:,None]
         d = data['DELive'][sel]
         adj = de_adj
         h,b,e=plt.hist(d[np.isfinite(d)], bins=np.logspace(np.log10(p5/adj),np.log10(p95*adj),100), alpha=0.5, label='%i' %f)
@@ -147,6 +165,8 @@ def run(proj):
     d = data['MFELive']
     p1,p5,p95,p99 = scoreatpercentile(d[d!=0], [1,5,95,99])
     for f, sel in zip(freqs,sel_freqs):
+        if show_presel:
+            sel = psel*sel[:,None]
         d = data['MFELive'][sel]
         adj = mfe_adj
         h,b,e=plt.hist(d[np.isfinite(d)], bins=np.logspace(np.log10(p5/adj),np.log10(p95*adj),100), alpha=0.5, label='%i' %f)
@@ -164,6 +184,8 @@ def run(proj):
     d = data['kurtLive']
     p1,p5,p95,p99 = scoreatpercentile(d[d!=0], [1,5,95,99])
     for f, sel in zip(freqs,sel_freqs):
+        if show_presel:
+            sel = psel*sel[:,None]
         d = data['kurtLive'][sel]
         h,b,e=plt.hist(d[np.isfinite(d)*(d!=0)], bins=np.linspace(p1*5,p95*3,100), alpha=0.5, label='%i' %f)
     plt.axvline(p1, color='g')
@@ -179,6 +201,8 @@ def run(proj):
     d = data['skewLive']
     p1,p5,p95,p99 = scoreatpercentile(d[d!=0], [1,5,95,99])
     for f, sel in zip(freqs,sel_freqs):
+        if show_presel:
+            sel = psel*sel[:,None]
         d = data['skewLive'][sel]
         h,b,e=plt.hist(d[np.isfinite(d)*(d!=0)], bins=np.linspace(p1*3,p99*3,100), alpha=0.5, label='%i' %f)
     plt.axvline(p1, color='g')
@@ -194,6 +218,8 @@ def run(proj):
     d = data['jumpLive']
     p1,p5,p95,p99 = scoreatpercentile(d[d>0], [1,5,95,99])
     for f, sel in zip(freqs,sel_freqs):
+        if show_presel:
+            sel = psel*sel[:,None]
         d = data['jumpLive'][sel]
         adj = jump_adj
         h,b,e=plt.hist(d[np.isfinite(d)*(d>0)], bins=np.logspace(np.log10(p1/adj),np.log10(p99*adj),100), alpha=0.5, label='%i' %f)
