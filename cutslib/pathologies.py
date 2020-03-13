@@ -1549,17 +1549,29 @@ def lowFreqAnal(fdata, sel, frange, df, nsamps, scan_freq, par,
                                      default = 1.)
         lf_data *= np.repeat([scl],lf_data.shape[1],axis=0).T
 
-    # Get Correlations
-    u, s, v = np.linalg.svd( lf_data, full_matrices=False )
+    # Get common mode using the pre-selected data
+    u, s, v = np.linalg.svd( lf_data[sl], full_matrices=False )
+    cm = v[0]
+    # Get gain for all data (not limited to pre-selected data)
+    gain = np.zeros(ndet)
+    gain[sel] = np.abs(np.dot(lf_data, np.conjugate(cm)))/s[0]
+    # Get correlations
+    # note that the s[0] here is from the pre-selected data which
+    # might be different to the actual s[0] using un-preseleected data
     corr = np.zeros(ndet)
-    if par.get("doubleMode",False):
-        corr = np.sqrt(abs(u[:,0]*s[0])**2+abs(u[:,1]*s[1])**2)/fnorm
-    else:
-        corr = np.abs(u[:,0])*s[0]/fnorm
+    corr[sel] = gain[sel] * s[0] / fnorm
+    # Get Correlations
+    # u, s, v = np.linalg.svd( lf_data, full_matrices=False )
+    # corr = np.zeros(ndet)
+    # if par.get("doubleMode",False):
+    #     corr[sel] = np.sqrt(abs(u[:,0]*s[0])**2+abs(u[:,1]*s[1])**2)/fnorm
+    # else:
+    #    corr[sel] = np.abs(u[:,0])*s[0]/fnorm
 
     # Get Gains
     # data = CM * gain
-    gain = np.abs(u[:,0])
+    # gain = np.zeros(ndet, dtype=complex)
+    # gain[sel] = np.abs(u[:,0])
     res.update({"preSel": preSel, "corr": corr, "gain": gain, "norm": norm,
                 "dcoeff": dcoeff, "ratio": ratio, "cc": cc, "normSel": normSel})
     return res
