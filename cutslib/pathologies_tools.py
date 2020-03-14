@@ -1382,42 +1382,7 @@ def normalizeAtms(atms,sels,stable):
         n, m = normalizeAtm(atms[:,i],sel,stable)
         norm.append(n)
         mask.append(m)
-        # sel = np.array(sels[:,i],bool)*stable
-        # if (sel.sum() > 40) and (sels[:,i].sum() > 100):
-        #     m =  np.mean(atms[:,i][sel])
-        #     atms[:,i] /= m
-        #     norm.append(m)
-        #     mask.append(True)
-        # else:
-        #     norm.append(1)
-        #     mask.append(False)
     return np.array(norm),np.array(mask)
-
-
-# DEPRECATED
-def normalizeAtm(atms,sel,stable,min_stable=40,min_sel=100):
-    sel_st = sel*stable
-    if (sel_st.sum() > min_stable) and (sel.sum() > min_sel):
-        m =  np.mean(atms[sel_st])
-        atms /= m
-        mask = True
-    else:
-        m = 1
-        mask = False
-    return m, mask
-
-# DEPRECATED
-def normalizeAtm_stable(atms,ff,resp,sel,stable):
-    # Warning: Raw atms should be used here!
-    sel_st = sel*stable
-    if (sel_st.sum() > 20) and (sel.sum() > 100):
-        m =  np.mean((resp*ff)[sel_st]) / np.mean((resp*atms)[sel_st])
-        atms /= m
-        mask = True
-    else:
-        m = 1
-        mask = False
-    return m, mask
 
 
 def findMode(x,window=1.2e-5,init=[0,7e-5],maxiter=20,minerr=1e-9):
