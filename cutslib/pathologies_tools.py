@@ -211,12 +211,6 @@ class reportPathologies( object ):
             f.write('#\n# Glitches paramteres:\n')
             f.write(printDictionary(cp('glitchParams'), tabLevel = 1,
                                     prefix = '#', verbose = False ))
-            # f.write('#\n# Other cut parameters:\n')
-            # f.write('#%28s = %d\n'%('cutBadRes',cp('cutBadRes')))
-            # f.write('#%28s = [%12.4g ,%12.4g]\n' % ('fractionRn',
-            #         cp('fractionRn')[0], cp('fractionRn')[1]))
-            # f.write('#%28s = %d\n'%('cutSlow',cp('cutSlow')))
-            # f.write('#%28s = %12.4g Hz\n' % ('slowTimeC',cp('slowLevel')))
             f.write('# END HEADER\n#\n')
             f.write(hd1)
             f.write(hd2)
@@ -227,19 +221,26 @@ class reportPathologies( object ):
         @Brief Add new entry to both results files.
         """
         p = self.params.get
+        # load tod
         loadParams = {"filename":obs, "read_data":False}
         loadParams.update(p("params_loadtod",{}))
         tod = moby2.scripting.get_tod(loadParams)
+        # load partial cuts
         depot = moby2.util.Depot(p("depot"))
-        pc_obj=depot.read_object(moby2.TODCuts, tag=p("tag_partial"), tod = tod)
+        pc_obj = depot.read_object(moby2.TODCuts, tag=p("tag_partial"), tod = tod)
         tod.info.sample_index = pc_obj.sample_offset
+        # count number of dets after partial cuts
+        # if nothing wrong it should give ndets
         glitches = len(tod.cuts.get_uncut())
+        # get scan cuts (det-level cuts)
+        # it has side effects of saving all the cuts to depot
         c_obj, pa = recoverScanCuts(tod, self.params)
+        # compute calibration
+        # it has side effects of saving all the calibration files in depot
         if "tag_cal" in self.params:
-            _=recoverCalibration(tod,self.params, cuts=c_obj, pa=pa)
+            _ = recoverCalibration(tod, self.params, cuts=c_obj, pa=pa)
+        # initialize the report (.db) file with headers and stuff
         self._initializeFiles(pa)
-        # live = np.ones(len(pa.dets), dtype = 'bool')
-        # live[1024:] = False
 
         # GET CUT STATISTICS
         darkDets = len(pa.dets[pa.darkSel])
@@ -1129,10 +1130,10 @@ def recoverCalibration(tod, params, pa=None, cuts=None, **kwargs):
         s = pa.liveSel
         calObj = moby2.Calibration(det_uid = pa.dets[s])
         calObj.set_property(["cal", "calRMS"], [calib[s], ffRMS[s]])
-        depot.write_object( calObj,
-                            tag=params.get("tag_cal"),
-                            tod = tod,
-                            force = True)
+        depot.write_object(calObj,
+                           tag=params.get("tag_cal"),
+                           tod=tod,
+                           force=True)
 
     return calObj, mask, level
 
