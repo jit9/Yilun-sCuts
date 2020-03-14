@@ -15,109 +15,6 @@ from cutslib import pathologies
 pylab.ioff()
 
 
-def recoverScanCuts(tod, params, full=False):
-    """
-    @brief  Script function that will find the cuts in a TOD and return them. If there is
-            no saved version of the cuts, it will create them.
-    Note that the pathologies object returned by this function is calibrated
-    """
-    cutParams = moby2.util.MobyDict.from_file(params.get("cutParams"))
-    pathop = cutParams['pathologyParams']
-    depot = moby2.util.Depot(params.get("depot"))
-    name = tod.info.name
-    if params.get("flatfield") is not None:
-        cutParams['pathologyParams']['calibration']['flatfield'] = params.get("flatfield")
-
-
-    # FIND STORED PATHOLOGIES
-    pa = get_pathologies(tod, params)
-    if pa is None:
-        return None, None
-    if tod.info.sample_index != pa.offsets[0] or tod.nsamps != pa.offsets[1]:
-        fix_tod_length(tod, pa.offsets)
-
-    # CUTS THAT DON'T NEED TO BE SAVED
-    if cutParams.get('cutSlow',False):
-        time_const = products.get_time_constants(cutParams.get('time_constants'),
-                                                 tod.info)
-        f3dB = np.zeros(len(tod.det_uid))
-        f3dB[time_const.det_uid] = time_const.tau
-        pa.addCriterion('slow', f3dB > 1./(2*np.pi*cutParams.get('slowLevel',15)))
-    if cutParams.get('cutBadRes',False):
-        iv_cal = products.get_iv_calibration({"source":"data"}, tod.info)
-        Rn_limits = params.get('fractionRn')
-        Rn_pass = (Rn_limits[0] <= iv_cal.fraction_Rnormal) * \
-            (iv_cal.fraction_Rnormal < Rn_limits[1])
-        pa.addCriterion('badRes', Rn_pass)
-
-    # GET NEW PATHOLOGY SELECTIONS
-    # Note that here we multiply all values by the flatfield or flatfield*responsivity
-    pa.makeNewSelections(params=pathop)
-    det_cuts = pa.makeCuts()
-
-    # GENERATE CUTS OBJECT
-    c_obj = moby2.TODCuts.for_tod(tod, assign = False)
-
-    # APPLY ALL PARTIAL CUTS
-    # MCE cuts
-    c_obj.merge_tod_cuts(moby2.tod.get_mce_cuts(tod))
-    # Glitch cuts
-    cfp = depot.get_full_path(moby2.TODCuts, tag=params.get('tag_partial'), tod=tod)
-    if os.path.exists( cfp ):
-        c_obj.merge_tod_cuts(depot.read_object( moby2.TODCuts,
-                                                tag=params.get("tag_partial"),
-                                                tod=tod))
-    # Section cuts
-    if pathop.get('getPartial',True):
-        section_cuts = pa.makePartialCuts()
-        c_obj.merge_tod_cuts(section_cuts)
-    # Scan cuts
-    if not(params.get('stare',True)):
-        az_cuts = pa.makeAzCuts()
-        c_obj.merge_tod_cuts(az_cuts)
-
-    # MERGE DETECTOR CUTS THAT DEPEND ON THE PARTIAL CUTS
-    if cutParams.get('maxFraction') is not None:
-        for det in tod.info.det_uid:
-            frac = np.asarray(c_obj.cuts[det].get_mask(),dtype=int).sum()/c_obj.nsamps
-            if frac > cutParams['maxFraction']:
-                det_cuts.set_always_cut(det)
-                pa.liveSel[det] = False
-    if cutParams.get_deep(("glitchParams","maxGlitch")) is not None:
-        for det in tod.info.det_uid:
-            if len(c_obj.cuts[det]) > cutParams["glitchParams"]["maxGlitch"]:
-                det_cuts.set_always_cut(det)
-                pa.liveSel[det] = False
-
-    # MERGE DETECTOR CUTS
-    c_obj.merge_tod_cuts(det_cuts)
-
-    # ADD CALIRBATION CUTS (IF Calibration CANNOT BE COMPUTED, KILL WHOLE TOD)
-    sel = pa.liveSel*pa.calData["respSel"]*(pa.crit["gainLive"]["values"] != 0)*pa.calData["stable"]
-    if sel.sum() == 0:
-        c_obj.set_always_cut(tod.info.det_uid)
-
-
-    # GET DARK DETECTORS
-    dd = pathologies.darkDets(patho = pa)
-
-    # OUTPUT NEW CUTS
-    if params.get('tag_out',None) is not None:
-        assert params.get('tag_out') != params.get('tag_partial')
-        depot.write_object(c_obj, tod = tod, force = True,
-                           tag=params.get('tag_out'))
-        depot.write_object(det_cuts, tod = tod, force = True,
-                           tag=params.get('tag_out')+"_det")
-        depot.write_object( dd, tod = tod, force = True,
-                            tag = params.get('tag_out'))
-        if pathop.get('getPartial',True):
-            depot.write_object(section_cuts, tod = tod, force = True,
-                               tag=params.get('tag_out')+"_sec")
-        print("cuts exported to %s"%params.get('tag_out'))
-
-        if full:
-            return c_obj, pa, resp, ff, calib
-    return c_obj, pa
 
 
 def get_pathologies(tod, params):
@@ -141,7 +38,6 @@ def get_pathologies(tod, params):
 
 
 # MAKE REPORT OF PATHOLOGIES AND CUTS RESULTS
-
 class reportPathologies( object ):
     """
     @Brief Generate report files for pathology statistics
@@ -234,7 +130,7 @@ class reportPathologies( object ):
         glitches = len(tod.cuts.get_uncut())
         # get scan cuts (det-level cuts)
         # it has side effects of saving all the cuts to depot
-        c_obj, pa = recoverScanCuts(tod, self.params)
+        c_obj, pa = self.recoverScanCuts(tod)
         # compute calibration
         # it has side effects of saving all the calibration files in depot
         if "tag_cal" in self.params:
@@ -276,6 +172,119 @@ class reportPathologies( object ):
             f.write('%8.3g %8.3g  '%(pa.crit[k[0]]['median'], pa.crit[k[0]]['sigma']))
         f.write('\n')
         f.close()
+
+
+    def recoverScanCuts(self, tod):
+        """
+        @brief  Script function that will find the cuts in a TOD and return them. If there is
+                no saved version of the cuts, it will create them.
+        Note that the pathologies object returned by this function is calibrated
+
+        Yilun: This is converted from a scripting function to a method so
+        that it allows more third-party extensions via class inheritence
+        """
+        params = self.params
+        cutParams = moby2.util.MobyDict.from_file(params.get("cutParams"))
+        pathop = cutParams['pathologyParams']
+        depot = moby2.util.Depot(params.get("depot"))
+        name = tod.info.name
+        if params.get("flatfield") is not None:
+            cutParams['pathologyParams']['calibration']['flatfield'] = params.get("flatfield")
+
+        # FIND STORED PATHOLOGIES
+        pa = get_pathologies(tod, params)
+        if pa is None:
+            return None, None
+        if tod.info.sample_index != pa.offsets[0] or tod.nsamps != pa.offsets[1]:
+            fix_tod_length(tod, pa.offsets)
+
+        # CUTS THAT DON'T NEED TO BE SAVED
+        if cutParams.get('cutSlow',False):
+            time_const = products.get_time_constants(cutParams.get('time_constants'),
+                                                     tod.info)
+            f3dB = np.zeros(len(tod.det_uid))
+            f3dB[time_const.det_uid] = time_const.tau
+            pa.addCriterion('slow', f3dB > 1./(2*np.pi*cutParams.get('slowLevel',15)))
+        if cutParams.get('cutBadRes',False):
+            iv_cal = products.get_iv_calibration({"source":"data"}, tod.info)
+            Rn_limits = params.get('fractionRn')
+            Rn_pass = (Rn_limits[0] <= iv_cal.fraction_Rnormal) * \
+                (iv_cal.fraction_Rnormal < Rn_limits[1])
+            pa.addCriterion('badRes', Rn_pass)
+
+        # GET (NEW) PATHOLOGY SELECTIONS
+        # NOTE that here we multiply all values by the flatfield or flatfield*responsivity
+        # pa.makeNewSelections(params=pathop)
+        # det_cuts = pa.makeCuts()
+        det_cuts = self.get_det_cuts(pathop)
+
+        # GENERATE CUTS OBJECT
+        c_obj = moby2.TODCuts.for_tod(tod, assign = False)
+
+        # APPLY ALL PARTIAL CUTS
+        # MCE cuts
+        c_obj.merge_tod_cuts(moby2.tod.get_mce_cuts(tod))
+        # Glitch cuts
+        cfp = depot.get_full_path(moby2.TODCuts, tag=params.get('tag_partial'), tod=tod)
+        if os.path.exists( cfp ):
+            c_obj.merge_tod_cuts(depot.read_object( moby2.TODCuts,
+                                                    tag=params.get("tag_partial"),
+                                                    tod=tod))
+        # Section cuts
+        if pathop.get('getPartial',True):
+            section_cuts = pa.makePartialCuts()
+            c_obj.merge_tod_cuts(section_cuts)
+        # Scan cuts
+        if not(params.get('stare',True)):
+            az_cuts = pa.makeAzCuts()
+            c_obj.merge_tod_cuts(az_cuts)
+
+        # MERGE DETECTOR CUTS THAT DEPEND ON THE PARTIAL CUTS
+        if cutParams.get('maxFraction') is not None:
+            for det in tod.info.det_uid:
+                frac = np.asarray(c_obj.cuts[det].get_mask(),dtype=int).sum()/c_obj.nsamps
+                if frac > cutParams['maxFraction']:
+                    det_cuts.set_always_cut(det)
+                    pa.liveSel[det] = False
+        if cutParams.get_deep(("glitchParams","maxGlitch")) is not None:
+            for det in tod.info.det_uid:
+                if len(c_obj.cuts[det]) > cutParams["glitchParams"]["maxGlitch"]:
+                    det_cuts.set_always_cut(det)
+                    pa.liveSel[det] = False
+
+        # MERGE DETECTOR CUTS
+        c_obj.merge_tod_cuts(det_cuts)
+
+        # ADD CALIRBATION CUTS (IF Calibration CANNOT BE COMPUTED, KILL WHOLE TOD)
+        sel = pa.liveSel*pa.calData["respSel"]*(pa.crit["gainLive"]["values"] != 0)*pa.calData["stable"]
+        if sel.sum() == 0:
+            c_obj.set_always_cut(tod.info.det_uid)
+
+
+        # GET DARK DETECTORS
+        dd = pathologies.darkDets(patho = pa)
+
+        # OUTPUT NEW CUTS
+        if params.get('tag_out',None) is not None:
+            assert params.get('tag_out') != params.get('tag_partial')
+            depot.write_object(c_obj, tod = tod, force = True,
+                               tag=params.get('tag_out'))
+            depot.write_object(det_cuts, tod = tod, force = True,
+                               tag=params.get('tag_out')+"_det")
+            depot.write_object( dd, tod = tod, force = True,
+                                tag = params.get('tag_out'))
+            if pathop.get('getPartial',True):
+                depot.write_object(section_cuts, tod = tod, force = True,
+                                   tag=params.get('tag_out')+"_sec")
+            print("cuts exported to %s"%params.get('tag_out'))
+
+        return c_obj, pa
+
+    def get_det_cuts(self, pathop):
+        """Method to get det cuts. It can be overiden to use cuts generated from other methods"""
+        pa.makeNewSelections(params=pathop)
+        det_cuts = pa.makeCuts()
+        return det_cuts
 
 
 class pathoList( object ):
