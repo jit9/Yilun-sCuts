@@ -21,17 +21,19 @@ class Module:
         ndet, ntod = data['sel'].shape
         # load model file
         with open(model_file, "rb") as f:
-            data = pickle.load(f)
+            model = pickle.load(f)
         # gather training data
-        features = []
         # loop over tod
-        for i, obs in enumerate(data['name']):
+        for i in np.arange(ntod):
+            obs = data['name'][i]
+            features = []
+            print("TOD: %d/%d" % (i,len(data['name'])))
             # loop over keys
             for k in model.features:
                 # (ndet, ntod)
                 feat = data[k]
                 if np.ndim(feat) == 2:
-                    features.append(feat[:,i])
+                    features.append(feat[:,i][:,None])
                 # (ndet or ntod)
                 elif np.ndim(feat) == 1:
                     if len(feat) == ndet:
@@ -42,12 +44,16 @@ class Module:
                         raise ValueError("feat not understood")
                 else:
                     raise ValueError("feat not understood")
-            features = np.hstack([features])
+            # get prediction
+            features = np.hstack(features)
             pred = model.predict(features).astype(bool)
-            # load tod
-            tod = moby2.scripting.get_tod({'filename': obs,
-                                           'read_data': false})
             # generate cuts based on prediction
+            try:
+                tod = moby2.scripting.get_tod({'filename': obs,
+                                               'read_data': False})
+            except IOError as e:
+                print("Failed to read tod, skipping...")
+                continue
             cuts = moby2.TODCuts.for_tod(tod, assign=False)
             cuts.set_always_cut(~pred)
             # TODO: merge in all other cuts
