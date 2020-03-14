@@ -24,6 +24,7 @@ class Module:
         self.path = config.get('planet_path')
         self.gauss_test = config.getint('gauss_test', 10)
         self.force = config.getboolean('force', False)
+        self.tag_cuts = config.get('tag_cut', None)
 
     def run(self, proj):
         ctime_start = self.ctime_start
@@ -32,6 +33,7 @@ class Module:
         path = self.path
         gauss_test = self.gauss_test
         force = self.force
+        tag_cuts = self.tag_cuts
 
         df = pd.DataFrame()
 
@@ -40,14 +42,17 @@ class Module:
         fb = moby2.scripting.get_filebase()
         depot = moby2.util.Depot(params.get('depot'))
         tag_calib = proj.tag
-        tag_cuts = proj.tag
+        # if tag_cuts not specified, use built-in tag
+        if not tag_cuts:
+            tag_cuts = proj.tag
+
         tag_selected = proj.tag
         if 'flatfield' in params:
             FF = moby2.util.MobyDict.from_file(params.get('flatfield'))
         tods, az, flag = np.loadtxt(os.path.join(proj.depot,
             'SelectedTODs/%s/selectedTODs_uranus.txt' %tag_selected), dtype=str, usecols=[0,3,5]).T
-        df['tods'] = np.asarray( tods, dtype=str )
-        df['flag'] = np.asarray( flag, dtype=int )
+        df['tods'] = np.asarray(tods, dtype=str)
+        df['flag'] = np.asarray(flag, dtype=int)
         df['az'] = np.asarray( az, dtype=float)
         df = df[df.flag==2]
 
