@@ -4,7 +4,7 @@ import os.path as op, h5py, pickle, numpy as np
 
 class Module:
     def __init__(self, config):
-        self.outfile = config.get("outfile","dataset.h5")
+        self.outdir = config.get("outdir","dataset.h5")
         self.train_portion = config.getfloat("train_portion", 0.6)
         self.validate_portion = config.getfloat("validate_portion", 0.2)
         self.test_portion = config.getfloat("test_portion", 0.2)
@@ -12,12 +12,13 @@ class Module:
         self.limit = config.getint("limit", None)
 
     def run(self, p):
-        outfile = self.outfile
+        outdir = self.outdir
         train_portion = self.train_portion
         validate_portion = self.validate_portion
         test_portion = self.test_portion
         randomize = self.randomize
         limit = self.limit
+        outfile = op.join(outdir, f"{p.tag}.h5")
         # specify keys in the data of interests
         # data per tod per det
         keys_ptd = ['psel', 'resp', 'respSel', 'cal', 'corrLive', 'DELive', 'MFELive', \
