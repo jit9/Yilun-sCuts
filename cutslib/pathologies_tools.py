@@ -213,10 +213,9 @@ class reportPathologies( object ):
             pa.addCriterion('badRes', Rn_pass)
 
         # GET (NEW) PATHOLOGY SELECTIONS
-        # NOTE that here we multiply all values by the flatfield or flatfield*responsivity
-        # pa.makeNewSelections(params=pathop)
-        # det_cuts = pa.makeCuts()
-        det_cuts = self.get_det_cuts(pathop)
+        # Note that here we multiply all values by the flatfield or
+        # flatfield*responsivity
+        det_cuts = self.get_det_cuts(pa, pathop)
 
         # GENERATE CUTS OBJECT
         c_obj = moby2.TODCuts.for_tod(tod, assign = False)
@@ -280,7 +279,7 @@ class reportPathologies( object ):
 
         return c_obj, pa
 
-    def get_det_cuts(self, pathop):
+    def get_det_cuts(self, pa, pathop):
         """Method to get det cuts. It can be overiden to use cuts generated from other methods"""
         pa.makeNewSelections(params=pathop)
         det_cuts = pa.makeCuts()
