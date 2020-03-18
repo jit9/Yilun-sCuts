@@ -1,11 +1,17 @@
+"""This script produces some performance plots for the cuts results.
+The plots iclude a season plot of live detectors and a killed-by
+plots that's the violin plot for each cut crit. It also generate
+frequency-space and time-space waterfall plots for 10 random TODs
+with calibrations.
+"""
+
 from matplotlib import pyplot as plt
-from pathologyReport import pathoReport
-import sys
+import os, sys, random, numpy as np
+
 import moby2
-from moby2.analysis.tod_ana import visual
-import os
-import random
-import numpy as np
+from cutslib import visual
+from cutslib.pathologyReport import pathoReport
+
 
 params = moby2.util.MobyDict.from_file( sys.argv[1] )
 pl = pathoReport( os.path.join(
@@ -43,7 +49,6 @@ for obs in random.sample(pl.data.todName, 10):
     moby2.tod.fill_cuts(tod)
     ld = cuts.get_uncut()
 
-    
     cal = moby2.scripting.get_calibration(
         {'type':'depot_cal',
          'depot': depot_path,
@@ -67,4 +72,3 @@ for obs in random.sample(pl.data.todName, 10):
                 params.get('dirplot'), 'waterfall_freq_%s_%s.png' %(obs,params.get('tag_out')) )
         )
     plt.close('all')
-
