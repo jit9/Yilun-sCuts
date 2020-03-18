@@ -70,7 +70,6 @@ class CutSources(Routine):
         sourceResult = os.path.exists(
             self._depot.get_full_path(
                 moby2.TODCuts, tag=self._tag_source, tod=tod))
-
         # check if hdf source cuts are needed
         if self._hdf_cuts and not sourceResult:
             f = h5py.File(self._hdf_cuts, 'r', swmr=True)

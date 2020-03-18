@@ -15,21 +15,19 @@ from cutslib import pathologies
 pylab.ioff()
 
 
-
-
 def get_pathologies(tod, params):
     cutParams = moby2.util.MobyDict.from_file(params.get("cutParams"))
     pathop = cutParams['pathologyParams']
     depot = moby2.util.Depot(params.get("depot"))
     fp = depot.get_full_path(pathologies.Pathologies,
-                             tag=params.get("tag_patho"), tod = tod,
-                             structure = params.get("structure"))
+                             tag=params.get("tag_patho"), tod=tod,
+                             structure=params.get("structure"))
     if os.path.exists(fp):
         pa = depot.read_object(pathologies.Pathologies,
-                               tag = params.get("tag_patho"),
-                               tod = tod,
-                               options = {"tod" : tod, "params": pathop},
-                               structure = params.get("structure"))
+                               tag=params.get("tag_patho"),
+                               tod=tod,
+                               options={"tod" : tod, "params": pathop},
+                               structure=params.get("structure"))
         return pa
     else:
         print("Error: no pathology object found (as explicit argument or from depot)")
@@ -138,7 +136,8 @@ class reportPathologies( object ):
         # initialize the report (.db) file with headers and stuff
         self._initializeFiles(pa)
 
-        # GET CUT STATISTICS
+        # get the average fraction of det time stream data
+        # that's cut, the closer to 0 the better
         darkDets = len(pa.dets[pa.darkSel])
         d = c_obj.get_uncut()
         liveDets = len(d)

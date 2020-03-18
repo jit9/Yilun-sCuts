@@ -38,7 +38,7 @@ def submit(cutparam):
         f = open( '%s/submitjob.sh.%d' % (outdir, n), 'w' )
         f.write( '#!/bin/sh\n' )
         f.write( '#SBATCH -N 1\n')
-        f.write( '#SBATCH --ntasks-per-node=32\n')  # default for della
+        f.write( '#SBATCH --ntasks-per-node=40\n')  # default for della
         f.write( '#SBATCH -J %s%d\n' % (jobname,n))
         f.write( '#SBATCH -t %s\n' % runtime )
         f.write( '#SBATCH --qos %s\n' % qos )
