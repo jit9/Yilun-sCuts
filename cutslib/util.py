@@ -1,6 +1,6 @@
 """This script contains common utility function for all other scripts"""
 
-import os
+import os, pickle
 import moby2
 
 def tag_to_afsv(tag, ar=True):
@@ -42,6 +42,12 @@ def parse_depot(cutparam):
 def parse_param(cutparam):
     return moby2.util.MobyDict.from_file(cutparam)
 
-
-
-
+def pickle_load(filename):
+    """Load pickle file in a py2/3 compatible way"""
+    with open(filename, "rb") as f:
+        try:
+            data = pickle.load(f)
+        except UnicodeDecodeError:
+            f.seek(0)  # fix 'cannot find MARK' bug
+            data = pickle.load(f, encoding='latin1')
+    return data
