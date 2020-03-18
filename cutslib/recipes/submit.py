@@ -34,7 +34,7 @@ def submit_command(command, cutparam, jobname=None):
     nomp = par.get("nomp", 1)
     # partition = par.get("partition", "serial")
     # total task per node including nomp
-    # note there is a maximum of 64 logical cores in della
+    # note there is a maximum of 40 logical cores in della
     ttpn = tpn * nomp
 
     # find list of tods to process
@@ -45,7 +45,7 @@ def submit_command(command, cutparam, jobname=None):
         f = open( '%s/submitjob.sh.%d' % (outdir, n), 'w' )
         f.write( '#!/bin/sh\n' )
         f.write( '#SBATCH -N 1\n')
-        f.write( '#SBATCH --ntasks-per-node=32\n')  # default for della
+        f.write( '#SBATCH --ntasks-per-node=40\n')  # default for della
         f.write( '#SBATCH -J %s%d\n' % (jobname,n))
         f.write( '#SBATCH -t %s\n' % runtime )
         f.write( '#SBATCH --qos %s\n' % qos )
