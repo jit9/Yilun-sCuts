@@ -1,3 +1,6 @@
+"""This seems to be a useful script that returns the list of TODs
+that scan across a given source"""
+
 import numpy as np
 from database import Database as DB
 from astropy import units as u

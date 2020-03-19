@@ -1,7 +1,10 @@
+"""This script is a snippet that shows how to get source masks for a
+TOD based on a given list of sources. """
+
 import numpy as np
 import moby2
 from moby2.scripting import products
-moby2.pointing.set_bulletin_A()           
+moby2.pointing.set_bulletin_A()
 
 obs = '1475836450.1475851025.ar2' # Tau A
 #obs = '1477209039.1477222347.ar2'
@@ -9,7 +12,7 @@ cuts = moby2.scripting.get_cuts({'depot':'/data/actpol/depot','tag':'mr3c_pa2_s1
 ld = cuts.get_uncut()
 pointing = {
     'source': 'fp_file',
-    'filename': "/data/actpol/actpol_data_shared/RelativeOffsets/template_ar2_s16_170131.txt"}                        
+    'filename': "/data/actpol/actpol_data_shared/RelativeOffsets/template_ar2_s16_170131.txt"}
 pointing_shift =  {
     'source':'file',
     'filename':'/data/actpol/actpol_data_shared/TODOffsets/tod_offsets_2016_170131.txt',
@@ -62,9 +65,5 @@ ny, nx = maskMap.data.shape
 gridding = moby2.pointing.GridPixelization.forFitsMap(maskMap)
 gridding.dx0 *= -1
 proj = moby2.pointing.WandProjector(wand, gridding, tod.fplane)
-# Warning this creates TOD-sized data...                                                                                                 
+# Warning this creates TOD-sized data...
 mask_vect = np.asarray( proj.deproject_from_map(maskMap.data), dtype=bool )
-
-
-
-

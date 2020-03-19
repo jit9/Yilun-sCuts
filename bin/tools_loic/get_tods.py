@@ -1,10 +1,12 @@
+"""Generate the tod and the sources in it. It makes use of
+get_sources_in_tod script and loop over the source_scans
+
+"""
+
 import sys, os
 import moby2
 from moby2.util.database import TODList
 moby2.pointing.set_bulletin_A()
-# moby2.pointing.set_bulletin_A()
-
-
 
 cparFile = "/home/lmaurin/cuts/2015/AR1/MR1_PA1_2015/cutParams_MR1_PA1_2015_nohwp.par"
 

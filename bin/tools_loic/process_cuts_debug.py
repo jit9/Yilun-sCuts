@@ -166,7 +166,7 @@ tic6 = time.time()
 n_downsample = params.get("n_downsample")
 if n_downsample is not None:
     tod = tod.copy(resample=2**n_downsample, resample_offset=1)
-    
+
 # FIND PATHOLOGIES
 tic7 = time.time()
 pa = pathologies.Pathologies(tod, pathop, noExclude = True)
@@ -179,7 +179,7 @@ pa = pathologies.Pathologies(tod, pathop, noExclude = True)
 
 par = pa.params['findPathoParams']
 
-# ANALYZE SCAN                                                                                    
+# ANALYZE SCAN
 pa.scan = pathologies.analyzeScan( np.unwrap(pa.tod.az), pa.sampleTime,
                          **pa.params.get("scanParams",{}) )
 pa.scan_freq = pa.scan["scan_freq"]
@@ -188,23 +188,23 @@ pa.chunkParams = {'T': pa.scan["T"]*pa.tod.info.downsample_level,
                     'N': pa.scan["N"]}
 
 
-# ANALYZE TEMPERATURE                                                                             
+# ANALYZE TEMPERATURE
 pa.Temp, pa.dTemp, pa.temperatureCut = pathologies.checkThermalDrift(pa.tod, par["thermParams"])
 
 
-# FIND ZERO DETECTORS                                                                             
+# FIND ZERO DETECTORS
 if pa.zeroSel is None:
     pa.zeroSel = ~pa.tod.data[:,::100].any(axis=1)
 
 
-# GET CANDIDATE DETECTORS                                                                         
+# GET CANDIDATE DETECTORS
 fullRMSlim = par.get("fullRMSlim",1e8)
 pa.fullRMSsel = np.std(pa.tod.data,axis=1) < fullRMSlim
 live = pa.liveCandidates * ~pa.zeroSel * pa.fullRMSsel
 dark = pa.origDark * ~pa.zeroSel * pa.fullRMSsel
 
 
-# Calibrate TOD to pW                                                                             
+# Calibrate TOD to pW
 pa.calibrate2pW()
 resp = pa.calData["resp"]; ff = pa.calData["ff"]
 cal = resp*ff
@@ -213,7 +213,7 @@ if not(np.any(pa.calData["calSel"])):
     stop
 
 
-# FIND JUMPS                                                                                      
+# FIND JUMPS
 pa.crit["jumpLive"]["values"] = moby2.libactpol.find_jumps(
     pa.tod.data,
     par['jumpParams']['dsStep'],
@@ -221,7 +221,7 @@ pa.crit["jumpLive"]["values"] = moby2.libactpol.find_jumps(
 pa.crit["jumpDark"]["values"] = pa.crit["jumpLive"]["values"]
 
 
-# FREQUENCY SPACE ANALYSIS                                                                        
+# FREQUENCY SPACE ANALYSIS
 trend = moby2.tod.detrend_tod(pa.tod)
 nf = pathologies.nextregular(pa.tod.nsamps)
 fdata = np.fft.rfft(pa.tod.data, nf)
@@ -230,7 +230,7 @@ df = 1./(dt*nf)
 
 
 
-# Low-frequency dark analysis                                                                     
+# Low-frequency dark analysis
 res = pathologies.multiFreqCorrAnal(fdata, dark, df, nf, pa.ndata, pa.scan_freq, par,
                         "darkCorrPar")
 pa.preDarkSel = res["preSel"]
@@ -240,7 +240,7 @@ pa.crit["normDark"]["values"] = res["norm"]
 pa.darkSel = pa.preDarkSel.copy()
 
 
-# Low-frequency live analysis                                                                     
+# Low-frequency live analysis
 pa.fbandSel = []
 pa.fbands = []
 if par["liveCorrPar"].get("separateFreqs",False):
@@ -255,7 +255,7 @@ else:
 
 pa.preLiveSel = np.zeros(pa.ndet,dtype=bool)
 pa.liveSel = np.zeros(pa.ndet,dtype=bool)
- 
+
 pa.crit["darkRatioLive"]["values"] = np.zeros(pa.ndet,dtype=float)
 pa.crit["corrLive"]["values"] = np.zeros(pa.ndet,dtype=float)
 pa.crit["gainLive"]["values"] = np.zeros(pa.ndet,dtype=float)
@@ -314,48 +314,48 @@ dcoeff = None
 ratio = None
 res = {}
 
-# Apply sine^2 taper to data                                                                          
+# Apply sine^2 taper to data
 if par.get("useTaper",False):
     taper = pathologies.get_sine2_taper([n_l,n_h], edge_factor = 6)
     lf_data *= np.repeat([taper],len(lf_data),axis=0)
 else:
     taper = np.ones(n_h-n_l)
-    
+
 
 fcmodes = fcm
-# Deproject correlated modes                                                                          
+# Deproject correlated modes
 if fcmodes is not None:
     data_norm = np.linalg.norm(lf_data,axis=1)
     dark_coeff = []
-    
+
     for m in fcmodes:
         coeff = np.dot(lf_data.conj(),m)
         lf_data -= np.outer(coeff.conj(),m)
         dark_coeff.append(coeff)
 
-    # Reformat dark coefficients                                                                      
+    # Reformat dark coefficients
     if len(dark_coeff) > 0:
         dcoeff = np.zeros([len(dark_coeff),ndet],dtype=complex)
         dcoeff[:,sel] = np.array(dark_coeff)
 
-    # Get Ratio                                                                                       
+    # Get Ratio
     ratio = np.zeros(ndet,dtype=float)
     data_norm[data_norm==0.] = 1.
     ratio[sel] = np.linalg.norm(lf_data,axis=1)/data_norm
 
-# Scan frequency rejection                                                                            
+# Scan frequency rejection
 if par.get("cancelSync",False) and (pa.scan_freq/df > 7):
     i_harm = pathologies.get_iharm([n_l,n_h], df, pa.scan_freq, wide = par.get("wide",True))
     lf_data[:,i_harm] = 0.0
 
-# Get correlation matrix                                                                              
+# Get correlation matrix
 c = np.dot(lf_data,lf_data.T.conjugate())
 a = np.linalg.norm(lf_data,axis=1)
 aa = np.outer(a,a)
 aa[aa==0.] = 1.
 cc = c/aa
 
-# Get Norm                                                                                            
+# Get Norm
 ppar = par.get("presel",{})
 norm = np.zeros(ndet,dtype=float)
 fnorm = np.sqrt(np.abs(np.diag(c)))
@@ -365,7 +365,7 @@ nlim = ppar.get("normLimit",[0.,1e15])
 if np.ndim(nlim) == 0: nlim = [0,nlim]
 normSel = (nnorm > nlim[0])*(nnorm < nlim[1])
 
-# Check if norms are divided in 2 groups. Use the higher norms                                        
+# Check if norms are divided in 2 groups. Use the higher norms
 sigs = ppar.get("sigmaSep",None)
 if sigs is not None:
     cent, lab = kmeans2(nnorm[normSel],2)
@@ -387,11 +387,11 @@ if sigs is not None:
             normSel[normSel] *= (lab==1)
         else:
             normSel[normSel] *= (lab==0)
-        
+
 
 
 respSel = pa.calData["respSel"]
-# Get initial detectors                                                                               
+# Get initial detectors
 if respSel is None:
     respSel = np.ones(sel.shape,dtype=bool)
 if par.get("presel",{}).get("method","median") is "median":
@@ -405,13 +405,6 @@ elif par.get("presel",{}).get("method") is "groups":
     res["groups"] = {"G": G, "ind": ind, "ld": ld, "smap": smap}
 else:
     raise "ERROR: Unknown preselection method"
-    #if respSel is not None: sl *= respSel[sel]                                                           
+    #if respSel is not None: sl *= respSel[sel]
 preSel = sel.copy()
 preSel[sel] = sl
-
-
-
-
-
-
-

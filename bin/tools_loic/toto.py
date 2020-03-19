@@ -1,3 +1,5 @@
+"""Get the number of sources in a given list of TODs. Likely obsolete now"""
+
 import moby2
 from astropy import units as u
 from astropy.time import Time
@@ -16,11 +18,9 @@ for obs in todlist:
         tod = moby2.scripting.get_tod({'filename':obs, 'read_data':False,
                                        'repair_pointing':True})
         sources = moby2.ephem.get_sources_in_tod(
-            tod, 
+            tod,
             source_list='/home/lmaurin/actpol_data_shared/BrightSources/mr3c_merged_gt2mK.txt')
         f = open('Nsources_gt2mK_in_tod.txt', 'a')
         f.write('{} {}\n'.format(obs, len(sources)))
         f.close()
     except: pass
-
-

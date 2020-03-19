@@ -1,3 +1,5 @@
+"""Generate the list of sources associated with a given TOD."""
+
 import moby2
 import sys
 moby2.pointing.set_bulletin_A()

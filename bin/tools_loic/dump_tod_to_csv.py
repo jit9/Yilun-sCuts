@@ -1,3 +1,5 @@
+"""Dump tod data into csv. Seems to be obsolete now"""
+
 import moby2
 import pandas as pd
 import zipfile
@@ -13,11 +15,9 @@ for obs in obslist:
     moby2.tod.remove_median(tod)
     cal = moby2.scripting.get_calibration({'type':'iv','source':'data'}, tod=tod)
     moby2.tod.apply_calibration(tod.data, cal.det_uid, cal.cal)
-    
+
     data = pd.DataFrame(data=tod.data.T, index=tod.ctime, columns=['tesdata%04i' %i for i in range(tod.data.shape[0])])
-    
-    
-    
+
     z = zipfile.ZipFile(tod.info.filename, 'r')
     files = z.namelist()
     z.close()
@@ -29,10 +29,5 @@ for obs in obslist:
             data[channel_name] = channel
         except:
             pass
-            
-            
+
     data.to_csv(tod.info.basename+'.csv', index_label='ctime')
-
-
-
-

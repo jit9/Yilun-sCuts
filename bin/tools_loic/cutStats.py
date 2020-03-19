@@ -1,3 +1,7 @@
+"""Get performance metrics of how many detectors are cut
+for each observation field, for example. Note that it
+relies on database module which is obsolete now"""
+
 import moby2, sys, os
 import numpy as np
 from moby2.scripting.pathologies_tools import pathoList
