@@ -232,7 +232,25 @@ Post-processing
 - press =F= to run the post-processing pipeline
 - rsync the report to a local machine to view the reports
 
+*** 8. How did i generate the lists of tods for preliminary studies?
+From s17 onwards, we genenerate a list of 1000 TODs for preliminary studies before running on the full season. To generate the list of tods, i used the binary script =select_tod_adv= in the bin folder. It takes in a parameter file such as =tod.par= in the template folder. For example, in the bin folder, 
+#+BEGIN_SRC bash
+./select_tod_adv ../templates/tod.par
+#+END_SRC
+The parameters in =tod.par= is explained in the commends in =select_tod_adv= script. 
+
+*** 9. How did i prepare the cuts h5 file for machine learning studies?
+After the main cuts pipeline and post-processing pipeline finish, run the =generate_h5= post-processing module to create the h5 file for =mlpipe= to use. 
+The model generated from =mlpipe= can in turn be used to generate the det-level cuts using =model_to_cuts= post-processing module. Note that this is not the final version of cuts that can be used in production as it only contains the det-level results. To generate full results, one needs to run a modified cuts pipeline that will merge in all other cuts including partial cuts, etc. The modules required to do this is written in =cutslib.thirdparty= and the binary code that executes it is named =update_cuts= in bin folder. 
+
+*** 10. What's the main changes in the base-line cuts in s17 onwards compared with before?
+1. calibration is purely based on planet flatfield and bias-step responsivity. No atmosphere gain is applied anymore. This is achieved by including the freq in the noAtmFreq in the cutParams file. 
+2. detectors without valid calibrations are no longer included. As we now calibrate by planet flatfield and bias-step responsivity, dets without flatfield or responsivity cannot be included reliably. 
+3. scan chunk level cuts are turned off by default as we no longer expect our detectors to behave drastically different in the duration of 10 mins. 
+4. pre-selection is no longer used to generate the cuts but instead used to calculate the common modes. The cuts are purely determined by the cuts thresholds, modulos manually exclusion. 
+
 ** Useful links
 - ACT roundtable: [[https://actexperiment.info/roundtable]]
 - TOD visualizer: [[https://github.com/guanyilun/tod_viz]]
 - Emacs plugins for cuts: [[https://github.com/guanyilun/cuts.el]]
+- cutparams repo: [[https://github.com/guanyilun/cutparams]]
