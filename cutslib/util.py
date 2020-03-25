@@ -51,3 +51,22 @@ def pickle_load(filename):
             f.seek(0)  # fix 'cannot find MARK' bug
             data = pickle.load(f, encoding='latin1')
     return data
+
+def to_scode(season):
+    season = str(season)
+    if season=='2016':
+        return 's16'
+    elif season=='2017':
+        return 's17'
+    elif season=='2018':
+        return 's18'
+    elif season=='2019':
+        return 's19'
+    else:
+        raise ValueError("Unknown season: %s" % season)
+
+def to_pa(array):
+    return array.lower().replace('ar','pa')
+
+def to_ar(array):
+    return array.lower().replace('pa','ar')
