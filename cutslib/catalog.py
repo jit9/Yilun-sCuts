@@ -2,6 +2,8 @@ import fitsio, os, numpy as np
 import pandas as pd
 import moby2
 from cutslib import SharedDepot
+from cutslib.util import to_scode, to_pa
+
 
 class Catalog():
     """Pandas based class for ACTPol catalog"""
@@ -24,32 +26,22 @@ class Catalog():
         self.abuses.update({'data':'loaded'})
         return self
 
-    def load_acqs(self, season=None, array=None, tag='171110'):
+    def load_acqs(self, season=None, array=None, version='171110'):
         """Load bias-step from a specific season/array/tag
         Args:
             season: scode format, numeric format will be auto-converted
             array: pa format, ar format will be aut-converted
-            tag: postfix of the bias_step files
+            version: postfix of the bias_step files
         """
         if (not season) or (not array):
             raise ValueError("Season and array needs to be specified!")
         # in case season and array are not in the expected format
-        array = array.lower().replace('ar','pa')
-        season = str(season)
-        if season=='2016':
-            season = 's16'
-        elif season=='2017':
-            season = 's17'
-        elif season=='2018':
-            season = 's18'
-        elif season=='2019':
-            season = 's19'
-        else:
-            raise ValueError("Unknown season: %s" % season)
+        array = to_pa(array)
+        season = to_scode(season)
         # load bias step db filepath
         sd = SharedDepot()
         fpath = sd.get_deep(('BiasStepTimes',
-                             f'intervals_{season}_{array}_{tag}.txt'))
+                             f'intervals_{season}_{array}_{version}.txt'))
         df = pd.read_fwf(fpath)
         # fix column name (remove # in the first column name)
         columns = list(df.columns)
