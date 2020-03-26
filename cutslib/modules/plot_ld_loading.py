@@ -12,17 +12,15 @@ import matplotlib.pyplot as plt
 import os.path as op
 import seaborn as sns
 from cutslib.pathologies_tools import pathoList, get_pwv
-
+from cutslib import Catalog
 
 class Module:
     def __init__(self, config):
         # allow optionally specify an alternative cuts_db
         self.cuts_db = config.get('cuts_db', None)
-        self.obs_catalog = config.get('obs_catalog', None)
 
     def run(self, p):
         cuts_db = self.cuts_db
-        obs_catalog = self.obs_catalog
 
         if cuts_db is not None:
             pl = pathoList( cuts_db )
@@ -36,12 +34,8 @@ class Module:
 
         keys = ['todName', 'liveDets', 'hour', 'hourAfterSunset', 'hourAfterSunrise']
         PL = pd.DataFrame.from_dict( {k:pl.data[k] for k in keys} )
-
-        filename = obs_catalog
-        npcat = fitsio.read(filename)
-        npcat = npcat.byteswap().newbyteorder()
-        catalog = pd.DataFrame.from_records(npcat)
-        catalog.index = pd.to_datetime(catalog.date)
+        # load catalog
+        catalog = Catalog().data
         sel = np.logical_and( catalog.obs_type != 'stare', catalog.season == p.i.season)
         sel = np.logical_and( sel, catalog.array == p.i.ar)
         output = pd.merge(catalog[sel], PL, left_on='tod_name', right_on='todName', how='left')

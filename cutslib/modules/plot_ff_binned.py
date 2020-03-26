@@ -9,11 +9,10 @@ import pickle, numpy as np, os, sys
 import moby2
 import pandas as pd
 from cutslib.visual import array_plots
-
+from cutslib import Catalog
 
 class Module:
     def __init__(self, config):
-        self.obs_catalog = config.get("obs_catalog", None)
         self.gain_limit = config.getfloat("gain_limit", 10.)
         self.sigmas = config.getfloat("sigmas", 5.)
         self.min_samples = config.getint("min_samples", 50)
@@ -22,7 +21,6 @@ class Module:
         self.pmax = config.getfloat("pmax", 1.3)
 
     def run(self, p):
-        obs_catalog = self.obs_catalog
         gain_limit = self.gain_limit
         sigmas = self.sigmas
         min_samples = self.min_samples
@@ -44,7 +42,7 @@ class Module:
             pf = pickle.Unpickler(f)
             data = pf.load()
         # get pwv for each of the tods
-        loadings = get_pwv(data['name'], obs_catalog)
+        loadings = get_pwv(data['name'])
         gains = data["gainLive"].copy()
         sel = np.asarray(data['sel'],dtype=bool)*np.asarray(data['respSel'],dtype=bool)
         # create bins of loadings
@@ -78,12 +76,9 @@ class Module:
 ####################
 
 
-def get_pwv(tod_list, obs_catalog):
+def get_pwv(tod_list):
     # load catalog to get loadings
-    npcat = fitsio.read(obs_catalog)
-    npcat = npcat.byteswap().newbyteorder()
-    catalog = pd.DataFrame.from_records(npcat)
-    catalog.index = pd.to_datetime(catalog.date)
+    catalog = Catalog().data
     loadings = []
     for d in tod_list:
         l = catalog[catalog.tod_name==d].loading.values

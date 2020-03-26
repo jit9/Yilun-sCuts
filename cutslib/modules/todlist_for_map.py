@@ -10,6 +10,7 @@ from moby2.util import ctime as ct
 from moby2.scripting.products import get_filebase
 import pandas as pd
 from cutslib.pathologies_tools import pathoList, get_pwv
+from cutslib import Catalog
 
 
 class Module:
@@ -22,7 +23,6 @@ class Module:
             "liveDets": {"gt": 150},
             "PWV": {"lt": 3},
         })
-        self.obs_catalog = config.get('obs_catalog', None)
 
     def run(self, p):
         obs_details = self.obs_details
@@ -30,7 +30,6 @@ class Module:
         include_time = self.include_time
         outdir = self.outdir
         selParams = self.selParams
-        obs_catalog = self.obs_catalog
 
         if cuts_db is not None:
             pl = pathoList( cuts_db )
@@ -44,12 +43,9 @@ class Module:
 
         keys = ['todName', 'liveDets', 'hour', 'hourAfterSunset', 'hourAfterSunrise']
         PL = pd.DataFrame.from_dict( {k:pl.data[k] for k in keys} )
-
-        filename = obs_catalog
-        npcat = fitsio.read(filename)
-        npcat = npcat.byteswap().newbyteorder()
-        catalog = pd.DataFrame.from_records(npcat)
-        catalog.index = pd.to_datetime(catalog.date)
+        # load catalog
+        cat = Catalog()
+        catalog = cat.data
         sel = np.logical_and( catalog.obs_type != 'stare', catalog.season == p.i.season)
         sel = np.logical_and( sel, catalog.array == p.i.ar)
         output = pd.merge(catalog[sel], PL, left_on='tod_name', right_on='todName', how='left')
