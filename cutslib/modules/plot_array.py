@@ -7,13 +7,14 @@ import pickle, os.path as op
 import numpy as np
 import numpy.ma as ma
 from cutslib.visual import array_plots
+from cutslib import SharedDepot
 from matplotlib import pyplot as plt
+
 
 class Module:
     def __init__(self, config):
         self.calibrate = config.getboolean("calibrate", False)
         self.targets = config.get("targets", None)
-        self.shared_depot = config.get("shared_depot", None)
         self.estimator_name = config.get("estimator", "mean")
         self.gain_l = config.getfloat("gain_l", None)
         self.gain_h = config.getfloat("gain_h", None)
@@ -33,7 +34,6 @@ class Module:
     def run(self, p):
         calibrate = self.calibrate
         targets = self.targets
-        shared_depot = self.shared_depot
         estimator_name = self.estimator_name
         gain_l = self.gain_l
         gain_h = self.gain_h
@@ -54,7 +54,12 @@ class Module:
         array = p.i.ar
         season = p.i.season
         pickle_file = p.i.pickle_file
-        ad = moby2.tod.ArrayData.from_fits_table(op.join(shared_depot, 'ArrayData/{}/{}/default.fits'.format(season, array)))
+
+        # load shared depot
+        shared_depot = SharedDepot()
+        ad = moby2.tod.ArrayData.from_fits_table(
+            op.join(shared_depot.root,
+                    'ArrayData/{}/{}/default.fits'.format(season, array)))
         dets = ad['det_uid'][ad['nom_freq']==freq]
 
         with open(pickle_file, "rb") as f:
