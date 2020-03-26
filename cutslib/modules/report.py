@@ -32,6 +32,12 @@ cuts run, so it is different than the number above.
   | {mld:.1f} | {ndets}    | {ldfrac:.1f}\% | {tfrac:.1f}\% |
   |-----------+------------+----------------+---------------|
 
+The fraction of data with valid bias-step is shown in the figure
+below
+
+#+ATTR_LATEX: :width 16cm
+[[{resp_hist}]]
+
 - Cuts parameters:
 {cuts_summary}
 * Statistics
@@ -119,6 +125,11 @@ class Module:
         res['source_scans'] = source_scans
         res['mld'] = pr.data.liveDets.mean(skipna=False)
 
+        #############
+        # resp hist #
+        #############
+        res['resp_hist'] = op.join(p.o.root, "resp_hist.png")
+
         ####################
         # detector numbers #
         ####################
@@ -139,7 +150,6 @@ class Module:
         res['ndets_tes_ff'] = len(set(dets_tes).intersection(set(dets_ff)))
         dets_stable = np.array(dets_ff)[np.array(ff_dict.get("stable"))]
         res['ndets_tes_ff_stable'] = len(set(dets_tes).intersection(set(dets_stable)))
-
 
         # get number of detectors
         ld_dict = cutParam.get_deep(('pathologyParams','detectorLists','live'))

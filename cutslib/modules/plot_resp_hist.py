@@ -16,12 +16,14 @@ class Module:
         self.tod_list = config.get("tod_list",None)
         self.limit = config.getint("limit", None)
         self.debug = config.getboolean("debug", True)
+        self.force = config.getboolean("force", False)
 
     def run(self, p):
         todname = self.todname
         tod_list = self.tod_list
         limit = self.limit
         debug = self.debug
+        force = self.force
 
         # load cut parameters
         params = moby2.util.MobyDict.from_file(p.i.cutparam)
@@ -54,36 +56,41 @@ class Module:
         tesSel = (array_data['nom_freq']== p.i.freq) * (array_data['det_type'] == 'tes')
         depot = moby2.util.Depot(p.depot)
         fracs = []
-        for i,obs in enumerate(obsnames):
-            print("[%d/%d] %s" % (i,len(obsnames),obs))
-            tod = moby2.scripting.get_tod({'filename':obs,
-                                           'read_data': False})
-            # check whether relevant files exist:
-            if op.isfile(depot.get_full_path(Pathologies, tod=tod, tag=p.tag)):
-                # load all relevant patholog results
-                patho = get_pathologies({'depot': p.depot,
-                                         'tag': p.tag}, tod=tod)
-                # for the first data let's load the calibration data
-                if i == 0:
-                    # number to compare to
-                    # freq + tes
-                    sel = tesSel
-                    # freq + tes + ff
-                    sel *= patho.calData['ffSel']
-                    # freq + tes + ff + stable
-                    sel *= patho.calData['stable']
-                respSel = patho.calData['respSel']
-                fracs.append(np.sum(respSel * sel)*1./np.sum(sel))
+        # if file exists, one may not want to redo the whole processing again
+        # unless forced to do
+        outfile = op.join(p.o.root, "resp_fracs.npy")
+        if force or (not op.exists(outfile)):
+            for i,obs in enumerate(obsnames):
+                print("[%d/%d] %s" % (i,len(obsnames),obs))
+                tod = moby2.scripting.get_tod({'filename':obs,
+                                               'read_data': False})
+                # check whether relevant files exist:
+                if op.isfile(depot.get_full_path(Pathologies, tod=tod, tag=p.tag)):
+                    # load all relevant patholog results
+                    patho = get_pathologies({'depot': p.depot,
+                                             'tag': p.tag}, tod=tod)
+                    # for the first data let's load the calibration data
+                    if i == 0:
+                        # number to compare to
+                        # freq + tes
+                        sel = tesSel
+                        # freq + tes + ff
+                        sel *= patho.calData['ffSel']
+                        # freq + tes + ff + stable
+                        sel *= patho.calData['stable']
+                    respSel = patho.calData['respSel']
+                    fracs.append(np.sum(respSel * sel)*1./np.sum(sel))
+        else:
+             fracs = np.loadtxt(outfile)
         # make plot
         plt.figure(figsize=(8,6))
-        pdf = fracs / np.sum(fracs)*len(fracs)
-        plt.hist(fracs, normed=True, cumulative=True, bins=100, histtype='step')
-        plt.xlabel("Fraction of dets", fontsize=14)
-        plt.title("cdf of percentage of the detectors with\nvalid bias step measurements",
-                  fontsize=14, x=0.5, y=0.85)
-        plt.ylabel("Fraction of TODs", fontsize=14)
+        plt.plot(np.linspace(0,1,len(fracs)), sorted(fracs), 'k', lw=2)
+        plt.xlabel("Fraction of TOD", fontsize=16)
+        plt.ylabel("Fraction of Dets", fontsize=16)
         plt.xticks(fontsize=14)
         plt.yticks(fontsize=14)
+        plt.title("Fraction of data with valid\nbias-step measurements",
+                  fontsize=14, x=0.70, y=0.1)
         outfile = op.join(p.o.root, "resp_hist.png")
         print("Saving: %s" % outfile)
         plt.savefig(outfile)
