@@ -50,8 +50,7 @@ def init(cutparam, output_dir=None):
     """initialize the project file structure.
     Args:
         cutparam (str): path to the cutparam file
-        output_dir (str): output path for the pipeline
-                          default to None
+        output_dir (str): output path for the pipeline default to None
     """
     # define folder structures
     tag = parse_tag(cutparam)
@@ -62,24 +61,14 @@ def init(cutparam, output_dir=None):
     ff = mkdir(root+'/flatfield')
     cal = DotMap()
     cal.root = mkdir(root+'/calibration')
-    cal.array = mkdir(cal.root+'/array')
     cal.resp = mkdir(cal.root+'/resp')
-    cal.peak = mkdir(cal.root+'/peak')
-    cal.gain_inv = mkdir(cal.root+'/gain_inv')
     patho = DotMap()
     patho.root = mkdir(root+'/pathologies')
-    patho.hist = mkdir(root+'/pathologies/hist')
     patho.viz = mkdir(root+'/pathologies/viz')
     patho.season = DotMap()
     patho.season.root = mkdir(root+'/pathologies/season')
-    patho.season.mean = mkdir(root+'/pathologies/season/mean')
-    patho.season.median = mkdir(root+'/pathologies/season/median')
-    patho.season.std  = mkdir(root+'/pathologies/season/std')
     patho.array = DotMap()
     patho.array.root = mkdir(root+'/pathologies/array')
-    patho.array.mean = mkdir(root+'/pathologies/array/mean')
-    patho.array.median = mkdir(root+'/pathologies/array/median')
-    patho.array.std  = mkdir(root+'/pathologies/array/std')
     # consolidate all output information
     o = DotMap()
     o.root = root
