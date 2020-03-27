@@ -58,7 +58,7 @@ class Module:
         fracs = []
         # if file exists, one may not want to redo the whole processing again
         # unless forced to do
-        outfile = op.join(p.o.root, "resp_fracs.npy")
+        outfile = op.join(p.o.cal.resp, "resp_fracs.npy")
         if force or (not op.exists(outfile)):
             for i,obs in enumerate(obsnames):
                 print("[%d/%d] %s" % (i,len(obsnames),obs))
@@ -91,10 +91,10 @@ class Module:
         plt.yticks(fontsize=14)
         plt.title("Fraction of data with valid\nbias-step measurements",
                   fontsize=14, x=0.70, y=0.1)
-        outfile = op.join(p.o.root, "resp_hist.png")
+        outfile = op.join(p.o.cal.resp, "resp_hist.png")
         print("Saving: %s" % outfile)
         plt.savefig(outfile)
         # save data for furthur processing
-        outfile = op.join(p.o.root, "resp_fracs.npy")
+        outfile = op.join(p.o.cal.resp, "resp_fracs.npy")
         print("Saving: %s" % outfile)
         np.savetxt(outfile, np.array(fracs))

@@ -128,7 +128,7 @@ class Module:
         #############
         # resp hist #
         #############
-        res['resp_hist'] = op.join(p.o.root, "resp_hist.png")
+        res['resp_hist'] = op.join(p.o.cal.resp, "resp_hist.png")
 
         ####################
         # detector numbers #
