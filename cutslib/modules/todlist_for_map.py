@@ -1,6 +1,14 @@
 """This script is adapted version of the TODList_for_maps.py script in
 moby2. It takes the observation details and try to find the list of
-tods that correspond to each of the field of observations"""
+tods that correspond to each of the field of observations
+
+Parameters:
+------------
+cuts_db (str): patho db file, if not interested in the default
+source_scan (bool): whether we want to restrict to source scan list
+selParams (str): dictionary of crits to select TODs from catalog
+
+"""
 
 import fitsio
 import moby2, sys, numpy as np, ephem, os
@@ -15,28 +23,31 @@ from cutslib import Catalog
 
 class Module:
     def __init__(self, config):
-        self.obs_details = config.get('obs_details').split()
         self.cuts_db = config.get('cuts_db', None)
         self.include_time = config.get('include_time', None)
         self.outdir = config.get('outdir', ".")
+        self.source_scan = config.getboolean('source_scan', False)
         self.selParams = config.get('selParams', {
             "liveDets": {"gt": 150},
             "PWV": {"lt": 3},
         })
+        # load dict from string if selParams is given by str
+        if type(self.selParams) == str:
+            import json
+            self.selParams = json.loads(self.selParams)
 
     def run(self, p):
-        obs_details = self.obs_details
         cuts_db = self.cuts_db
         include_time = self.include_time
         outdir = self.outdir
         selParams = self.selParams
-
+        source_scan = self.source_scan
+        cpar = moby2.util.MobyDict.from_file(p.i.cutparam)
         if cuts_db is not None:
             pl = pathoList( cuts_db )
         else:
-            cpar = moby2.util.MobyDict.from_file(p.i.cutparam)
             pl = pathoList( str(p.i.db) )
-        #pl.addPWV2results()
+        # pl.addPWV2results()
         pl.removeDuplicates()
         pl.addEphem()
         Ndata = pl.ndata
@@ -46,8 +57,17 @@ class Module:
         # load catalog
         cat = Catalog()
         catalog = cat.data
-        sel = np.logical_and( catalog.obs_type != 'stare', catalog.season == p.i.season)
+        # base sel for season, array, etc
+        sel = np.logical_and(catalog.obs_type != 'stare',
+                             catalog.season == p.i.season)
         sel = np.logical_and( sel, catalog.array == p.i.ar)
+        # if we want to restrict to source_scan only
+        if source_scan:
+            from moby2.util.database import TODList
+            cpar = moby2.util.MobyDict.from_file(p.i.cutparam)
+            source_list = TODList.from_file(cpar.get('source_scans'))
+            sel = np.logical_and(sel, catalog.tod_name.isin(source_list))
+
         output = pd.merge(catalog[sel], PL, left_on='tod_name', right_on='todName', how='left')
         output.index = pd.to_datetime(output.ctime, unit='s')
         output.sort_index(inplace=True)
@@ -55,7 +75,7 @@ class Module:
         output.PWV[~np.isfinite(output.PWV)] = 0
         output['flag'] = np.zeros(len(output), dtype=int)
         output.flag[~np.isnan(output.liveDets)] += 1
-
+        cpar.get
         print("%i TODs" %(len(output)))
         print("%i were processed" %((output.flag == 1).sum()))
         sel1 = np.ones(len(output), dtype=bool)
