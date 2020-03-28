@@ -3,6 +3,7 @@
 import os, glob
 import moby2
 
+
 class SharedDepot:
     """Thin wrapper of the act_shared_depot"""
     def __init__(self, path=None):
@@ -30,3 +31,20 @@ class SharedDepot:
 
     def __repr__(self):
         return f"SharedDepot(root={self.root})"
+
+
+class Depot(SharedDepot):
+    """Thin wrapper of the depot. Comparing with the Depot object in
+    moby2.util.Depot, this is mainly to provide a navigational helper to
+    avoid repeating os.path.join procedures
+
+    """
+    def __init__(self, path=None):
+        # if path not otherwise specified, use default in environment
+        if not path:
+            self.root = os.environ.get("CUTS_DEPOT")
+        else:
+            self.root = path
+
+    def __repr__(self):
+        return f"Depot(root={self.root})"

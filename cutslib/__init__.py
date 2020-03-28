@@ -1,2 +1,2 @@
-from .shared_depot import SharedDepot
+from .depot import SharedDepot, Depot
 from .catalog import Catalog
