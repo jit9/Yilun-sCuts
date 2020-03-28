@@ -28,7 +28,6 @@ class Module:
                                           'filedb_template.txt'))
         with open(template, "r") as f:
             tpl = Template(f.read())
-        tpl.render(cut_tags="Hello\nworld!")
 
         # load release
         cr_file = p.depot.get_deep((f'release_{cr}.txt',))

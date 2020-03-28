@@ -75,7 +75,7 @@ class Module:
         output.PWV[~np.isfinite(output.PWV)] = 0
         output['flag'] = np.zeros(len(output), dtype=int)
         output.flag[~np.isnan(output.liveDets)] += 1
-        cpar.get
+
         print("%i TODs" %(len(output)))
         print("%i were processed" %((output.flag == 1).sum()))
         sel1 = np.ones(len(output), dtype=bool)
