@@ -15,6 +15,7 @@ setup(
                       'pycook',
                       'seaborn',
                       'ipdb',
+                      'jinja2',
                       'future', # from here onwards will be moby2 deps
                       'numpy',
                       'matplotlib',
