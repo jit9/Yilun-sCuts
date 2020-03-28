@@ -46,8 +46,10 @@ import os.path as op
 
 output_dir = "output"
 
-def init(cutparam, output_dir=None):
-    """initialize the project file structure.
+def init_post(cutparam, output_dir=None):
+    """initialize the project file structure for post-processing.
+    The post-processing works for each tag.
+
     Args:
         cutparam (str): path to the cutparam file
         output_dir (str): output path for the pipeline default to None
@@ -95,4 +97,14 @@ def init(cutparam, output_dir=None):
     p.e = e
     p.tag = tag
     p.depot = depot
+    return p
+
+
+def init_final():
+    """Initialize the final processing that works on all
+    tags"""
+    import os
+    from cutslib import Depot
+    p = DotMap()
+    p.depot = Depot()
     return p

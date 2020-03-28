@@ -15,12 +15,19 @@ config.read(sys.argv[1])
 
 # first read the pipeline section which defines the entire program
 pconfig = config['pipeline']
-cutparam = pconfig.get("cutparam")
+cutparam = pconfig.get("cutparam", None)
 output_dir = pconfig.get("output_dir", None)
 modules = pconfig.get("pipeline").split()
 
 # initialize the project file structure
-p = proj.init(cutparam, output_dir)
+if cutparam:
+    # if cutparam is given, i assume that we want to do simple
+    # post-processing for each cut version instead of all
+    p = proj.init_post(cutparam, output_dir)
+else:
+    # if no cutparam is specified, i assume we want to do the
+    # final post-processing to work on all cutparams together
+    p = proj.init_final()
 
 # create pipeline
 init_func = {}
