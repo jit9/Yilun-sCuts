@@ -249,6 +249,43 @@ The model generated from =mlpipe= can in turn be used to generate the det-level 
 3. scan chunk level cuts are turned off by default as we no longer expect our detectors to behave drastically different in the duration of 10 mins. 
 4. pre-selection is no longer used to generate the cuts but instead used to calculate the common modes. The cuts are purely determined by the cuts thresholds, modulos manually exclusion. 
 
+*** 11. How does release work
+Before i forget, this is how to generate a cut release. First go to the root cutparam directory. Suppose i want to release the latest cuts for s17, simply run
+#+BEGIN_SRC bash
+cuts release tags *s17*
+#+END_SRC
+It will promote me for a version name, author name and a file to write to. The default values should be reasonable for most of the cases. Here is a sample output, including the prompts:
+#+begin_example
+Version: (default: 20200328) 
+Author: (default: Yilun Guan) 
+{
+  "version": "20200328",
+  "date": "Mar 28, 2020",
+  "tags": {
+    "pa4_f150_s17_c11": {
+      "params": "/projects/ACT/yilung/cuts/pa4_f150_s17_c11/cutparams_v6.par",
+      "tag_out": "pa4_f150_s17_c11_v6",
+      "tag_cal": "pa4_f150_s17_c11_v6",
+      "tag_partial": "pa4_f150_s17_c11_v3_partial",
+      "tag_planet": "pa4_f150_s17_c11_v3_planet",
+      "tag_source": "pa4_f150_s17_c11_v3_source"
+    },
+    "pa4_f220_s17_c11": {
+      "params": "/projects/ACT/yilung/cuts/pa4_f220_s17_c11/cutparams_v3.par",
+      "tag_out": "pa4_f220_s17_c11_v3",
+      "tag_cal": "pa4_f220_s17_c11_v3",
+      "tag_partial": "pa4_f220_s17_c11_v2_partial",
+      "tag_planet": "pa4_f220_s17_c11_v2_planet",
+      "tag_source": "pa4_f220_s17_c11_v2_source"
+    }
+  },
+  "author": "Yilun Guan",
+  "depot": "/projects/ACT/yilung/depot/"
+}
+Write to: (default: /projects/ACT/yilung/depot/release_20200328.txt)
+#+end_example
+This is written in json format which should be easily digestible by modules in the downstream.
+An example module that read the release is the =create_todinfo= module which generates the enki compatible =todinfo.txt= file. 
 ** Useful links
 - ACT roundtable: [[https://actexperiment.info/roundtable]]
 - TOD visualizer: [[https://github.com/guanyilun/tod_viz]]
