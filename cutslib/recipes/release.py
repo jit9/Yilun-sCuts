@@ -38,6 +38,12 @@ def tags(*tags):
         }
     import json
     print(json.dumps(release, indent=2))
+    outfile_default = op.join(release['depot'],
+                              f"release_{release['version']}.txt")
+    outfile = prompt("Write to", outfile_default)
+    with open(outfile, "w") as f:
+        f.write(json.dumps(release, indent=2))
+    print("Release written: %s" % outfile)
 
 
 #####################
