@@ -17,6 +17,9 @@ def tag_to_afsv(tag, ar=True):
     freq = int(tag.split('_')[1][1:])  # from f150 -> int(150)
     season = '20'+tag.split('_')[2][1:]  # from s17 -> 2017
     version = tag.split('_')[-1]
+    # if tag has postfix like _partial, use the one before that
+    if version[0] != 'v':
+        version = tag.split('_')[-2]
     if array[0] == 'a':  # start with ar
         if not ar:       # but don't want ar
             array = 'pa'+array[-1]  # from ar4 -> pa4
