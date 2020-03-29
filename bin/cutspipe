@@ -8,6 +8,22 @@ import sys, os
 from cutslib import proj
 import importlib
 
+#####################
+# utility functions #
+#####################
+
+def create_run_func(config):
+    cmd = config.get("command")
+    if not cmd:
+        raise ValueError("No command given!")
+    def run_func(p):
+        os.system(cmd)
+    return run_func
+
+########
+# main #
+########
+
 # parse config file
 config = ConfigParser(interpolation=EI())
 print("Reading parameter file: %s" % sys.argv[1])
@@ -57,6 +73,13 @@ for m in modules:
         loader.exec_module(mod)
         mod = mod.Module(config[m])
         run_func[m] = mod.run
+    elif mod_type == 'command':
+        # instead of loading module, run a given shell command
+        run_func[m] = create_run_func(config[m])
+    else:
+        raise ValueError(f"Unknow module type: {mod_type}")
+        print("Supported types: internal, external, command")
+
 
 # run pipeline
 for m in modules:
