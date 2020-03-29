@@ -25,9 +25,8 @@ setup(
                       'pytz',
                       'h5py',
                       'profilehooks',
-                      'fitsio',
-                      'pyfits',],
+                      'fitsio',],
     entry_points={'console_scripts': [
         'cuts=cutslib.cli:main'
-    ]}
+    ]},
 )

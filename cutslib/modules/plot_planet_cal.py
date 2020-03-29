@@ -11,7 +11,7 @@ from moby2.util.database import TODList
 from matplotlib import pyplot as plt
 import ephem
 import sys, pickle
-import pyfits as pf
+import astropy.io.fits as pf
 
 T_URANUS = 177.6        #K CMB
 s15_split_time = 1441810800

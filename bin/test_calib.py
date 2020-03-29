@@ -9,8 +9,8 @@ from moby2.util.database import TODList
 from matplotlib import pyplot as plt
 import ephem
 import sys, pickle
-import pyfits as pf
-T_URANUS = 177.6        #K CMB    
+import astropy.io.fits as pf
+T_URANUS = 177.6        #K CMB
 
 
 s15_split_time = 1441810800
@@ -55,7 +55,7 @@ df['tods'] = np.asarray( tods, dtype=str )
 df['flag'] = np.asarray( flag, dtype=int )
 df = df[df.flag==2]
 
-print("Start with %i selected TODs" %df.tods.size) 
+print("Start with %i selected TODs" %df.tods.size)
 path = params.get('planet_path')
 array_name = params.get('array')
 array_data =  products.get_array_data(
@@ -92,13 +92,13 @@ if not os.path.exists(os.path.join('PICKLE', tag_calib+'.pickle')):
         try:
             tod = moby2.scripting.get_tod(
                 {'filename':filename, 'read_data':False})
-        except: 
+        except:
             print("Can't load tod %s" %filename)
             continue
         alt[idx] = tod.alt.mean()
         pwv_, tdiff = apex_pwv.get_nearest(tod.info.ctime)
         print("Apex tdiff = %i" %tdiff)
-        if np.abs(tdiff) < 600.: 
+        if np.abs(tdiff) < 600.:
             pwv[idx] = pwv_
         else:
             pwv_, tdiff = alma_pwv.get_nearest(tod.info.ctime)
@@ -113,7 +113,7 @@ if not os.path.exists(os.path.join('PICKLE', tag_calib+'.pickle')):
             cal[Cal.det_uid,idx] = np.abs(Cal.cal) * tod.info.runfile.ReadoutFilter().gain()
             if 'flatfield' in params:
                 cal[FF['det_uid']] *= FF['cal']
-        except: 
+        except:
             print('No cal for this TOD')
         try:
             cuts = depot.read_object(moby2.TODCuts,
@@ -202,7 +202,7 @@ if params.get('season') == 's15':
     beam_solid_angle = np.array(bso)
 else:
     beam_solid_angle = get_beam_solid_angle(params.get('array'), params.get('season'))
-    
+
 print(beam_solid_angle)
 
 
@@ -227,7 +227,7 @@ peak_masked = peak_masked[:,sel]
 df = df[sel]
 
 
-# Get the statistics (average and dispersion for each TOD) 
+# Get the statistics (average and dispersion for each TOD)
 k = stats.mstats.kurtosistest(peak_masked, axis=0)
 s = stats.mstats.skewtest(peak_masked, axis=0)
 sel = (k.pvalue*s.pvalue) < params.get('gauss_test',1.)
@@ -257,7 +257,7 @@ ax1.errorbar(df.loading, df.peak_mean, df.peak_error, fmt=',', color='k', ecolor
 splot = ax1.scatter(df.loading, df.peak_mean, s=100,
 #            c=df.hour_utc, vmin=0, vmax=24,
             c=df.Ndets,
-            edgecolor='None', 
+            edgecolor='None',
 #            cmap='hsv')
             cmap='RdYlBu_r')
 clb = plt.colorbar(splot)
