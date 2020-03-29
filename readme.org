@@ -349,7 +349,17 @@ obs_details_cmb = wide_01h_n
 obs_details_noncmb = uranus
 outfile = /scratch/gpfs/yilung/mapdata/s17_subset/todinfo.txt
 #+END_SRC
-
+Another type of module that is supported is the =command= type. It
+is essentially like running command in bash, here is an example
+#+BEGIN_SRC
+[test_module]
+type = command
+dir = pa4_f220_s18_c11
+command = ls ${dir}
+#+END_SRC
+Note that we have enabled and used the =ExtendedInterpolation= syntax
+for variable substitution. Refer to =ConfigParser= for more
+documentation on how to use this.
 ** Useful links
 - ACT roundtable: [[https://actexperiment.info/roundtable]]
 - TOD visualizer: [[https://github.com/guanyilun/tod_viz]]
