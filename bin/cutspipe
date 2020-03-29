@@ -3,13 +3,13 @@
 """This script is the driver script that takes in a parameter file
 and parse the fields to generate a pipeline and excute it"""
 
-import configparser
-import sys
+from configparser import ConfigParser, ExtendedInterpolation as EI
+import sys, os
 from cutslib import proj
 import importlib
 
 # parse config file
-config = configparser.ConfigParser()
+config = ConfigParser(interpolation=EI())
 print("Reading parameter file: %s" % sys.argv[1])
 config.read(sys.argv[1])
 
