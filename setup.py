@@ -4,6 +4,7 @@ setup(
     name='cutslib',
     version='0.1.0',
     packages=['cutslib'],
+    include_package_data=True,
     scripts=['bin/cutspipe',
              'bin/run_cuts',
              'bin/submit_cuts',
