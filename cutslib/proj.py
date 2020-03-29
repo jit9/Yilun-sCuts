@@ -42,7 +42,7 @@ List of output files:
 
 from .util import mkdir, parse_tag, parse_depot, tag_to_afsv
 from dotmap import DotMap
-import os.path as op
+import os.path as op, os
 
 output_dir = "output"
 
@@ -103,8 +103,10 @@ def init_post(cutparam, output_dir=None):
 def init_final():
     """Initialize the final processing that works on all
     tags"""
-    import os
     from cutslib import Depot
     p = DotMap()
     p.depot = Depot()
+    # if mapdata root is specified, attach it here
+    map_root = os.environ.get("CUTS_MAPDATA", None)
+    p.map_root = map_root
     return p
