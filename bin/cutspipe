@@ -4,25 +4,10 @@
 and parse the fields to generate a pipeline and excute it"""
 
 from configparser import ConfigParser, ExtendedInterpolation as EI
-import sys, os
+import sys
 from cutslib import proj
+from cutslib.modules.command import create_run_func
 import importlib
-
-#####################
-# utility functions #
-#####################
-
-def create_run_func(config):
-    cmd = config.get("command")
-    if not cmd:
-        raise ValueError("No command given!")
-    def run_func(p):
-        os.system(cmd)
-    return run_func
-
-########
-# main #
-########
 
 # parse config file
 config = ConfigParser(interpolation=EI())
