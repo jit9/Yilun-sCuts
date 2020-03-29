@@ -159,15 +159,26 @@ executed in sequence. It can be useful in some occasions.
 *** 5. Environment variables, how are they used?
 The environment variables can be used to define where the cuts depot is or where the
 working directory of the cuts is, etc. The default values and the keys are described
-in =cutslib.environ=. These can be set in the =.bashrc= with
+in =cutslib.environ=. These can be set in the =.bashrc=. Here is how i setup
+the environment variables
 #+BEGIN_SRC bash
-export CUTS_DEPOT="/path/to/depot"
-export CUTS_USER="somename"
+export CUTS_DEPOT="/projects/ACT/yilung/depot/"
+export CUTS_DIR="/projects/ACT/yilung/cuts/"
 export CUTS_PYENV="myenv"
+export CUTS_SHARED_DEPOT="/projects/ACT/yilung/actpol_data_shared/"
+export CUTS_MAPDATA="/scratch/gpfs/yilung/mapdata"
 #+END_SRC
-Note that by default i am assuming you are running on a local environment given by =CUTS_PYENV=.
-This is so that the python environment can be set properly before submitting slurm jobs.
-
+Note that by default i am assuming you are running on a local
+environment given by =CUTS_PYENV=.  This is so that the python
+environment can be set properly before submitting slurm jobs.  To
+furthur elaborate, =CUTS_DEPOT= is where the outputs of the cuts
+are. =CUTS_DIR= is where the working directory of the cuts are. This
+is such that various recipes such as =cuts run list= can find the
+parameter files that i am working on, it's a pre-requisite for the
+emacs cut plug-in. =CUTS_PYENV= is the local python environment as
+described earlier. =CUTS_SHARED_DEPOT= is the path to shared depot,
+and =CUTS_MAPDATA= is the path to the directory to work with mapdata.
+This is used by the =build_todinfo.py= module.
 *** 6. How did i exclude detectors with unstable flatfield and low gain detector?
 As low gain detectors tend to result in low rms detectors which gets a
 large weight in the map-making process, they are often identified
