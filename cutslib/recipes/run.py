@@ -58,7 +58,7 @@ def submit(cutparam):
 def list(all=None):
     """List all the latest cuts parameters and the status of it"""
     # get cuts tags information
-    for p in glob.glob(CUTS_DIR+"/*"):
+    for p in glob.glob(CUTS_DIR+"/pa*"):
         tag = os.path.basename(p)
         # get all cutparam
         cpars = [f.strip() for f in glob.glob(p+"/cutparam*.par")]
