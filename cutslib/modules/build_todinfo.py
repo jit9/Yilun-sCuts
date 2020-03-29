@@ -13,7 +13,6 @@ dataset: name of the dataset
 sel: sel passed to build_todinfo
 
 """
-import subprocess
 
 
 class Module:
@@ -42,5 +41,4 @@ class Module:
             f.write("module load so_stack\n")
             f.write(cmd)
         os.system("bash .tmpfile")
-        # proc = subprocess.Popen(['bash', '.tmpfile'], stdout=subprocess.PIPE)
-        # retval = proc.wait()
+        os.system("rm .tmpfile")
