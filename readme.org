@@ -312,6 +312,13 @@ obs_details_noncmb = uranus
 The only difference is that it doesn't depend on the cutparams, except
 that everything should be the same as normal post-processing
 pipelines.
+*** 13. How to setup environment for enki
+To setup environment to run enki or enki related modules do
+#+BEGIN_SRC
+module load enki
+module load so_stack
+#+END_SRC
+on tiger.
 ** Useful links
 - ACT roundtable: [[https://actexperiment.info/roundtable]]
 - TOD visualizer: [[https://github.com/guanyilun/tod_viz]]
