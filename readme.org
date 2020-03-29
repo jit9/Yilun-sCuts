@@ -330,6 +330,26 @@ module load enki
 module load so_stack
 #+END_SRC
 on tiger.
+*** 14. What are different types of modules?
+At the moment, the post-processing pipeline (=cutspipe=) supports
+different types of modules. By default the module is an =internal=
+type which means it will be loaded from =cutslib.modules= by
+default. The default name is the pipeline module name unless specified
+otherwise by =module= option. It also supports external module that
+can be loaded from a given file. To use this one needs to specify
+=type= option and =file= option to tell the pipeline where to look for
+the module. Here is an example configuration for an external module
+#+BEGIN_SRC
+[create_todinfo]
+type = external
+file = /home/yilung/work/cutslib/cutslib/modules/create_todinfo.py
+
+cut_release = 20200327
+obs_details_cmb = wide_01h_n
+obs_details_noncmb = uranus
+outfile = /scratch/gpfs/yilung/mapdata/s17_subset/todinfo.txt
+#+END_SRC
+
 ** Useful links
 - ACT roundtable: [[https://actexperiment.info/roundtable]]
 - TOD visualizer: [[https://github.com/guanyilun/tod_viz]]

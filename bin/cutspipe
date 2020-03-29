@@ -33,11 +33,30 @@ else:
 init_func = {}
 run_func = {}
 for m in modules:
-    mod_name = config[m].get("module", m)
-    mod = importlib.import_module("cutslib.modules.{}".format(mod_name))
-    print("Initializing module: %s" % m)
-    mod = mod.Module(config[m])
-    run_func[m] = mod.run
+    # check type of the module
+    mod_type = config[m].get("type", "internal")
+    if mod_type == "internal":
+        # by default load internal modules from cutslib.modules
+        mod_name = config[m].get("module", m)
+        mod = importlib.import_module("cutslib.modules.{}".format(mod_name))
+        print("Initializing module: %s" % m)
+        mod = mod.Module(config[m])
+        run_func[m] = mod.run
+    elif mod_type == 'external':
+        # load Module from external file
+        # FIXME: note that this supports python 3 only!
+        import importlib.machinery
+        import importlib.util
+        # get path
+        mod_path = config[m].get("file")
+        if not mod_path:
+            raise ValueError("No module path is specified!")
+        loader = importlib.machinery.SourceFileLoader('Module', mod_path)
+        spec = importlib.util.spec_from_loader(loader.name, loader)
+        mod = importlib.util.module_from_spec(spec)
+        loader.exec_module(mod)
+        mod = mod.Module(config[m])
+        run_func[m] = mod.run
 
 # run pipeline
 for m in modules:
