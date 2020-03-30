@@ -40,11 +40,9 @@ class Module:
         criteria = {}
         alt = []
         if params.get("keys") is None:
-            keys = ["corrLive", "DELive", "MFELive","darkRatioLive",# "ampLive",
+            keys = ["corrLive", "DELive", "MFELive",
                     "rmsLive", "skewLive", "kurtLive",
-                    "normLive", "gainLive", "jumpLive",
-                    "corrDark", "DEDark", "normDark",
-                    "gainDark", "rmsDark", "jumpDark"]
+                    "normLive", "gainLive", "jumpLive"]
         else:
             keys = params.get("keys")
 
