@@ -4,13 +4,18 @@
 and parse the fields to generate a pipeline and excute it"""
 
 from configparser import ConfigParser, ExtendedInterpolation as EI
-import sys
+import sys, os.path as op
 from cutslib import proj
 from cutslib.modules.command import create_run_func
 import importlib
 
 # parse config file
 config = ConfigParser(interpolation=EI())
+# read default configuration
+default_config = op.join(op.dirname(proj.__file__),
+                         'modules', 'defaults.ini')
+config.read(default_config)
+# read configuration specified
 print("Reading parameter file: %s" % sys.argv[1])
 config.read(sys.argv[1])
 

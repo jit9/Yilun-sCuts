@@ -1,1 +1,2 @@
 include templates/*
+include cutslib/cutslib/modules/defaults.ini
