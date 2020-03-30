@@ -360,6 +360,17 @@ command = ls ${dir}
 Note that we have enabled and used the =ExtendedInterpolation= syntax
 for variable substitution. Refer to =ConfigParser= for more
 documentation on how to use this.
+*** 15. How to use =cutspipe= modules with mpi?
+The post-processing pipeline =cutspipe= is made to support mpi. In
+order for a module to make use of mpi, it needs to be supported in the
+module explicitly. The relevant dependencies are injected through the
+argument to the =run(p)= method call with the rank, size and comm
+contained in =p.rank=, =p.size=, =p.comm=. If a module support mpi, it
+can declared in the option with =mpi=True=. This allows the main
+program to pass mpi control to the module instead of forcing it to run
+with =rank=0= for other modules that do not support mpi. See
+=cutslib.modules.collect_crit= module for an example of how mpi is
+supported.
 ** Useful links
 - ACT roundtable: [[https://actexperiment.info/roundtable]]
 - TOD visualizer: [[https://github.com/guanyilun/tod_viz]]
