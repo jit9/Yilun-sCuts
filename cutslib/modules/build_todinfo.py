@@ -27,7 +27,7 @@ class Module:
         dataset = self.dataset
         sel = self.sel
         ds_root = op.join(p.map_root, dataset)
-        cmd = f'enki build_todinfo {ds_root}/todinfo.txt "{sel}"'\
+        cmd = f'build_todinfo {ds_root}/todinfo.txt "{sel}"'\
               f' {ds_root}/todinfo.hdf --filedb {ds_root}/filedb.txt'\
               f' --dataset {dataset}'
         if n_tasks > 1:
