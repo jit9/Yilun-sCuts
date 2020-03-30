@@ -9,6 +9,7 @@ import moby2
 from moby2.util.database import TODList
 from cutslib.pathologies_tools import get_pwv
 from cutslib.pathologies import Pathologies, get_pathologies
+from cutslib import util
 
 class Module:
     def __init__(self, config):
@@ -60,7 +61,8 @@ class Module:
         # unless forced to do
         outfile = op.join(p.o.cal.resp, "resp_fracs.npy")
         if force or (not op.exists(outfile)):
-            for i,obs in enumerate(obsnames):
+            for i in range(p.rank, len(obsnames), p.size):
+                obs = obsnames[i]
                 print("[%d/%d] %s" % (i,len(obsnames),obs))
                 tod = moby2.scripting.get_tod({'filename':obs,
                                                'read_data': False})
@@ -70,7 +72,7 @@ class Module:
                     patho = get_pathologies({'depot': p.depot,
                                              'tag': p.tag}, tod=tod)
                     # for the first data let's load the calibration data
-                    if i == 0:
+                    if i == p.rank:
                         # number to compare to
                         # freq + tes
                         sel = tesSel
@@ -80,21 +82,24 @@ class Module:
                         sel *= patho.calData['stable']
                     respSel = patho.calData['respSel']
                     fracs.append(np.sum(respSel * sel)*1./np.sum(sel))
+            fracs = util.allgatherv(fracs, p.comm)
         else:
-             fracs = np.loadtxt(outfile)
-        # make plot
-        plt.figure(figsize=(8,6))
-        plt.plot(np.linspace(0,1,len(fracs)), sorted(fracs), 'k', lw=2)
-        plt.xlabel("Fraction of TOD", fontsize=16)
-        plt.ylabel("Fraction of Dets", fontsize=16)
-        plt.xticks(fontsize=14)
-        plt.yticks(fontsize=14)
-        plt.title("Fraction of data with valid\nbias-step measurements",
-                  fontsize=14, x=0.70, y=0.1)
-        outfile = op.join(p.o.cal.resp, "resp_hist.png")
-        print("Saving: %s" % outfile)
-        plt.savefig(outfile)
-        # save data for furthur processing
-        outfile = op.join(p.o.cal.resp, "resp_fracs.npy")
-        print("Saving: %s" % outfile)
-        np.savetxt(outfile, np.array(fracs))
+            if p.rank == 0:
+                fracs = np.loadtxt(outfile)
+        if p.rank == 0:
+            # make plot
+            plt.figure(figsize=(8,6))
+            plt.plot(np.linspace(0,1,len(fracs)), sorted(fracs), 'k', lw=2)
+            plt.xlabel("Fraction of TOD", fontsize=16)
+            plt.ylabel("Fraction of Dets", fontsize=16)
+            plt.xticks(fontsize=14)
+            plt.yticks(fontsize=14)
+            plt.title("Fraction of data with valid\nbias-step measurements",
+                      fontsize=14, x=0.70, y=0.1)
+            outfile = op.join(p.o.cal.resp, "resp_hist.png")
+            print("Saving: %s" % outfile)
+            plt.savefig(outfile)
+            # save data for furthur processing
+            outfile = op.join(p.o.cal.resp, "resp_fracs.npy")
+            print("Saving: %s" % outfile)
+            np.savetxt(outfile, np.array(fracs))
