@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 '''
 Produce maps of the cuts and hits for the selected TODs.
 Mostly taken from map_cuts.py script by Sigurd.
@@ -264,7 +266,7 @@ if __name__ == '__main__':
     ids = filedb.scans[args.sel]
     id_dict = split_ids(ids)
 
-    for scan_key, scan_ids in id_dict.iteritems():
+    for scan_key, scan_ids in id_dict.items():
 
         outdir_sub = opj(outdir, scan_key)
         mkoutdir(outdir_sub)
