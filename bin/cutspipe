@@ -20,18 +20,36 @@ cutparam = pconfig.get("cutparam", None)
 output_dir = pconfig.get("output_dir", None)
 modules = pconfig.get("pipeline").split()
 
-# initialize the project file structure
-if cutparam:
-    # if cutparam is given, i assume that we want to do simple
-    # post-processing for each cut version instead of all
-    p = proj.init_post(cutparam, output_dir)
+# setup mpi
+from mpi4py import MPI
+comm = MPI.COMM_WORLD
+size = comm.Get_size()
+rank = comm.Get_rank()
+mpi = size > 1
+
+if rank == 0:
+    # initialize the project file structure
+    if cutparam:
+        # if cutparam is given, i assume that we want to do simple
+        # post-processing for each cut version instead of all
+        p = proj.init_post(cutparam, output_dir)
+    else:
+        # if no cutparam is specified, i assume we want to do the
+        # final post-processing to work on all cutparams together
+        p = proj.init_final()
 else:
-    # if no cutparam is specified, i assume we want to do the
-    # final post-processing to work on all cutparams together
-    p = proj.init_final()
+    p = None
+
+p = comm.bcast(p, root=0)
+
+# synchronize
+if mpi: comm.Barrier()
+
+p.comm = comm
+p.size = size
+p.rank = rank
 
 # create pipeline
-init_func = {}
 run_func = {}
 for m in modules:
     # check type of the module
@@ -68,5 +86,18 @@ for m in modules:
 
 # run pipeline
 for m in modules:
-    print("Running module: %s" % m)
-    run_func[m](p)
+    # if a module supports mpi, specify it under this option
+    mod_mpi = config[m].getboolean("mpi", False)
+    # when the module does not want mpi but pipeline is mpi enabled
+    # run it with rank 0. For all other cases run it like before
+    if not mod_mpi and mpi:
+        if rank == 0:
+            print("Running module: %s" % m)
+            run_func[m](p)
+        # synchronize
+        if mpi: comm.Barrier()
+    else:
+        print("Running module: %s" % m)
+        run_func[m](p)
+        # synchronize
+        if mpi: comm.Barrier()
