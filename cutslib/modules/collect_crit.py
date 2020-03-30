@@ -6,6 +6,7 @@ import pickle, numpy as np, sys, os
 from moby2.util.database import TODList
 from cutslib.pathologies_tools import fix_tod_length, get_pwv
 from cutslib.pathologies import Pathologies
+from cutslib import util
 
 class Module:
     def __init__(self, config):
@@ -51,8 +52,9 @@ class Module:
 
         n = 0
         N = len(obsnames)
-        for obs in obsnames:
-            print("Collecting %s: %d out of %d"%(obs.split("/")[-1], n, N))
+        for obs_i in range(p.rank, len(obsnames), p.size):
+            obs = obsnames[obs_i]
+            print("Collecting %s: %d out of %d"%(obs.split("/")[-1], obs_i, N))
             n += 1
             try:
                 tod = moby2.scripting.get_tod({"filename":obs, "read_data":False})
@@ -92,25 +94,28 @@ class Module:
                 alt.append(np.mean(tod.alt))
 
         data = {}
-        data['name'] = tods
-        data['sel'] = np.array(sel).T
-        data['psel'] = np.array(psel).T
-        data["live"] = pa.liveCandidates
-        data["dark"] = pa.origDark
-        data["scan_freq"] = scanf
-        data["resp"] = np.array(resp).T
-        data["respSel"] = np.array(respSel).T
-        data["ff"] = ff
-        data["cal"] = np.array(cal).T
-        data["stable"] = stable
-        data["ctime"] = np.array(ctimes)
-        data["pwv"] = get_pwv(data["ctime"])
-        data["alt"] = alt
+        data['name'] = util.allgatherv(tods, p.comm)
+        data['sel'] = util.allgatherv(sel, p.comm).T
+        data['psel'] = util.allgatherv(psel, p.comm).T
+        data["resp"] = util.allgatherv(resp, p.comm).T
+        data["scan_freq"] = util.allgatherv(scanf, p.comm)
+        data["respSel"] = util.allgatherv(respSel, p.comm).T
+        data["cal"] = util.allgatherv(cal, p.comm).T
+        data["ctime"] = util.allgatherv(ctimes, p.comm)
+        data["pwv"] = util.allgatherv(get_pwv(np.array(ctimes)), p.comm)
+        data["alt"] = util.allgatherv(alt, p.comm)
         for k in list(criteria.keys()):
-            data[k] = np.array(criteria[k]).T
-        outfile = p.o.pickle_file
-        print("Saving data: %s" % outfile)
-        f = open(outfile, 'wb')
-        p = pickle.Pickler(f,2)
-        p.dump(data)
-        f.close()
+            data[k] = util.allgatherv(np.array(criteria[k]), p.comm).T
+
+        if p.rank == 0:
+            data["live"] = pa.liveCandidates
+            data["dark"] = pa.origDark
+            data["ff"] = ff
+            data["stable"] = stable
+
+            outfile = p.o.pickle_file
+            print("Saving data: %s" % outfile)
+            f = open(outfile, 'wb')
+            p = pickle.Pickler(f,2)
+            p.dump(data)
+            f.close()
