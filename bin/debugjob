@@ -1,0 +1,3 @@
+#!/bin/bash
+nnode=${1:-1}
+salloc -pdebug --nodes $nnode --ntasks-per-node=10 --cpus-per-task=4 --time=1:00:00
