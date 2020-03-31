@@ -1,7 +1,7 @@
 """This is not a module but a number of utility libraries
 for command type module"""
 
-import random, string, os
+import random, string
 
 def generate_random_filename():
     return '.tmp_' + \
@@ -20,6 +20,7 @@ def create_run_func(config):
     # check for conda environ
     conda_env = config.get("conda_env", None)
     def run_func(p):
+        import os
         with open(tfname, "w") as f:
             f.write("#!/bin/bash\n")
             f.write("source ~/.bashrc\n")

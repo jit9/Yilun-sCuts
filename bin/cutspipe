@@ -49,10 +49,7 @@ if rank == 0:
 else:
     p = None
 
-p = comm.bcast(p, root=0)
-
-# synchronize
-if mpi: comm.Barrier()
+if mpi: p = comm.bcast(p, root=0)
 
 p.comm = comm
 p.size = size
