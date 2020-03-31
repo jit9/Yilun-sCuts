@@ -4,14 +4,18 @@
 and parse the fields to generate a pipeline and excute it"""
 
 from configparser import ConfigParser, ExtendedInterpolation as EI
-import sys, os.path as op
+import sys, os.path as op, os
 from cutslib import proj
 from cutslib.modules.command import create_run_func
 import importlib
 
-# parse config file
-config = ConfigParser(interpolation=EI())
-# read default configuration
+# initialize config parser from environment variables
+# this means all environment variables are accessible
+# through extended interpolation syntax.
+# for example: ${HOME} refers to the home directory.
+# note that the interpolation is case-insensitive
+config = ConfigParser(os.environ, interpolation=EI())
+# read default configuration from cutslib
 default_config = op.join(op.dirname(proj.__file__),
                          'modules', 'defaults.ini')
 config.read(default_config)
