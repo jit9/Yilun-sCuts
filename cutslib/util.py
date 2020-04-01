@@ -77,6 +77,32 @@ def to_pa(array):
 def to_ar(array):
     return array.lower().replace('pa','ar')
 
+def pas_per_season(season):
+    if season == 's13':
+        return ['pa1']
+    elif season == 's14':
+        return ['pa1', 'pa2']
+    elif season == 's15':
+        return ['pa1', 'pa2', 'pa3']
+    elif season == 's16':
+        return ['pa2', 'pa3', 'pa4']
+    elif season in ('s17', 's18', 's19'):
+        return ['pa4', 'pa5', 'pa6']
+    else:
+        raise ValueError('No arrays found for season {}'.
+                         format(season))
+
+def freqs_per_pa(pa):
+    if pa in ('pa1', 'pa2'):
+        return ['f150']
+    elif pa in ('pa3', 'pa5', 'pa6'):
+        return ['f090', 'f150']
+    elif pa == 'pa4':
+        return ['f150', 'f220']
+    else:
+        raise ValueError('No freqs found for season {}'.
+                         format(pa))
+
 # functions copied from pixell.utils to reduce dependency
 def cumsum(a, endpoint=False):
 	"""As numpy.cumsum for a 1d array a, but starts from 0. If endpoint is True, the result
