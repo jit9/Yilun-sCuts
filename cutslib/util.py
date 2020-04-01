@@ -28,11 +28,14 @@ def tag_to_afsv(tag, ar=True):
             array = 'ar'+array[-1]
     return (array, freq, season, version)
 
-def mkdir(dir):
-    if not os.path.exists(dir):
-        print("Creating directory: %s" % dir)
-        os.makedirs(dir)
-    return dir
+
+def mkdir(dir, comm=None, rank=0):
+    if comm: return mkdir(dir, None, comm.Get_rank())
+    if rank == 0:
+        if not os.path.exists(dir):
+            print("Creating directory: %s" % dir)
+            os.makedirs(dir)
+        return dir
 
 def parse_tag(cutparam):
     params = parse_param(cutparam)
