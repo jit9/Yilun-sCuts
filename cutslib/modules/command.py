@@ -53,6 +53,7 @@ def create_run_func(config):
     nomp = config.getint("nomp", 0)
     def run_func(p):
         import os
+        print(cmd)
         with open(tfname, "w") as f:
             f.write("#!/bin/bash\n")
             # write slurm headers if that's what we want
