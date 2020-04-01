@@ -1,0 +1,39 @@
+#!/usr/bin/env python
+
+import matplotlib
+matplotlib.use('agg')
+
+import numpy as np
+import os.path as op
+import glob
+
+from pixell import enmap, enplot, mpi
+from enlib import config
+
+comm = mpi.COMM_WORLD
+opj = op.join
+
+if __name__ == '__main__':
+
+    parser = config.ArgumentParser()
+    parser.add_argument("infiles", nargs='+')
+    parser.add_argument("-d", "--downgrade", type=float, default=4)
+    parser.add_argument("-r", "--range", type=float, default=4000)
+    args = parser.parse_args()
+
+    plot_opts = {'quantile' : 0.001, 'colorbar' : True, 'ticks' : 5,
+                 'mask' : np.nan, 'autocrop' : True, 'color' : 'gray'}
+
+    infiles = args.infiles
+
+    for i in range(comm.rank,len(infiles),comm.size):
+        infile = infiles[i]
+        print('rank {:3d}: plotting {}'.format(
+            comm.rank, infile))
+
+        imap = enmap.read_map(infile)
+        imap = enmap.downgrade(imap, args.downgrade)
+
+        plot = enplot.plot(imap, **plot_opts)
+        outfile = '.'.join(infile.split('.')[:-1])
+        enplot.write(outfile, plot)
