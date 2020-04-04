@@ -517,7 +517,7 @@ class Pathologies( object ):
         # Select live detectors
         # If usePresel is set to False, the pre-selection will not be used for cut
         # by default the pre-selection is used
-        usePresel = params['otherParams'].get('usePresel', True)
+        usePresel = self.params['otherParams'].get('usePresel', True)
         if usePresel:
             self.liveSel = ~self.zeroSel*~self.exclude*self.preLiveSel
         else:
