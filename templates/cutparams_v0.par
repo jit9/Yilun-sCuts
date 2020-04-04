@@ -1,29 +1,20 @@
 #PARAMETER FILE FOR GET_CUTS.PY
 traceLevel = 2                  # Verbosity level
-depot = '/project/r/rbond/yguan/depot'
+depot = '{{ depot }}'
 
 # Output TAGs
-# [Yilun] These are the tags for the cuts products.
-# You should chose a tagging system you are confortable with.
-# Ideally, keep the structure pa?_f???_s?? and add your tag at the end.
-# We have been using a system based on c?? for moby2 version and v?? for parameters version
-# I am not sure it is very convenient and you might want to change that for something else.
-# Maintaining consistent tags (adding suffix like _partial, _source, etc) for a run is good
-# but sometimes you don't need to re-generate everything and some can be reused from previous run.
-# Please change them, c11_v6 is the last run I made and we should avoid re-using the same tags.
-tag_out = 'pa5_f150_s17_c11_v0'                # Tag to store full cuts
-tag_cal = 'pa5_f150_s17_c11_v0'                # Tag to store new calibration objects
-tag_patho = 'pa5_f150_s17_c11_v0'              # Tag to store pathologies
-tag_partial = 'pa5_f150_s17_c11_v0_partial'    # Tag to store partial cuts
-tag_source = 'pa5_f150_s17_c11_v0_source'      # Tag to store source cuts
-hdf_source_cuts = '/project/r/rbond/yguan/depot/TODCuts/src_cuts_s17v5_f150.hdf'  # include source cuts
-tag_cmb = 'pa5_f150_s17_c11_v0_cmb'            # Tag to store source cuts
-tag_planet = 'pa5_f150_s17_c11_v0_planet'      # Tag to store planet cuts
-tag_sync = 'pa5_f150_s17_c11_v0'               # Tag to store sync fit
+tag_out = '{{ tag_out }}'              # Tag to store full cuts
+tag_cal = '{{ tag_out }}'              # Tag to store new calibration objects
+tag_patho = '{{ tag_out }}'            # Tag to store pathologies
+tag_partial = '{{ tag_out }}_partial'  # Tag to store partial cuts
+tag_source = '{{ tag_out }}_source'    # Tag to store source cuts
+# hdf_source_cuts = '/projects/ACT/yilung/depot/TODCuts/src_cuts_s17v5_f090.hdf'
+tag_cmb = '{{ tag_out }}_cmb'          # Tag to store source cuts
+tag_planet = '{{ tag_out }}_planet' # Tag to store planet cuts
+tag_sync = '{{ tag_out }}'            # Tag to store sync fit
 
 # Control Flags
-# [Yilun] These can be used to avoid re-computing everything and use previous products instead.
-# In particular, the newfile flag is important to avoid re-rpocessing TODs that are already present.
+
 newfile = False                 # - True to create new output file  # whether to make new ones
                                 # - False to append to previous file
 forcePartial = False            # Force to recalculate all cuts
@@ -34,34 +25,28 @@ cut_planets = True
 
 
 # List of TODs to analyze
-# [Yilun] This is the list of TODs to process, at some point you probably should point to lists you produce yourself.
 # We should decide on a subset of TODs to work on at first.
-# source_scans = "/project/r/rbond/yguan/depot/TODLists/2017_ar5_nohwp.txt"
-source_scans = "./test_list.txt"
+source_scans = "{{ source_scan }}"
 
 # Cuts Parameter file
 cutParams = 'cutParams_v0.par' # Custom cut parameters
 
 # Known bad tods
-# [Yilun] This is mostly useless, but if there are TODs you don't want to process you can provide a list here.
 # It used to be to avoid spending time on TODs that have corrupted files, in particular for real time cuts.
-reject_depot = "/project/r/rbond/yguan/depot/TODLists/empty_list.txt"
+reject_depot = "{{ depot }}/TODLists/empty_list.txt"
 
 # Reporting parameters
-# [Yilun] This is important. In this directory will live some statistics and useful information about your run.
-outdir = './run_v0' # Output directory for results
-rejectList = 'rejected.txt' # List of TODs that failed to produce cuts
-report = 'pa5_f150_s17_c11_v0' # File to output pathologies statistics
-timefile = 'timefile.txt' # File to output cut statistics
-errfile = 'out.pickle' # File to output stdout
+outdir = './run_v0'            # Output directory for results
+rejectList = 'rejected.txt'    # List of TODs that failed to produce cuts
+report = '{{ tag_out }}' # File to output pathologies statistics
+timefile = 'timefile.txt'      # File to output cut statistics
+errfile = 'out.pickle'         # File to output stdout
 
 # Moby options
 manifest_conf = '/data/manifest_conf/manifest_2016.conf'
 moby_options = {"verbosity": 3, "log_file": "log.txt", "append": True, "log_exceptions": True}
 
-
 # TOD preprocess params
-# [Yilun] I suppose you shouldn't touch these parameters for now, we can discuss them later if you have questions about what they do.
 detrend = False
 remove_filter_gain = True
 IV_wait = 220
@@ -69,27 +54,26 @@ rebias_wait = 25
 n_downsample = 1                # Number of times to downsample
 stare = False
 
-# Cuts Caller params
-# [Yilun] These parameters are for handmade parallelization. They are passed to cutsCaller
+# Cuts Caller params: 
 # Runtime can be used if a job scheduler is present, but it is not on hermes.
 # by default 20 processes will be allocated to one node.
-nproc = 160
-runtime = "00:10:00"  # not relevant (hours)
-partition = "debug"
+tpn=16
+nnode=4
+jobname = "{{ jobname }}"  # stand for pa5,s17,f090
+runtime = "00:30:00"  # hours
+qos = "short"
 
 # Post-analysis parameters
-# [Yilun] These parameters will not be used by the cuts run itself but for some post-processing analysis.
-critfile = "pa5_f150_s17_c11_v0_results.pickle"
+critfile = "{{ tag_out }}_results.pickle"
 dirplot = './run_v0/PLOTS'
 dirstats = './run_v0'
 
 # Flat-field parameters
-# [Yilun] These parameters will not be used by the cuts run itself but for some post-processing analysis.
 ff_params = {
       "useSel": True,
       "minSamples": 50,
       "sigmas": 5,
-      "selectedTODs": "./selTODs_pa5_f150_s17_c11_v0.txt",
+      "selectedTODs": "./selTODs_{{ tag_out }}.txt",
       "normalize": True,
       "gainLimit": 10,
       "maxRMS": 0.3,
