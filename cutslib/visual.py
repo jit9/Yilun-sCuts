@@ -19,6 +19,36 @@ import moby2
 from moby2.tod.array_data import ArrayData
 moby2.pointing.set_bulletin_A()
 
+
+def set_plotstyle(options={}, style='default'):
+    """Define common plot style"""
+    default = {}
+    if style == 'default':
+        # style from Cristobal
+        for tick in ('xtick', 'ytick'):
+            default['{0}.major.size'.format(tick)] = 8
+            default['{0}.minor.size'.format(tick)] = 4
+            default['{0}.major.width'.format(tick)] = 2
+            default['{0}.minor.width'.format(tick)] = 2
+            default['{0}.labelsize'.format(tick)] = 20
+            default['{0}.direction'.format(tick)] = 'in'
+        default['xtick.top'] = True
+        default['ytick.right'] = True
+        default['axes.linewidth'] = 2
+        default['axes.labelsize'] = 22
+        default['font.size'] = 22
+        default['font.family']='sans-serif'
+        default['legend.fontsize'] = 18
+        default['lines.linewidth'] = 2
+        default['axes.prop_cycle'] = cycler(color=['#2424f0','#df6f0e','#3cc03c','#d62728','#b467bd','#ac866b','#e397d9','#9f9f9f','#ecdd72','#77becf'])
+
+    for key in default:
+        plt.rcParams[key] = default[key]
+    # overwrite if necessary
+    for key in options:
+        plt.rcParams[key] = options[key]
+
+
 def plot_with_cuts(tod, det, interactive=True):
     if interactive: pylab.ion()
     else: pylab.ioff()

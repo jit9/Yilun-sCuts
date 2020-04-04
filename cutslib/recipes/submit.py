@@ -4,10 +4,10 @@ def update_crit(cutparam):
     submit_command("update_crit", cutparam)
 
 def run_tiger(cutparam):
-    submit_command("run_cuts", cutparam, 'tiger')
+    submit_command("run_cuts", cutparam, cluster='tiger')
 
 def run_della(cutparam):
-    submit_command("run_cuts", cutparam, 'della')
+    submit_command("run_cuts", cutparam, cluster='della')
 
 ####################
 # utility function #
@@ -53,15 +53,14 @@ def submit_command(command, cutparam, jobname=None, cluster='tiger'):
         f = open( '%s/submitjob.sh.%d' % (outdir, n), 'w' )
         f.write( '#!/bin/sh\n' )
         f.write( '#SBATCH -N 1\n')
-        f.write( '#SBATCH --ntasks-per-node=%d\n' % (ttpn))  # default for della
+        f.write( '#SBATCH --ntasks-per-node=%d\n' % (ttpn))
         f.write( '#SBATCH -J %s%d\n' % (jobname,n))
         f.write( '#SBATCH -t %s\n' % runtime )
         f.write( '#SBATCH --qos %s\n' % qos )
-        # f.write( '#SBATCH --partition %s\n' % partition)
         f.write( '#SBATCH --output=%s/slurmjob.log.%d\n' % (outdir, n))
         f.write( 'module load gcc\n' )
         f.write( 'module load openmpi\n' )
-        f.write( 'source activate %s\n' % CUTS_PYENV )  #FIXME
+        f.write( 'source activate %s\n' % CUTS_PYENV )
         f.write( 'cd %s\n' % basedir)
         start, end = n*tpn, (n+1)*tpn
         for i in range(start, end):
