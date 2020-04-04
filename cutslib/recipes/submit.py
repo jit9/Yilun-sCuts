@@ -3,14 +3,17 @@
 def update_crit(cutparam):
     submit_command("update_crit", cutparam)
 
-def run(cutparam):
-    submit_command("run_cuts", cutparam)
+def run_tiger(cutparam):
+    submit_command("run_cuts", cutparam, 'tiger')
+
+def run_della(cutparam):
+    submit_command("run_cuts", cutparam, 'della')
 
 ####################
 # utility function #
 ####################
 
-def submit_command(command, cutparam, jobname=None):
+def submit_command(command, cutparam, jobname=None, cluster='tiger'):
     """submit slurm jobs for given binary script based on todloop"""
     import os
     from moby2.util import MobyDict
@@ -35,7 +38,12 @@ def submit_command(command, cutparam, jobname=None):
     # partition = par.get("partition", "serial")
     # total task per node including nomp
     # note there is a maximum of 40 logical cores in della
-    ttpn = tpn * nomp
+    if cluster == 'tiger':
+        ttpn = 40
+    elif cluster == 'della':
+        ttpn = 32
+    else:
+        ttpn = 32
 
     # find list of tods to process
     if not(os.path.isdir(outdir)): os.makedirs(outdir)
@@ -45,7 +53,7 @@ def submit_command(command, cutparam, jobname=None):
         f = open( '%s/submitjob.sh.%d' % (outdir, n), 'w' )
         f.write( '#!/bin/sh\n' )
         f.write( '#SBATCH -N 1\n')
-        f.write( '#SBATCH --ntasks-per-node=40\n')  # default for della
+        f.write( '#SBATCH --ntasks-per-node=%d\n' % (ttpn))  # default for della
         f.write( '#SBATCH -J %s%d\n' % (jobname,n))
         f.write( '#SBATCH -t %s\n' % runtime )
         f.write( '#SBATCH --qos %s\n' % qos )
