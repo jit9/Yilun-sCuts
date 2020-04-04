@@ -69,7 +69,10 @@ def to_scode(season):
     elif season=='2019':
         return 's19'
     else:
-        raise ValueError("Unknown season: %s" % season)
+        return season
+
+def to_season(scode):
+    return scode.replace('s','20')
 
 def to_pa(array):
     return array.lower().replace('ar','pa')

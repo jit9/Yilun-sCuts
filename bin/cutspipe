@@ -30,10 +30,10 @@ output_dir = pconfig.get("output_dir", None)
 modules = pconfig.get("pipeline").split()
 
 # setup mpi
-from mpi4py import MPI
-comm = MPI.COMM_WORLD
-size = comm.Get_size()
-rank = comm.Get_rank()
+from cutslib import mpi
+comm = mpi.COMM_WORLD
+size = comm.size
+rank = comm.rank
 mpi = size > 1
 
 if rank == 0:

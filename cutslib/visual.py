@@ -60,6 +60,7 @@ def plot_with_cuts(tod, det, interactive=True):
     pylab.plot(t[~sel], tod.data[det][~sel], "r.", markersize=1)
     return pylab.gca()
 
+
 class freqSpaceWaterfall( object ):
     """
     Functions to generate the waterfall data (power spectrum) and

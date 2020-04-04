@@ -103,9 +103,10 @@ def init_post(cutparam, output_dir=None):
 def init_final():
     """Initialize the final processing that works on all
     tags"""
-    from cutslib import Depot
+    from cutslib import Depot, SharedDepot
     p = DotMap()
     p.depot = Depot()
+    p.shared_depot = SharedDepot()
     # if mapdata root is specified, attach it here
     map_root = os.environ.get("CUTS_MAPDATA", None)
     p.map_root = map_root
