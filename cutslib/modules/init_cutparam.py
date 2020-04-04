@@ -56,6 +56,7 @@ class Module:
                     'scode': to_scode(season),
                     'shared_depot': p.shared_depot.root,
                     'freq': freq,
+                    'depot': p.depot.root
                 }
                 outdir = f"{pa}_{freq}_{season}_{softver}"
                 if not op.exists(outdir):
@@ -82,16 +83,15 @@ class Module:
                 )
                 # generate cutparams in each folder
                 outfile = op.join(outdir, 'cutparams_v0.par')
+                to_write = True
                 if op.exists(outfile):
                     if not self.force:
                         ans = input(f"{outfile} exists, overwrite? y/n ")
                         to_write = ans == 'y'
-                    else:
-                        to_write = True
-                    if to_write:
-                        with open(outfile, "w") as f:
-                            f.write(res)
-                        print(f"Written to: {outfile}")
+                if to_write:
+                    with open(outfile, "w") as f:
+                        f.write(res)
+                    print(f"Written to: {outfile}")
 
                 # load cutParams template and render it
                 template = op.abspath(op.join(op.dirname(cutslib.__file__),
@@ -118,13 +118,12 @@ class Module:
                 )
                 # generate cutparams in each folder
                 outfile = op.join(outdir, 'cutParams_v0.par')
+                to_write = True
                 if op.exists(outfile):
                     if not self.force:
                         ans = input(f"{outfile} exists, overwrite? y/n ")
                         to_write = ans == 'y'
-                    else:
-                        to_write = True
-                    if to_write:
-                        with open(outfile, "w") as f:
-                            f.write(res)
-                        print(f"Written to: {outfile}")
+                if to_write:
+                    with open(outfile, "w") as f:
+                        f.write(res)
+                    print(f"Written to: {outfile}")
