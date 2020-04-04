@@ -31,6 +31,7 @@ import pandas as pd
 import numpy as np
 from moby2.ephem import ACTEphem
 import matplotlib.pyplot as plt
+from cutslib import Catalog
 
 fb = moby2.scripting.get_filebase()
 
@@ -47,15 +48,10 @@ params = moby2.util.MobyDict.from_file( sys.argv[1] )
 output_dir = params.get("output_dir", ".")
 
 # load catalog of tods and convert to pandas dataframe
-moby2_conf = moby2.util.MobyConfig()
-filename = moby2_conf.get_deep(('obs_catalog','filename'))
 
-npcat = fitsio.read(filename)
-npcat = npcat.byteswap().newbyteorder()
-catalog = pd.DataFrame.from_records(npcat)
-catalog.index = pd.to_datetime(catalog.date)
 
-# import ipdb;ipdb.set_trace()
+catalog = Catalog().data
+import ipdb;ipdb.set_trace()
 
 # select tods based on the specified criteria
 # 1st iteration
