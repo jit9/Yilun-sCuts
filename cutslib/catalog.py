@@ -79,11 +79,30 @@ class Catalog():
                     target = query[k].replace("pa","ar")
                 else:
                     target = query[k]
-                sel *= self.data[k] == target
+                if type(target) == list:
+                    sel *= self.data[k].isin(target)
+                else:
+                    sel *= self.data[k] == target
         sel = sel.astype(bool)
         self.data = self.data[sel]
         self.abuses.update(query)
         return self
+
+    def narrow_down(self, tod_list):
+        """Narrow down the catalog to a given todlist, it wraps
+        around select method
+
+        Args:
+            tod_list: list or a path to the list"""
+        if type(tod_list) == str:
+            with open(tod_list, "r") as f:
+                content = f.readlines()
+            content = [l.strip() for l in content]
+        elif type(tod_list) == list:
+            content = tod_list
+        else:
+            raise ValueError("tod_list format not recognized!")
+        self.select({'tod_name': content})
 
     def __repr__(self):
         return f"Catalog(n_entry={len(self.data)})"
