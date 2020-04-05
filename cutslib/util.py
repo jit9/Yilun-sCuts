@@ -156,3 +156,30 @@ def allgatherv(a, comm, axis=0):
 	if must_fix:
 		fb = fb.view(dtype=a.dtype)
 	return moveaxis(fb, 0, axis)
+
+def decode_array_if_necessary(arr):
+    """Given an arbitrary numpy array arr, decode it if it is of type S
+    and we're in a version of python that doesn't like that
+
+    """
+    try:
+        np.array(["a"],"S")[0] in "a"
+        return arr
+    except TypeError:
+        if arr.dtype.type is np.bytes_:
+            return np.char.decode(arr)
+        else:
+            return arr
+
+def encode_array_if_necessary(arr):
+    """Given an arbitrary numpy array arr, encode it it if it is of type U
+    and we're in a version of python that doesn't like that
+    """
+    try:
+        np.array(["a"],"S")[0] in "a"
+        return arr
+    except TypeError:
+        if arr.dtype.type is np.str_:
+            return np.char.encode(arr)
+        else:
+            return arr
