@@ -15,6 +15,7 @@ from cutslib import util
 
 import pickle
 
+
 class Module:
     def __init__(self, config):
         pass
