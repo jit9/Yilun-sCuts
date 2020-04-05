@@ -1,14 +1,19 @@
-"""This module aims to make a plot that anwsers the question: how much
-data is cut at different pwv, the difference of this compared to
-plot_live_fraction module is that i want to give more information than
-just taking the mean or the median in this plot.
+"""This module aims to anwser the question: how much data is cut at
+different pwv. To answer this, this module collects the relevant sels
+for each tod in the source_scans and stores them for plotting in the
+future. This will be the pre-requisite module for all modules that
+look at number of dets being cut.
 
 """
+
 import moby2
 import os.path as op
 
 from cutslib import Catalog
 from cutslib.pathologies import get_pathologies, Pathologies
+from cutslib import util
+
+import pickle
 
 class Module:
     def __init__(self, config):
@@ -63,6 +68,7 @@ class Module:
             except Exception as e:
                 # data missing
                 res['tod_sel'].append(False)
+                continue
             if op.isfile(depot.get_full_path(Pathologies, tod=tod, tag=p.tag)):
                 # load all relevant patholog results
                 patho = get_pathologies({'depot': p.depot,
@@ -112,5 +118,6 @@ class Module:
             res['tes_sel'] = tes_sel
             # write out
             outfile = op.join(p.o.patho.root, 'sel.pickle')
-            with open(outfile, "w") as f:
-                pickle.dump(res, outfile)
+            with open(outfile, "wb") as f:
+                pickle.dump(res, f)
+            print(f"Written to: {outfile}")
