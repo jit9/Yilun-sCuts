@@ -54,7 +54,7 @@ class Module:
         N = len(obsnames)
         for obs_i in range(p.rank, len(obsnames), p.size):
             obs = obsnames[obs_i]
-            print("Collecting %s: %d out of %d"%(obs.split("/")[-1], obs_i, N))
+            print("%2d %s: %5d/%5d"%(p.rank, obs.split("/")[-1], obs_i, N))
             n += 1
             try:
                 tod = moby2.scripting.get_tod({"filename":obs, "read_data":False})
@@ -93,6 +93,7 @@ class Module:
                 ctimes.append(tod.info.ctime)
                 alt.append(np.mean(tod.alt))
 
+        p.comm.Barrier()
         data = {}
         data['name'] = util.allgatherv(tods, p.comm)
         data['sel'] = util.allgatherv(sel, p.comm).T
