@@ -96,6 +96,7 @@ class Module:
                 res['tod_sel'].append(False)
 
         # gather results from individual processes
+        p.comm.Barrier()
         res['sel'] = util.allgatherv(res['sel'],p.comm)
         res['resp_sel'] = util.allgatherv(res['resp_sel'],p.comm)
         res['presel'] = util.allgatherv(res['presel'],p.comm)

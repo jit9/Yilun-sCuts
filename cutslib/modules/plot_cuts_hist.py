@@ -24,10 +24,7 @@ def plot_smoothed(x, y, ax=None, window=10, mode='valid', **kwargs):
     kernel = np.ones(window)/window
     x_smt = np.convolve(x, kernel, mode=mode)
     y_smt = np.convolve(y, kernel, mode=mode)
-    if not ax:
-        plt.plot(x_smt, y_smt, **kwargs)
-    else:
-        ax.plot(x_smt, y_smt, **kwargs)
+    ax.plot(x_smt, y_smt, **kwargs)
     return ax
 
 
@@ -37,9 +34,13 @@ def plot_smoothed(x, y, ax=None, window=10, mode='valid', **kwargs):
 
 class Module:
     def __init__(self, config):
-        pass
+        self.window = config.getint("window", 10)
+        self.show_baseline = config.getboolean("show_baseline", True)
 
     def run(self, p):
+        window = self.window
+        show_baseline = self.show_baseline
+
         # first check whether we have the required file available
         sel_file = op.join(p.o.patho.root, "sel.pickle")
         if not op.exists(sel_file):
@@ -82,17 +83,19 @@ class Module:
         # ax.plot(pwv[ind], resp[ind], label='with resp')
         # ax.plot(pwv[ind], sel[ind], label='uncut')
         # plt.plot(pwv[ind], presel[ind], label='presel')
-        plot_smoothed(pwv[ind], resp[ind], ax=ax, label='with resp')
-        plot_smoothed(pwv[ind], sel[ind], ax=ax, label='uncut')
+        plot_smoothed(pwv[ind], resp[ind], ax=ax, label='with resp', window=window)
+        plot_smoothed(pwv[ind], sel[ind], ax=ax, label='uncut', window=window)
+        plot_smoothed(pwv[ind], presel[ind], ax=ax, label='presel', window=window)
         crit_keys = [k for k in list(data.keys()) if 'Live' in k]
         for k in crit_keys:
             if k in ['skewLive', 'kurtLive']:
                 continue
             crit_num = np.zeros_like(pwv)
             crit_num[tod_sel] = np.sum(data[k]*data['resp_sel'],axis=1)
-            plot_smoothed(pwv[ind], crit_num[ind], label=k)
+            plot_smoothed(pwv[ind], crit_num[ind], ax=ax, label=k, window=window)
         # plot reference line
-        ax.axhline(np.sum(baseline), label='TES', color='k', linestyle='-')
+        if show_baseline:
+            ax.axhline(np.sum(baseline), label='TES', color='k', linestyle='-')
         ax.axhline(np.sum(data['ff_sel']*baseline), label='with ff',
                    color='k', linestyle='--')
         ax.axhline(np.sum(data['ff_stable']*baseline), color='k',
