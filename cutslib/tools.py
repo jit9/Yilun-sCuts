@@ -285,6 +285,15 @@ def get_iharm(frange, df, scan_freq, wide = False):
 
 
 def get_time_domain_modes(fmodes, n_l, nsamps, df=1.,):
+    """What's happening here is: supposed fmodes has shape (ndet, nfreq)
+              n_l      nfreq-1       1
+    fcm = [0 0 ... 0] [        ] [        ]
+          [0 0 ... 0] [        ] [ real   ]
+     ndet [. . ... 0] [ fmodes ] [ fmodes ]
+          [. . ... 0] [        ] [  -1    ]
+          [0 0 ... 0] [        ] [        ]
+
+    """
     # Get modes in time domain
     if fmodes.ndim == 1:
         fmodes = fmodes[np.newaxis,:]

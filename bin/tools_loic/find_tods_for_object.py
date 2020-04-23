@@ -1,3 +1,6 @@
+"""Calculate sun / moon distance for each TOD. There are a number
+of useful utility functions here"""
+
 import numpy as np
 import moby2
 from moby2.instruments import actpol
@@ -13,12 +16,12 @@ ids = db.select_tods()
 eph = actEphem.ACTEphem()
 Sun = eph._objects['Sun']
 Moon = eph._objects['Moon']
-    
+
 
 def angdist( x, y ):
     az1, alt1 = x
     az2, alt2 = y
-    return np.arccos( 
+    return np.arccos(
         np.cos(alt1)*np.cos(alt2)*np.cos(az1-az2)
         + np.sin(alt1)*np.sin(alt2) )
 
@@ -49,7 +52,7 @@ def find_tods_for_object( coords_object ):
              id.max_dec, id.max_dec,
              id.min_dec],
             color, alpha=0.2)
-        if inside: 
+        if inside:
             tl.append(id.basename)
             ids_sel.append(id)
     return tl, ids_sel
@@ -85,25 +88,25 @@ for id in ids:
         filename = fb.filename_from_name(id.basename, single=True)
         tod = moby2.scripting.products.get_tod(
             {'filename':filename, 'read_data':False, 'repair_pointing':True} )
-        
+
         eph.set_ctime(tod.info.ctime)
-        
+
         Sun.compute(tod.info.ctime)
         Sun_alt, Sun_az = eph.radec_to_altaz(Sun.ra*rad2deg,
                                              Sun.dec*rad2deg)
-        
+
         Moon.compute(tod.info.ctime)
         Moon_alt, Moon_az = eph.radec_to_altaz(Moon.ra*rad2deg,
                                                Moon.dec*rad2deg)
-        
-        
+
+
         # plt.plot(tod.az*rad2deg, tod.alt*rad2deg, 'b.')
         # plt.plot(Sun_az*rad2deg, Sun_alt*rad2deg, 'y*')
         # plt.plot(Moon_az*rad2deg, Moon_alt*rad2deg, 'ko')
-        
+
         dSun = 180 / np.pi * min(
             angdist([tod.az.min(), tod.alt.mean()], [Sun_az, Sun_alt]),
-            angdist([tod.az.max(), tod.alt.mean()], [Sun_az, Sun_alt]) )
+            angdist([tod.az.max(), tod.alt.mean()], [Sun_az, Sun_alt]))
         dMoon = 180 / np.pi * min(
             angdist([tod.az.min(), tod.alt.mean()], [Moon_az, Moon_alt]),
             angdist([tod.az.max(), tod.alt.mean()], [Moon_az, Moon_alt]) )

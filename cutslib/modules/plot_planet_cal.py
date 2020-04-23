@@ -25,6 +25,7 @@ class Module:
         self.gauss_test = config.getint('gauss_test', 10)
         self.force = config.getboolean('force', False)
         self.tag_cuts = config.get('tag_cut', None)
+        self.color_scale = config.get('color_scale', 'ctime')
 
     def run(self, proj):
         ctime_start = self.ctime_start
@@ -34,6 +35,7 @@ class Module:
         gauss_test = self.gauss_test
         force = self.force
         tag_cuts = self.tag_cuts
+        color_scale = self.color_scale
 
         df = pd.DataFrame()
 
@@ -259,19 +261,20 @@ class Module:
         ax1.plot(x, y, 'b--')
         ax1.errorbar(df.loading, df.peak_mean, df.peak_error, fmt=',', color='k', ecolor='k', elinewidth=2)
         splot = ax1.scatter(df.loading, df.peak_mean, s=100,
+                            c=df[color_scale],edgecolor='None',
+                            cmap='copper')
         #            c=df.hour_utc, vmin=-8, vmax=16,
         #            c=df.Ndets,
-        #              c=df.ctime,
-                    c=df.az,
-                    edgecolor='None',
+        #            c=df.ctime,
+        #            c=df.az,
         #            cmap='hsv')
         #            cmap='RdYlBu_r')
-                    cmap='copper')
         clb = plt.colorbar(splot)
         # clb.set_label('Ndets')
         # clb.set_label('ctime')
         # clb.set_label('hour_utc')
-        clb.set_label('azimuth')
+        # clb.set_label('azimuth')
+        clb.set_label(color_scale)
         ax1.set_xlim((0,loading_max))
         y_lim = params.get('y_lim', p0*2)
         ax1.set_ylim((0,y_lim))
@@ -322,6 +325,7 @@ def get_beam_solid_angle(array,season):
            's15b': {'PA1':195.1, 'PA2':182.8, 'PA3_90': 493.9, 'PA3_150':261.5},
            's16': {'PA2':179.8, 'PA3_90':471.4, 'PA3_150':241.5, 'PA4_150':236.1, 'PA4_220':112.8},
            's17': {'PA4_150':218.2, 'PA4_220':116.8, 'PA5_90':428.1, 'PA5_150':201.1, 'PA6_90':463.7, 'PA6_150':215.5},
+           's18': {'PA4_150':218.2, 'PA4_220':116.8, 'PA5_90':428.1, 'PA5_150':201.1, 'PA6_90':463.7, 'PA6_150':215.5}
        }
     return bso[season][array] * 1e-9
 
