@@ -296,6 +296,21 @@ class freqSpaceWaterfall( object ):
         if show: plt.show()
         else: plt.close()
 
+    def plot_corr(self, selection, fmin, fmax, n_deproj=0, plot=True):
+        from . import analysis as ana
+        freq = self.matfreqs
+        fmask = (freq > fmin) * (freq < fmax)
+        fmodes = self.mat[np.ix_(selection, fmask)]
+        fmodes = ana.deproject_modes(fmodes, n_modes=n_deproj)
+        cov = ana.corrmat(fmodes)
+        if plot:
+            plt.figure(figsize=(10,10))
+            plt.imshow(cov, cmap='jet', origin='lower')
+            plt.colorbar(shrink=0.8)
+            plt.xlabel('dets')
+            plt.ylabel('dets')
+            plt.title(f'noise cov [{fmin}Hz, {fmax}Hz] deproj={n_deproj}')
+        return cov
 
 
 class timeSpaceWaterfall( object ):
@@ -575,9 +590,6 @@ class quality( object ):
         else: plt.clf()
 
 
-
-
-
 def generateArmonicMask(freqs, scanFreq, window = 10):
     """
     @brief Generates a mask that isolates those frequencies which are near a scan armonic.
@@ -609,7 +621,9 @@ def tuneScanFreq(p, nu, scanFreq, scope = 0.002, nsamp = 100, plot = False):
 
 
 
-
+#######################
+# array plots related #
+#######################
 
 
 def array_plots( param,
