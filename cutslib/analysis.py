@@ -62,14 +62,14 @@ def analyze_scan(tod, qlim=1, vlim=0.01, n_smooth=0):
     return scan_params
 
 
-def analyze_common_mode(fdata, nsamps, preselector=None):
+def analyze_common_mode(fdata, nsamps=1, preselector=None):
     """perform a simple common mode analysis in a given frequency range.
     It requires the fft signal (fsignal) to be available in the tod.
 
     Parameters
     ----------
     tod: moby2 tod object
-    frange: frequency range to look for common mode (in Hz)
+    nsamps: use to normalize, default to 1
     preselector: mask or a function to generate preselection mask
 
     Returns
@@ -158,13 +158,13 @@ def analyze_detector_noise(fdata, preselector=None, n_deproject=0):
     noises['skew'] = skew.statistics
     noises['skew_pval'] = skew.pvalue
 
-def deproject_modes(fdata, n_modes=0, preselector=None):
+def deproject_modes(fdata, n_modes=0, preselector=None, inplace=False):
     c = fdata @ fdata.T.conj()
     presel = preselect_dets(c, preselector)
     # deproject `n_deproject` common modes from data
     if n_modes > 0:
         # svd to covariance matrix gives U S^2 V*
-        u, s2, v = scipy.linalg.svd(c[presel][presel], full_matrices=False)
+        u, s2, v = scipy.linalg.svd(c[np.ix_(presel,presel)], full_matrices=False)
         # get first `n_deproject` common mode
         # kernel => (nmode, ndet)
         kernel = v[:n_modes]/np.sqrt(s2[:n_modes])[:,None]
@@ -173,8 +173,10 @@ def deproject_modes(fdata, n_modes=0, preselector=None):
         modes = kernel @ fdata[presel]
         # deproject these modes
         coeff = modes @ fdata.T.conj()
-        fdata_deproj = fdata - coeff.T.conj() @ modes
-    return fdata_deproj
+        if not inplace:
+            fdata = fdata.copy()
+        fdata -= coeff.T.conj() @ modes
+    return fdata
 
 def fmodes_to_tmodes(fmodes, pad_left=1, pad_right=0, nsamps=1):
     """represent frequency domain modes as time domain modes. Note
