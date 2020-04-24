@@ -42,9 +42,9 @@ def preselector(fun):
 @preselector
 def by_median(corrmat, min_corr=0.6, min_sel=10, min_frac=0.1):
     # select dets with median above `min_corr`
-    sel = np.median(np.abs(corrmat), axis=1) > min_corr
+    sel = np.nanmedian(np.abs(corrmat), axis=1) > min_corr
     # check whether we have enough dets
-    min_dets = max(min_sel, int(corrmat[0]*min_frac))
+    min_dets = max(min_sel, int(corrmat.shape[0]*min_frac))
     if np.sum(sel) < min_dets:
         raise PreselectionError
     return sel

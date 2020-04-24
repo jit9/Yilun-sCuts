@@ -1,5 +1,66 @@
 """Grab some of the codes written for SO"""
 import scipy, numpy as np
+from moby2.tod.cuts import CutsVector
+
+
+def analyze_scan(tod, qlim=1, vlim=0.01, n_smooth=0):
+    """Gather some information about the scan
+
+    Parameters:
+    -----------
+    qlim: percentile of az to find turnaround (0-100)
+    vlim: lower-limit of scan speed to consider as scanning
+    n_smooth: window size to smooth scan speed
+
+    Returns:
+    --------
+    scan_params (dict)
+
+    """
+    # first: find useful scan parameters
+    scan_params = {}
+    # get turnaround
+    az = tod.az
+    lo, hi = np.percentile(az, [qlim,100-qlim*1])
+    scan_params['az_lo'] = lo
+    scan_params['az_hi'] = hi
+    # get scan speed
+    t = tod.ctime
+    daz, dt = np.diff(az), np.diff(t)
+    vaz = daz / dt
+    vaz = np.r_[vaz[0], vaz]  # add the missing point
+    # smooth if that's what we want
+    if n_smooth > 0:
+        # the first/last n_smooth/2 points are no longer trustable
+        kernel = np.ones(n_smooth)/n_smooth
+        vaz = np.convolve(kernel, mode='same')
+    v_typ, dt_typ = np.median(np.abs(vaz)), np.median(dt)
+    scan_params['vscan'] = v_typ
+    scan_params['dt'] = dt_typ
+    scan_params['srate'] = 1/dt_typ
+    # get quick est of scan freq and period
+    # (2 times faster than np.fft.rfft, off by 0.1%)
+    pivots_l = np.array(CutsVector.from_mask(az < lo).mean(axis=1), dtype=int)
+    pivots_h = np.array(CutsVector.from_mask(az > hi).mean(axis=1), dtype=int)
+    tscan = np.median(np.diff(pivots_l)*dt_typ)
+    scan_params['tscan'] = tscan
+    scan_params['fscan'] = 1/tscan
+    scan_params['pivots_l'] = pivots_l
+    scan_params['pivots_h'] = pivots_h
+    scan_params['n_scan'] = len(pivots_l)
+    # estimate az min/max
+    scan_params['az_min'] = np.median(az[az<lo])
+    scan_params['az_max'] = np.median(az[az>hi])
+    # get some flags
+    scan_f = (az > lo) * (az < hi)
+    turn_f = ~scan_f
+    stop_f = np.abs(vaz) < v_typ * vlim
+    pick_f = np.abs(vaz) > v_typ * 2
+    # generate flag objects and return flags manager
+    scan_params['scan_flags'] = (stop_f + pick_f)*scan_f
+    scan_params['turn_flags'] = turn_f
+    return scan_params
+
 
 def analyze_common_mode(fdata, nsamps, preselector=None):
     """perform a simple common mode analysis in a given frequency range.
@@ -34,7 +95,7 @@ def analyze_common_mode(fdata, nsamps, preselector=None):
     gain = np.abs(fdata @ cm.conj())/s[0]
     # get norm
     fnorm = np.sqrt(np.abs(np.diag(c)))
-    norm = fnorm*np.sqrt(2./len(nsamps))
+    norm = fnorm*np.sqrt(2./nsamps)
     # get correlations
     # note that the s[0] here is from the pre-selected data which
     # might be different to the actual s[0] using un-preselected data
@@ -48,7 +109,6 @@ def analyze_common_mode(fdata, nsamps, preselector=None):
     cm_params['norm'] = norm
     cm_params['corr'] = corr
     return cm_params
-
 
 def analyze_detector_noise(fdata, preselector=None, n_deproject=0):
     """Perform a simple analysis of noise property of dets in a given
@@ -98,26 +158,23 @@ def analyze_detector_noise(fdata, preselector=None, n_deproject=0):
     noises['skew'] = skew.statistics
     noises['skew_pval'] = skew.pvalue
 
-
-def deproject_modes(fdata, preselector=None, n_modes=0):
+def deproject_modes(fdata, n_modes=0, preselector=None):
     c = fdata @ fdata.T.conj()
     presel = preselect_dets(c, preselector)
     # deproject `n_deproject` common modes from data
-    if n_deproject > 0:
+    if n_modes > 0:
         # svd to covariance matrix gives U S^2 V*
         u, s2, v = scipy.linalg.svd(c[presel][presel], full_matrices=False)
         # get first `n_deproject` common mode
         # kernel => (nmode, ndet)
-        kernel = v[:n_deproject]/np.sqrt(s2[:n_deproject])[:,None]
+        kernel = v[:n_modes]/np.sqrt(s2[:n_modes])[:,None]
         # common mode representation in freq-space
         # (nmode, ndet) . (ndet, nfreq) => (nmode, nfreq)
         modes = kernel @ fdata[presel]
         # deproject these modes
         coeff = modes @ fdata.T.conj()
-        fdata -= coeff.T.conj() @ modes
-    return fdata
-
-
+        fdata_deproj = fdata - coeff.T.conj() @ modes
+    return fdata_deproj
 
 def fmodes_to_tmodes(fmodes, pad_left=1, pad_right=0, nsamps=1):
     """represent frequency domain modes as time domain modes. Note
@@ -154,8 +211,7 @@ def corrmat(fmodes):
     return c/aa
 
 def covmat(fmodes):
-    return = fmodes @ fmodes.T.conj()
-
+    return fmodes @ fmodes.T.conj()
 
 def preselect_dets(corrmat, preselector):
     """Pre-select a set good of detectors to extract commmon mode,
@@ -176,7 +232,10 @@ def preselect_dets(corrmat, preselector):
     --------
     det mask showing which dets are pre-selected
 
-    """                                                                                                          if isinstance(preselector, np.ndarray):
+    """
+    if preselector is None:
+        return np.ones(corrmat.shape[0], dtype=bool)
+    if isinstance(preselector, np.ndarray):
         if preselector.dtype == np.int:  # a det ids
             presel = np.zeros(fdata.shape[0]).astype('bool')
             presel[preselector] = 1
@@ -185,7 +244,7 @@ def preselect_dets(corrmat, preselector):
         else:
             raise ValueError(f"Unsupported preselector type")
     elif callable(preselector):  # a function
-        presel = preselector(cc)
+        presel = preselector(corrmat)
     elif isinstance(preselector, tuple):  # fallback list
         presel_success = False
         for selector in preselector:

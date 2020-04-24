@@ -6,10 +6,6 @@ from moby2.libactpol import freq_space_waterfall
 from moby2.libactpol import time_space_waterfall
 from moby2.scripting import products
 import numpy as np
-try:
-    import pylab
-except:
-    pass
 import matplotlib as mpl
 from matplotlib import pyplot as plt
 from matplotlib import cm, patches
@@ -50,15 +46,15 @@ def set_plotstyle(options={}, style='default'):
 
 
 def plot_with_cuts(tod, det, interactive=True):
-    if interactive: pylab.ion()
-    else: pylab.ioff()
+    if interactive: plt.ion()
+    else: plt.ioff()
     sel = np.ones(tod.nsamps, dtype=bool)
     for c in tod.cuts.cuts[det]:
         sel[c[0]:c[1]] = False
     t = tod.ctime - tod.ctime[0]
-    pylab.plot(t[sel], tod.data[det][sel], "k.", markersize=1)
-    pylab.plot(t[~sel], tod.data[det][~sel], "r.", markersize=1)
-    return pylab.gca()
+    plt.plot(t[sel], tod.data[det][sel], "k.", markersize=1)
+    plt.plot(t[~sel], tod.data[det][~sel], "r.", markersize=1)
+    return plt.gca()
 
 
 class freqSpaceWaterfall( object ):
@@ -128,8 +124,8 @@ class freqSpaceWaterfall( object ):
         @param hideYLabel   Do not display Y label.
         @param forceAll     Force all detectors to appear. Unselected detectors appear in black.
         """
-        if show: pylab.ion()
-        else: pylab.ioff()
+        if show: plt.ion()
+        else: plt.ioff()
         if selection is None:
             sel = np.ones(len(self.dets), dtype = 'bool')
         elif forceAll:
@@ -202,16 +198,16 @@ class freqSpaceWaterfall( object ):
             mask = np.ones(mat.shape, dtype = bool)
             mask[fsel] = False
             mmat = np.ma.array(mat, mask = mask)
-            m = pylab.matshow(mmat, **kargs)
+            m = plt.matshow(mmat, **kargs)
         else:
-            m = pylab.matshow(mat, **kargs)
-        b = pylab.colorbar(shrink=0.8)
+            m = plt.matshow(mat, **kargs)
+        b = plt.colorbar(shrink=0.8)
         if logy:
             b.set_label("log10("+units+"$^2$/Hz)")
         else:
             b.set_label(units+"$^2$/Hz")
-        if not(hideYLabel): pylab.ylabel(ylabel)
-        pylab.xlabel("Frequency [Hz]")
+        if not(hideYLabel): plt.ylabel(ylabel)
+        plt.xlabel("Frequency [Hz]")
         if self.logx:
             m.axes.set_xticks(xt)
             m.axes.set_xticklabels(xtl)
@@ -231,12 +227,12 @@ class freqSpaceWaterfall( object ):
         else: m.axes.set_yticklabels(ytl)
         if separators:
             for pos in sep:
-                pylab.axhline(y=pos, color='black', linewidth=1)
+                plt.axhline(y=pos, color='black', linewidth=1)
         m.axes.set_aspect(rat)
         m.figure.set_size_inches(size[0], size[1], forward = True)
         m.set_clim(vmin = vmin, vmax = vmax)
         if "cmap" in kargs: cmap = kargs["cmap"]
-        else: cmap = pylab.cm.RdYlBu_r
+        else: cmap = plt.cm.RdYlBu_r
         cmap.set_bad([0.3, 0.3, 0.3],1.)
         m.set_cmap(cmap)
         if title is None:
@@ -244,10 +240,10 @@ class freqSpaceWaterfall( object ):
                 (self.name.split('.')[0], self.array)
             if rowDominance: title += "(Row Dominated)"
             else: title += "(Column Dominated)"
-        pylab.title(title)
-        if filename is not None: pylab.savefig(filename, dpi = dpi)
-        if show: pylab.show()
-        else: pylab.close()
+        plt.title(title)
+        if filename is not None: plt.savefig(filename, dpi = dpi)
+        if show: plt.show()
+        else: plt.close()
 
     def plotArray( self, vmin = None, vmax = None, title = None, filename = None,
                    selection = None,
@@ -266,8 +262,6 @@ class freqSpaceWaterfall( object ):
         @param forceNew     Whether to recalculate the quality or not.
         @param show         Whether to show or not the plot on screen.
         """
-        if show: pylab.ion()
-        else: pylab.ioff()
         if forceNew or self.qual is None:
             self.qual = np.zeros(len(self.mat))
             for i in range(len(self.mat)):
@@ -285,22 +279,22 @@ class freqSpaceWaterfall( object ):
             vals = np.sort(vals[vals != 0.0])
         if vmin is None: vmin = vals[int(len(vals)*0.02)]
         if vmax is None: vmax = vals[int(len(vals)*0.98)]
-        m = pylab.matshow(self.arrayQual.transpose())
+        m = plt.matshow(self.arrayQual.transpose())
         m.set_clim(vmin = vmin, vmax = vmax)
         m.axes.xaxis.set_ticks_position("bottom")
-        b = pylab.colorbar(shrink=0.8)
+        b = plt.colorbar(shrink=0.8)
         b.formatter.set_powerlimits([-2,-2])
         #b.set_label('%s*rtsec'%units)
         b.draw_all()
-        pylab.xlabel("rows")
-        pylab.ylabel("cols")
+        plt.xlabel("rows")
+        plt.ylabel("cols")
         if title is None:
             title = "Noise Quality TOD %s %s " % \
             (self.name.split('.')[0], self.array)
-        pylab.title(title)
-        if filename is not None: pylab.savefig(filename)
-        if show: pylab.show()
-        else: pylab.close()
+        plt.title(title)
+        if filename is not None: plt.savefig(filename)
+        if show: plt.show()
+        else: plt.close()
 
 
 
@@ -349,8 +343,8 @@ class timeSpaceWaterfall( object ):
         @param filename     Name of the file where to store the plot.
         @param show         Whether to display or not the plot.
         """
-        if show: pylab.ion()
-        else: pylab.ioff()
+        if show: plt.ion()
+        else: plt.ioff()
         if selection is None:
             sel = np.ones(np.shape(self.mat)[0], dtype = 'bool')
         else: sel = selection
@@ -391,11 +385,11 @@ class timeSpaceWaterfall( object ):
         yt.append(j)
         ytl.append('')
 
-        m = pylab.matshow(mat)
-        b = pylab.colorbar(shrink=0.8)
+        m = plt.matshow(mat)
+        b = plt.colorbar(shrink=0.8)
         b.set_label(units)
-        pylab.ylabel(ylabel)
-        pylab.xlabel("Time [s]")
+        plt.ylabel(ylabel)
+        plt.xlabel("Time [s]")
 
         shape = np.shape(self.mat[sel])
         rat = float(shape[1])/float(shape[0])*1.2
@@ -412,12 +406,12 @@ class timeSpaceWaterfall( object ):
         m.axes.set_yticklabels(ytl)
         if separators:
             for pos in sep:
-                pylab.axhline(y=pos, color='black', linewidth=1)
+                plt.axhline(y=pos, color='black', linewidth=1)
         m.figure.set_size_inches(10., 10.5, forward = True)
         m.set_clim(vmin = vmin, vmax = vmax)
-        if title is not None: pylab.title(title)
-        if filename is not None: pylab.savefig(filename)
-        if not(show): pylab.clf()
+        if title is not None: plt.title(title)
+        if filename is not None: plt.savefig(filename)
+        if not(show): plt.clf()
 
 
 class scanWaterfall( object ):
@@ -474,11 +468,11 @@ class scanWaterfall( object ):
         if vmin is None: np.median(np.min(self.mat, axis = 1))
         if vmax is None: np.median(np.max(self.mat, axis = 1))
 
-        m = pylab.matshow(self.mat)
-        b = pylab.colorbar(shrink=0.8)
+        m = plt.matshow(self.mat)
+        b = plt.colorbar(shrink=0.8)
         b.set_label(units)
-        pylab.ylabel("Time [min]")
-        pylab.xlabel("dAz [deg]")
+        plt.ylabel("Time [min]")
+        plt.xlabel("dAz [deg]")
 
         shape = np.shape(self.mat)
         rat = float(shape[1])/float(shape[0])*1.2
@@ -502,10 +496,10 @@ class scanWaterfall( object ):
 
         m.figure.set_size_inches(10., 10.5, forward = True)
         m.set_clim(vmin = vmin, vmax = vmax)
-        if title is not None: pylab.title(title)
-        if filename is not None: pylab.savefig(filename)
-        if show: pylab.show()
-        else: pylab.clf()
+        if title is not None: plt.title(title)
+        if filename is not None: plt.savefig(filename)
+        if show: plt.show()
+        else: plt.clf()
 
 
 class quality( object ):
@@ -565,20 +559,20 @@ class quality( object ):
             vals = np.sort(vals[vals != 0.0])
         if vmin is None: vmin = vals[int(len(vals)*0.02)]
         if vmax is None: vmax = vals[int(len(vals)*0.98)]
-        m = pylab.matshow(self.arrayQual)
+        m = plt.matshow(self.arrayQual)
         m.set_clim(vmin = vmin, vmax = vmax)
         m.axes.xaxis.set_ticks_position("bottom")
-        b = pylab.colorbar(shrink=0.8)
+        b = plt.colorbar(shrink=0.8)
         b.set_label(units+" rms")
-        pylab.xlabel("rows")
-        pylab.ylabel("cols")
+        plt.xlabel("rows")
+        plt.ylabel("cols")
         if title is None:
             title = "Noise Quality TOD %s %s " % \
             (self.name.split('.')[0], self.array)
-        pylab.title(title)
-        if filename is not None: pylab.savefig(filename)
-        if show: pylab.show()
-        else: pylab.clf()
+        plt.title(title)
+        if filename is not None: plt.savefig(filename)
+        if show: plt.show()
+        else: plt.clf()
 
 
 
@@ -608,7 +602,7 @@ def tuneScanFreq(p, nu, scanFreq, scope = 0.002, nsamp = 100, plot = False):
     for i in range(nsamp):
         index = np.where(np.mod(nu,freqs[i]) < df)[0]
         pow[i] = np.mean(np.log(p[index]))
-    if plot: pylab.plot(pow), pylab.show()
+    if plot: plt.plot(pow), plt.show()
     mf = freqs[pow == pow.max()]
     if np.ndim(mf) > 0: return mf[0]
     else: return mf
