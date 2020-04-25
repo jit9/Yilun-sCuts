@@ -4,7 +4,7 @@ from __future__ import division
 from past.builtins import basestring
 
 import numpy as np, time, pickle, os, matplotlib
-import scipy.stats as stat
+import scipy.stats as stat, scipy
 
 pylab = None
 def import_pylab(interactive = True):
@@ -1428,7 +1428,7 @@ def getDarkModes(fdata, darkSel, frange, df, nf, nsamps, par, tod=None):
     # Obtain main svd modes to deproject from data
     if par["darkModesParams"].get("useSVD",False):
         Nmodes = par["darkModesParams"].get("Nmodes",None)
-        u, s, v = np.linalg.svd( fc_inputs, full_matrices=False )
+        u, s, v = scipy.linalg.svd( fc_inputs, full_matrices=False )
         if Nmodes is None: fcmodes = v[s > s.max()/10]
         else: fcmodes = v[:Nmodes]
     else:
@@ -1556,7 +1556,7 @@ def lowFreqAnal(fdata, sel, frange, df, nsamps, scan_freq, par,
         lf_data *= np.repeat([scl],lf_data.shape[1],axis=0).T
 
     # Get common mode using the pre-selected data
-    u, s, v = np.linalg.svd( lf_data[sl], full_matrices=False )
+    u, s, v = scipy.linalg.svd( lf_data[sl], full_matrices=False )
     cm = v[0]
     # Get gain for all data (not limited to pre-selected data)
     gain = np.zeros(ndet)
@@ -1567,7 +1567,7 @@ def lowFreqAnal(fdata, sel, frange, df, nsamps, scan_freq, par,
     corr = np.zeros(ndet)
     corr[sel] = gain[sel] * s[0] / fnorm
     # Get Correlations
-    # u, s, v = np.linalg.svd( lf_data, full_matrices=False )
+    # u, s, v = scipy.linalg.svd( lf_data, full_matrices=False )
     # corr = np.zeros(ndet)
     # if par.get("doubleMode",False):
     #     corr[sel] = np.sqrt(abs(u[:,0]*s[0])**2+abs(u[:,1]*s[1])**2)/fnorm

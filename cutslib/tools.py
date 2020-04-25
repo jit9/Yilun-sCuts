@@ -4,6 +4,7 @@ from __future__ import division
 from past.builtins import basestring
 
 import numpy as np
+from cutslib.errors import PreselectionError
 # import pyfftw
 
 def power( x, dt = 1., nbin = 1, binsize = 0, detrend = False,
@@ -174,7 +175,7 @@ def presel_by_median(cc, sel=None, **kwargs):
         print("ERROR: did not find any valid detectors for low frequency analysis.")
         sl = (np.median(abs(cc),axis=0) > superMinCorr)*sel
         if sl.sum() < minSel:
-            raise RuntimeError("PRESELECTION FAILED, did not find any valid detectors for low frequency analysis.")
+            raise PreselectionError("PRESELECTION FAILED, did not find any valid detectors for low frequency analysis.")
     else:
         sl = ((abs(cc[sl]).mean(axis=0)-1./len(cc[sl]))*len(cc[sl])/(len(cc[sl])-1) > minCorr)*sel
     return sl
