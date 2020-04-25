@@ -380,6 +380,17 @@ program to pass mpi control to the module instead of forcing it to run
 with =rank=0= for other modules that do not support mpi. See
 =cutslib.modules.collect_crit= module for an example of how mpi is
 supported.
+*** 16. How do i remove tod runs specific errors from running next time?
+Sometimes errors are unavoidable. For example, preselection errors are unavoidable
+sometimes and this happens at the very end of the pipeline so if we know for sure a
+tod is going to fail pre-selection, we shoudn't have spent long time to run the previous
+routines. One way out of this is to include these tods in a skip list. For example,
+here is how i get the tods with an error message containing "Presel" (preselection errors)
+and pipe the results to a skip list. Then i can put this list in the cutparams file
+in the reject_depot list.
+#+BEGIN_SRC bash
+cuts run errors_tod cutparams_v0.par presel > skip_tods.txt
+#+END_SRC
 ** Useful links
 - ACT roundtable: [[https://actexperiment.info/roundtable]]
 - TOD visualizer: [[https://github.com/guanyilun/tod_viz]]
