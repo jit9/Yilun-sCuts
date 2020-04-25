@@ -207,7 +207,16 @@ cuts dets get_exclude cutparams_v3.par > exclude.dict
 cuts dets union exclude.dict unstable.dict lowgain.dict > exclude_v2.dict
 #+END_SRC
 Then I will update the cutParam file to use =exclude_v2.dict= as the
-excluded detector list.
+excluded detector list. Note that if this is the only change, one does
+not need to re-run cuts pipeline entirely because exclude detector list
+is applied in the very end. One can remove the db file
+generated in the run_* folder and re-run. This will skip the glitch,
+planet, source cuts and multi-frequency analysis which will save
+considerable amount of time. One can also run
+#+BEGIN_SRC bash
+cuts submit update_crit cutparams_v0.par
+#+END_SRC
+which will be even faster.
 *** 7. How to use =cuts.recipes.params.quickfix= to change some parameters?
 Before i forget, this is how to perform a quick command-line fix of cutparams
 #+BEGIN_SRC bash

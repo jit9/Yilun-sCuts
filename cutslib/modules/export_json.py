@@ -7,8 +7,9 @@ from moby2.util.database import TODList
 from cutslib.pathologies_tools import get_pwv
 from cutslib.pathologies import Pathologies, get_pathologies
 
+
 class Module:
-    def init(self, config):
+    def __init__(self, config):
         self.todname = config.get("tod",None)
         self.tod_list = config.get("tod_list",None)
         self.limit = config.getint("limit", None)
@@ -67,81 +68,79 @@ class Module:
         with open(outfile,"w") as f:
             f.write(json.dumps(metadata))
 
-    def parse_stats(todname, p):
-        """This function parses the useful stats from a given TOD
-        Args:
-            todname: name of the tod
-            p: proj parameter as in run(proj)
-        """
-        # load tod
-        depot = moby2.util.Depot(p.depot)
-        tod = moby2.scripting.get_tod({'filename':todname,
-                                       'read_data': False})
-        # check whether relevant files exist:
-        if op.isfile(depot.get_full_path(Pathologies, tod=tod, tag=p.tag)) and \
-           op.isfile(depot.get_full_path(moby2.TODCuts, tod=tod, tag=p.tag)):
-           # and op.isfile(depot.get_full_path(moby2.Calibration, tod=tod, tag=params["tag_cal"])):
+def parse_stats(todname, p):
+    """This function parses the useful stats from a given TOD
+    Args:
+        todname: name of the tod
+        p: proj parameter as in run(proj)
+    """
+    # load tod
+    depot = moby2.util.Depot(p.depot)
+    tod = moby2.scripting.get_tod({'filename':todname,
+                                   'read_data': False})
+    # check whether relevant files exist:
+    if op.isfile(depot.get_full_path(Pathologies, tod=tod, tag=p.tag)) and \
+       op.isfile(depot.get_full_path(moby2.TODCuts, tod=tod, tag=p.tag)):
+       # and op.isfile(depot.get_full_path(moby2.Calibration, tod=tod, tag=params["tag_cal"])):
 
-            # load pathology and cuts
-            patho = get_pathologies({'depot': p.depot,
-                                     'tag': p.tag}, tod=tod)
-            cuts = depot.read_object(moby2.TODCuts, tod=tod, tag=p.tag)
-            lsel = np.zeros(patho.ndet)
-            lsel[cuts.get_uncut()] = 1
+        # load pathology and cuts
+        patho = get_pathologies({'depot': p.depot,
+                                 'tag': p.tag}, tod=tod)
+        cuts = depot.read_object(moby2.TODCuts, tod=tod, tag=p.tag)
+        lsel = np.zeros(patho.ndet)
+        lsel[cuts.get_uncut()] = 1
 
-            # empty dictionary to store relevant res
-            res = {}
-            # store array data
-            res.update(patho.tod.info.array_data)
-            # store pathology stats
-            res['corrLive'] = patho.crit['corrLive']['values']
-            res['rmsLive'] = patho.crit['rmsLive']['values']
-            res['kurtLive'] = patho.crit['kurtLive']['values']
-            res['skewLive'] = patho.crit['skewLive']['values']
-            res['MFELive'] = patho.crit['MFELive']['values']
-            res['normLive'] = patho.crit['normLive']['values']
-            res['gainLive'] = patho.crit['gainLive']['values']
-            res['jumpLive'] = patho.crit['jumpLive']['values']
-            res['DELive'] = patho.crit['DELive']['values']
-            res['ff'] = patho.calData['ff']
-            res['resp'] = patho.calData['resp']
-            res['presel'] = patho.preLiveSel
-            res['sel'] = lsel
-            # pwv = get_pwv([tod.info.ctime])
-            if debug:
-                import ipdb;ipdb.set_trace()
-            # generate export json file
-            export = {}
-            export['tag'] = p.tag
-            # export['pwv'] = float(pwv[0])
-            export['source'] = []
-            for i in range(len(res['det_uid'])):
-                if res['nom_freq'][i] == p.i.freq:
-                    export['source'].append([
-                        int(res['det_uid'][i]),
-                        float(res['array_x'][i]),
-                        float(res['array_y'][i]),
-                        int(res['row'][i]),
-                        int(res['col'][i]),
-                        float(res['MFELive'][i]),
-                        float(res['skewLive'][i]),
-                        float(res['corrLive'][i]),
-                        float(res['rmsLive'][i]),
-                        float(res['gainLive'][i]),
-                        float(res['DELive'][i]),
-                        float(res['normLive'][i]),
-                        float(res['kurtLive'][i]),
-                        float(res['ff'][i]),
-                        float(res['resp'][i])*1e16,
-                        int(res['presel'][i]),
-                        res['pol_family'][i],
-                        int(res['bias_line'][i]),
-                        int(res['optical_sign'][i]),
-                        int(res['sel'][i]),
-                    ])
-            outfile = op.join(p.o.patho.viz, "%s.json" % todname)
-            print("Writing: %s" % outfile)
-            with open(outfile,"w") as f:
-                f.write(json.dumps(export))
-            return todname
-        return None
+        # empty dictionary to store relevant res
+        res = {}
+        # store array data
+        res.update(patho.tod.info.array_data)
+        # store pathology stats
+        res['corrLive'] = patho.crit['corrLive']['values']
+        res['rmsLive'] = patho.crit['rmsLive']['values']
+        res['kurtLive'] = patho.crit['kurtLive']['values']
+        res['skewLive'] = patho.crit['skewLive']['values']
+        res['MFELive'] = patho.crit['MFELive']['values']
+        res['normLive'] = patho.crit['normLive']['values']
+        res['gainLive'] = patho.crit['gainLive']['values']
+        res['jumpLive'] = patho.crit['jumpLive']['values']
+        res['DELive'] = patho.crit['DELive']['values']
+        res['ff'] = patho.calData['ff']
+        res['resp'] = patho.calData['resp']
+        res['presel'] = patho.preLiveSel
+        res['sel'] = lsel
+        # pwv = get_pwv([tod.info.ctime])
+        # generate export json file
+        export = {}
+        export['tag'] = p.tag
+        # export['pwv'] = float(pwv[0])
+        export['source'] = []
+        for i in range(len(res['det_uid'])):
+            if res['nom_freq'][i] == p.i.freq:
+                export['source'].append([
+                    int(res['det_uid'][i]),
+                    float(res['array_x'][i]),
+                    float(res['array_y'][i]),
+                    int(res['row'][i]),
+                    int(res['col'][i]),
+                    float(res['MFELive'][i]),
+                    float(res['skewLive'][i]),
+                    float(res['corrLive'][i]),
+                    float(res['rmsLive'][i]),
+                    float(res['gainLive'][i]),
+                    float(res['DELive'][i]),
+                    float(res['normLive'][i]),
+                    float(res['kurtLive'][i]),
+                    float(res['ff'][i]),
+                    float(res['resp'][i])*1e16,
+                    int(res['presel'][i]),
+                    res['pol_family'][i],
+                    int(res['bias_line'][i]),
+                    int(res['optical_sign'][i]),
+                    int(res['sel'][i]),
+                ])
+        outfile = op.join(p.o.patho.viz, "%s.json" % todname)
+        print("Writing: %s" % outfile)
+        with open(outfile,"w") as f:
+            f.write(json.dumps(export))
+        return todname
+    return None
