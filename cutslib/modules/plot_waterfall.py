@@ -10,6 +10,9 @@ type = external
 file = waterfall.py
 tod_list = tod_ar7.txt
 fmin = 0.01
+cov_fmin = 10
+cov_fmax = 20
+n_deproj = 3
 outdir = plots/ar7/
 
 
@@ -21,7 +24,7 @@ from cutslib import analysis as ana
 import moby2
 from moby2.util.database import TODList
 
-def cov_frange(fsw, sel, fmin, fmax, n_deproj=0, plot=True):
+def cov_frange(fsw, sel, fmin, fmax, n_deproj=0, plot=True, vmin=-1, vmax=1):
     freq = fsw.matfreqs
     fmask = (freq > fmin) * (freq < fmax)
     fmodes = fsw.mat[np.ix_(sel, fmask)]
@@ -29,7 +32,7 @@ def cov_frange(fsw, sel, fmin, fmax, n_deproj=0, plot=True):
     cov = ana.corrmat(fmodes)
     if plot:
         plt.figure(figsize=(10.5,10.5))
-        plt.imshow(cov, cmap='jet', origin='lower')
+        plt.imshow(cov, cmap='jet', origin='lower', vmin=vmin, vmax=vmax)
         plt.colorbar(shrink=0.8)
         plt.xlabel('dets')
         plt.ylabel('dets')
@@ -41,11 +44,17 @@ class Module:
     def __init__(self, config):
         self.tod_list = config.get('tod_list')
         self.fmin = config.getfloat('fmin')
+        self.cov_fmin = config.getfloat('cov_fmin', 10)
+        self.cov_fmax = config.getfloat('cov_fmax', 10)
         self.outdir = config.get('outdir')
+        self.n_deproj = config.getint('n_deproj')
 
     def run(self, p):
         tod_list = self.tod_list
         fmin = self.fmin
+        cov_fmin = self.cov_fmin
+        cov_fmax = self.cov_fmax
+        n_deproj = self.deproj
         outdir = self.outdir
         # load tod
         todnames = TODList.from_file(tod_list)
@@ -64,8 +73,8 @@ class Module:
             outfile = op.join(outdir, op.basename(tn)+'_tsw.png')
             tsw.plot(selection=sel, title=f'Time-domain waterfall:{op.basename(tn)}', filename=outfile)
             # create correlation plot
-            cov_frange(fsw, sel, 10, 20, n_deproj=10);
+            cov_frange(fsw, sel, cov_fmin, cov_fmax, n_deproj=deproj);
             outfile = op.join(outdir, op.basename(tn)+'_cov.png')
             plt.savefig(outfile)
             plt.close()
-        p.mpi.Barrier()
+        p.comm.Barrier()
