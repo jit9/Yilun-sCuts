@@ -76,7 +76,7 @@ class SeasonStats:
             'kurtLive': {
                 'name': 'Kurtosis',
                 'scale': 'linear',
-                'limits': [1, 95],
+                'limits': [1, 99],
             },
             'jumpLive': {
                 'name': 'Jump',
@@ -105,12 +105,20 @@ class SeasonStats:
             data['corrLive'] = 2*(1-data['corrLive'])
             # also update style accordingly
             self.style['corrLive'].update({
+                'name': 'theta^2',
                 'scale': 'log',
-                'limits': [5, 95],
+                'limits': [1, 99],
                 'type': 'percentile',
             })
         self.stats = data
+        print(f"stats loaded with {len(data['name'])} tods")
 
+    def __getattr__(self, item):
+        if item in self.stats:
+            return self.stats[item]
+        else: raise ValueError
+
+    # plotting utilities
 
     def hist(self, figsize=(20, 12), nbins=100, style={}, hist_opts={}, guideline=True):
         data = self.stats
@@ -140,7 +148,8 @@ class SeasonStats:
             ax.set_title(style[f]['name'])
             ax.get_yaxis().set_visible(False)
 
-    def tri(self, figsize=(20, 20), nbins=100, style={}, hist_opts={}, hist2d_opts={}, filename=None):
+    def tri(self, figsize=(20, 20), nbins=100, style={}, hist_opts={}, hist2d_opts={},
+            filename=None, density=False):
         data = self.stats
         sel = data['sel'].astype(bool)
         # start to plot
@@ -164,7 +173,7 @@ class SeasonStats:
                     else:
                         bins = np.linspace(lo, hi, nbins)
                     # actually plot it
-                    opts = {'density': True}
+                    opts = {'density': density}
                     opts.update(hist_opts)
                     axes[i,j].hist(d, bins=bins, **opts)
                     # get axis scale right
@@ -187,7 +196,7 @@ class SeasonStats:
                     else:
                         bins2 = np.linspace(lo2, hi2, nbins)
                     # set up plot opts
-                    opts = {'cmap': plt.cm.RdYlBu_r, 'density': True}
+                    opts = {'cmap': plt.cm.RdYlBu_r, 'density': density}
                     opts.update(hist2d_opts)
                     # actually plot it
                     axes[i,j].hist2d(d1, d2, bins=[bins1, bins2], **opts)
@@ -856,11 +865,11 @@ def tuneScanFreq(p, nu, scanFreq, scope = 0.002, nsamp = 100, plot = False):
 
 
 def array_plots( param,
-                 det=None, instrument = 'actpol', array = None, season = None,
+                 det=[], instrument='actpol', array=None, season=None,
                  fr=None, tod=None, darks=True,
                  pmax=None, pmin=None, outrange=True,
                  param_name='', param_units='', title='',
-                 display = 'show', save_name = 'newfig.png', cmap=cm.RdYlBu_r):
+                 display='show', save_name='newfig.png', cmap=cm.RdYlBu_r):
     """Plot a parameter across the array
 
     Arguments:
@@ -888,7 +897,7 @@ def array_plots( param,
 ided")
         return 0
 
-    det = np.asarray(det, dtype = int)
+    # det = np.asarray(det, dtype = int)
     param = np.asarray(param, dtype = float)
 
     if tod is not None:
@@ -918,17 +927,19 @@ ided")
         Detid = det
 
     # if we want to force a frequency
+    # YG: hacky
+    det_uid = array_data['det_uid']
     if fr:
-        det_uid = array_data['det_uid']
+        # det_uid = array_data['det_uid']
         det_uid = det_uid[array_data['nom_freq']==fr]
         Detid = np.intersect1d(Detid, det_uid)
         # also update param
-        tmp = np.zeros(max(det)+1)
-        tmp[det] = param
-        param = tmp[Detid]
-        del tmp
+        # tmp = np.zeros(max(det)+1)
+        # tmp[det] = param
+        # param = tmp[Detid]
+        # del tmp
 
-    pos, polfamily, freq = get_position( Detid, instrument, array, season )
+    pos, polfamily, freq = get_position( det_uid, instrument, array, season )
     x, y = pos
 
     if pmin == None:
