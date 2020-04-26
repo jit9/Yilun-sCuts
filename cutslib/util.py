@@ -183,3 +183,10 @@ def encode_array_if_necessary(arr):
             return np.char.encode(arr)
         else:
             return arr
+
+def update_if_not_exist(old, new):
+    """Update old dict with new one, only the keys that do not
+    exist in old will be updated"""
+    nonexist_keys = [k for k in new if k not in old]
+    for k in nonexist_keys: old[k] = new[k]
+    return old
