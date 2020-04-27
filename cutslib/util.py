@@ -3,6 +3,8 @@
 import os, pickle, numpy as np
 import moby2
 
+from . import environ as env
+
 def tag_to_afsv(tag, ar=True):
     """Parse array(a), freq(f), season(s) and version(v) from tag
     An example tag is pa4_f150_s17_c11_v0
@@ -28,6 +30,12 @@ def tag_to_afsv(tag, ar=True):
             array = 'ar'+array[-1]
     return (array, freq, season, version)
 
+def get_rundir(tag):
+    """Get run directory associated with a given tag"""
+    dirname = '_'.join(tag.split('_')[:-1])  # everything but the version
+    ver = tag.split('_')[-1]
+    run_dir = os.path.join(env.CUTS_DIR, dirname, f'run_{ver}')
+    return run_dir
 
 def mkdir(dir, comm=None, rank=0):
     if comm: return mkdir(dir, None, comm.Get_rank())
