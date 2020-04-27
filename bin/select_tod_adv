@@ -48,8 +48,6 @@ params = moby2.util.MobyDict.from_file( sys.argv[1] )
 output_dir = params.get("output_dir", ".")
 
 # load catalog of tods and convert to pandas dataframe
-
-
 catalog = Catalog().data
 import ipdb;ipdb.set_trace()
 

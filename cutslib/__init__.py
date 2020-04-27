@@ -6,4 +6,4 @@ from .season import SeasonStats
 # short cut for long import
 from moby2.util.database import TODList
 from moby2.util import MobyDict
-from moby2.cuts import TODCuts
+from moby2 import TODCuts

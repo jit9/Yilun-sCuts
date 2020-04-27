@@ -704,7 +704,7 @@ class Pathologies( object ):
         """
         @brief  Apply cuts to tod.
         """
-        print('tod.dark not updated!')
+        #print('tod.dark not updated!')
         #self.tod.dark = self.dets[self.darkSel]
         #self.tod.ndark = len(self.tod.dark)
         c_obj = moby2.TODCuts.for_tod(self.tod, assign=False)

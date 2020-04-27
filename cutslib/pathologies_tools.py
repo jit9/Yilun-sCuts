@@ -11,7 +11,7 @@ import moby2
 from moby2.scripting import products
 from moby2.util.database import TODList
 from cutslib import pathologies
-
+import h5py
 
 
 def get_pathologies(tod, params):
@@ -253,7 +253,7 @@ class reportPathologies( object ):
         c_obj.merge_tod_cuts(det_cuts)
 
         # Load external cuts to include
-        include_cuts = cutParams.get('include_cuts')
+        include_cuts = cutParams.get_deep(('pathologyParams','include_cuts'))
         for entry in include_cuts:
             # exclude these dets if that's what we want
             hf = h5py.File(entry['file'], "r")
@@ -264,7 +264,7 @@ class reportPathologies( object ):
                 # we only support this now but potentially may have more
                 if entry['type'] == 'exclude':
                     c_obj.set_always_cut(det_uid)
-                else: raise ValueError("unsupport type")
+                else: raise ValueError("unsupported type")
 
         # ADD CALIRBATION CUTS (IF Calibration CANNOT BE COMPUTED, KILL WHOLE TOD)
         sel = pa.liveSel*pa.calData["respSel"]*(pa.crit["gainLive"]["values"] != 0)*pa.calData["stable"]
@@ -287,7 +287,8 @@ class reportPathologies( object ):
             if pathop.get('getPartial',True):
                 depot.write_object(section_cuts, tod = tod, force = True,
                                    tag=params.get('tag_out')+"_sec")
-            print("cuts exported to %s"%params.get('tag_out'))
+            # less verbose here
+            # print("cuts exported to %s"%params.get('tag_out'))
 
         return c_obj, pa
 

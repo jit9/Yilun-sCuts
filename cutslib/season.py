@@ -131,8 +131,8 @@ class SeasonStats:
         if sel is None: sel = self.sel
         assert sel.shape == self.stats['sel'].shape
         f = h5py.File(filename, "w")
-        for i in tqdm(range(sel.shape[0])):
-            det_cuts = sel[i,:]
+        for i in tqdm(range(sel.shape[-1])):
+            det_cuts = sel[:,i]
             # skip if nothing is cut
             if np.sum(det_cuts) == 0: continue
             obs = self.stats['name'][i]
@@ -142,10 +142,10 @@ class SeasonStats:
         """Load hdf file into a sel"""
         f = h5py.File(filename, "r")
         sel = np.zeros_like(self.sel)
-        for i in range(sel.shape[0]):
+        for i in range(sel.shape[-1]):
             obs = self.stats['name'][i]
             if obs in f:
-                sel[i,:] = f[obs][:]
+                sel[:,i] = f[obs][:]
         return sel
 
     # plotting utilities
@@ -153,7 +153,7 @@ class SeasonStats:
         """multiple conditions"""
         conds += (self.stats['sel'],)
         sel = reduce(np.logical_and, conds)
-        fig, axes = plt.subplots(2,2,figsize=(12,10))
+        fig, axes = plt.subplots(2,3,figsize=(15,10))
         axes[0,0].plot(self.ctime, np.sum(sel, axis=0),'k.',alpha=0.3)
         axes[0,0].set_xlabel('ctime')
         ax = axes[0,0].twinx()
@@ -161,16 +161,21 @@ class SeasonStats:
         ax.plot(self.ctime[idx], self.pwv[idx], 'k-',alpha=0.1)
         ax.set_ylabel('pwv')
         ax.set_ylim(bottom=0)
-        axes[0,1].plot(np.sum(sel, axis=1),'k.',alpha=0.3)
-        axes[0,1].set_xlabel('det_uid')
+        axes[0,2].plot(self.alt, np.sum(sel, axis=0),'k.',alpha=0.3)
+        axes[0,2].set_xlabel('alt')
+        axes[0,1].plot(self.pwv, np.sum(sel, axis=0), 'k.', alpha=0.3)
+        axes[0,1].set_xlim([0,3])
+        axes[0,1].set_xlabel('loading (mm)')
         det_uid = np.arange(sel.shape[0])
         row, col = det_uid // 32, det_uid % 32
-        axes[1,0].plot(row, np.sum(sel, axis=1),'k.',alpha=0.3)
-        axes[1,0].set_xlabel('row')
-        axes[1,1].plot(col, np.sum(sel, axis=1),'k.',alpha=0.3)
-        axes[1,1].set_xlabel('col')
+        axes[1,0].plot(np.sum(sel, axis=1),'k.',alpha=0.3)
+        axes[1,0].set_xlabel('det_uid')
+        axes[1,1].plot(row, np.sum(sel, axis=1),'k.',alpha=0.3)
+        axes[1,1].set_xlabel('row')
+        axes[1,2].plot(col, np.sum(sel, axis=1),'k.',alpha=0.3)
+        axes[1,2].set_xlabel('col')
         for i in range(2):
-            for j in range(2):
+            for j in range(3):
                 axes[i,j].set_ylabel('n matches')
                 axes[i,j].set_ylim(bottom=1)
         plt.tight_layout()
@@ -202,17 +207,18 @@ class SeasonStats:
         plt.xlabel('PWV/sin(alt) (mm)')
         plt.ylabel('# of TODs')
 
-    def hist(self, figsize=(20, 12), nbins=100, style={}, hist_opts={}, guideline=True):
+    def hist(self, sel=None, figsize=(20, 12), nbins=100, style={}, hist_opts={}, show_sel=False, axes=None):
         data = self.stats
-        sel = data['sel'].astype(bool)
-        sel = np.logical_and(self.sel, sel)
+        if sel is None:
+            sel = data['sel'].astype(bool)
         # start to plot
         # get styles right -> make sure we don't overwrite defaults
         mystyle = copy.deepcopy(self.style)
         mystyle.update(style)
         style = mystyle  # a better name
         fields = list(style.keys())
-        fig, axes = plt.subplots(3, 3, figsize=figsize)
+        if axes is None:
+            fig, axes = plt.subplots(3, 3, figsize=figsize)
         for i in range(len(fields)):
             ax = axes[i//3, i%3]
             f = fields[i]
@@ -230,7 +236,9 @@ class SeasonStats:
                 ax.set_xscale('log')
             ax.set_title(style[f]['name'])
             ax.get_yaxis().set_visible(False)
-
+        if show_sel:
+            axes = self.hist(self.sel, axes=axes, hist_opts={'color':'r'})
+        return axes
 
     def tri(self, figsize=(20, 20), nbins=100, style={}, hist_opts={}, hist2d_opts={},
             filename=None, density=False):
