@@ -4,6 +4,8 @@
 import numpy as np, pickle, copy, os.path as op
 from matplotlib import pyplot as plt
 from functools import reduce
+from tqdm import tqdm
+import h5py
 
 # cutslib dependency
 from .depot import Depot
@@ -122,9 +124,31 @@ class SeasonStats:
             return self.stats[f"{item}Live"]
         else: raise ValueError(f"{item} does not exist!")
 
-    # plotting utilities
+    def sel2hdf(self, filename, sel=None):
+        """Save a given sel or the internal sel into a hdf file
+        to be later digested by cuts pipeline"""
+        if sel is None: sel = self.sel
+        assert sel.shape == self.stats['sel'].shape
+        f = h5py.File(filename, "w")
+        for i in tqdm(range(sel.shape[0])):
+            det_cuts = sel[i,:]
+            # skip if nothing is cut
+            if np.sum(det_cuts) == 0: continue
+            obs = self.stats['name'][i]
+            f[obs] = det_cuts
 
-    def count_matches(self, *conds):
+    def hdf2sel(self, filename):
+        """Load hdf file into a sel"""
+        f = h5py.File(filename, "r")
+        sel = np.zeros_like(self.sel)
+        for i in range(sel.shape[0]):
+            obs = self.stats['name'][i]
+            if obs in f:
+                sel[i,:] = f[obs][:]
+        return sel
+
+    # plotting utilities
+    def find_matches(self, *conds):
         """multiple conditions"""
         conds += (self.stats['sel'],)
         sel = reduce(np.logical_and, conds)
@@ -151,6 +175,21 @@ class SeasonStats:
         plt.tight_layout()
         self.sel = sel
         return self
+
+    def view_sel(self, sel=None):
+        if sel is None: sel = self.stats['sel']
+        fig, axes = plt.subplots(3,1,figsize=(20, 10), sharex=True)
+        idx = np.argsort(self.ctime)
+        axes[0].plot(self.pwv[idx], 'k.', markersize=1)
+        axes[0].set_ylim([0,3.5])
+        axes[0].xaxis.set_visible(False)
+        axes[0].set_ylabel('PWV / sin(alt) (cm)')
+        axes[1].imshow(sel[:,idx], aspect="auto", cmap='Greys', origin='lower')
+        axes[1].set_ylabel('Dets')
+        axes[2].plot(np.sum(sel[:,idx], axis=0), 'k-', lw=0.2)
+        axes[2].set_xlabel('TOD (ordered by ctime)')
+        axes[2].set_ylabel('# of Live Dets')
+        fig.subplots_adjust(hspace=0)
 
     def hist(self, figsize=(20, 12), nbins=100, style={}, hist_opts={}, guideline=True):
         data = self.stats

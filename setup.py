@@ -20,6 +20,7 @@ setup(
                       'seaborn',
                       'ipdb',
                       'jinja2',
+                      'tqdm',
                       'future', # from here onwards will be moby2 deps
                       'numpy',
                       'matplotlib',
