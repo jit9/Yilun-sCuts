@@ -113,6 +113,7 @@ class SeasonStats:
         db = op.join(run_dir, f"{tag}.db")
         if op.exists(db):
             self.db = pathoReport(db)
+            self.db.addPWV()
             print("patho report loaded")
 
     def __getattr__(self, item):
@@ -190,6 +191,16 @@ class SeasonStats:
         axes[2].set_xlabel('TOD (ordered by ctime)')
         axes[2].set_ylabel('# of Live Dets')
         fig.subplots_adjust(hspace=0)
+
+    def hist_pwv(self, figsize=(8,6), **kwargs):
+        plt.figure(figsize=figsize)
+        pwv = self.pwv[self.pwv>0]
+        opts = {'rwidth': 0.75, 'bins': 50}
+        opts.update(kwargs)
+        plt.hist(pwv, **opts);
+        plt.xlim([0,3])
+        plt.xlabel('PWV/sin(alt) (mm)')
+        plt.ylabel('# of TODs')
 
     def hist(self, figsize=(20, 12), nbins=100, style={}, hist_opts={}, guideline=True):
         data = self.stats
