@@ -7,12 +7,11 @@ import numpy as np, os, sys, time, ephem, pickle
 import matplotlib, pylab
 from matplotlib import pyplot as plt
 import moby2
-from cutslib import visual as v
-pylab.ion()
+# from cutslib import visual as v
 from moby2.scripting import products
 from moby2.util.database import TODList
 from cutslib import pathologies
-pylab.ioff()
+
 
 
 def get_pathologies(tod, params):
@@ -252,6 +251,20 @@ class reportPathologies( object ):
 
         # MERGE DETECTOR CUTS
         c_obj.merge_tod_cuts(det_cuts)
+
+        # Load external cuts to include
+        include_cuts = cutParams.get('include_cuts')
+        for entry in include_cuts:
+            # exclude these dets if that's what we want
+            hf = h5py.File(entry['file'], "r")
+            # see whether it's necessary
+            if name in hf:
+                mask = hf[name][:]
+                det_uid = np.where(mask)[0]
+                # we only support this now but potentially may have more
+                if entry['type'] == 'exclude':
+                    c_obj.set_always_cut(det_uid)
+                else: raise ValueError("unsupport type")
 
         # ADD CALIRBATION CUTS (IF Calibration CANNOT BE COMPUTED, KILL WHOLE TOD)
         sel = pa.liveSel*pa.calData["respSel"]*(pa.crit["gainLive"]["values"] != 0)*pa.calData["stable"]
