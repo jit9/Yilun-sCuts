@@ -6,7 +6,7 @@ from .pathologies import Pathologies, get_pathologies
 from .pathologies_tools import get_pwv
 
 
-def load_tod(todname, tag=None, planet=None, partial=None):
+def load_tod(todname, tag=None, planet=None, partial=None, rd=True):
     tod = moby2.scripting.get_tod({'filename': todname, 'repair_pointing':True})
     print("tod loaded")
     # load metadata with tag
@@ -15,7 +15,8 @@ def load_tod(todname, tag=None, planet=None, partial=None):
         try:
             cuts = moby2.scripting.get_cuts({
                 'depot': CUTS_DEPOT,
-                'tag': tag
+                'tag': tag,
+                'read_data': rd
             }, tod=tod)
             tod.cuts = cuts
             print("-> cuts loaded in tod.cuts")
