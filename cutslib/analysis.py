@@ -175,8 +175,9 @@ def deproject_modes(fdata, n_modes=0, preselector=None, inplace=False):
         coeff = modes @ fdata.T.conj()
         if not inplace:
             fdata = fdata.copy()
-        fdata -= coeff.T.conj() @ modes
-    return fdata
+        to_deproj = coeff.T.conj() @ modes
+        fdata -= to_deproj
+    return fdata, to_deproj
 
 def fmodes_to_tmodes(fmodes, pad_left=1, pad_right=0, nsamps=1):
     """represent frequency domain modes as time domain modes. Note
