@@ -260,8 +260,17 @@ From s17 onwards, we genenerate a list of 1000 TODs for preliminary studies befo
 The parameters in =tod.par= is explained in the commends in =select_tod_adv= script.
 
 *** 9. How did i prepare the cuts h5 file for machine learning studies?
-After the main cuts pipeline and post-processing pipeline finish, run the =generate_h5= post-processing module to create the h5 file for =mlpipe= to use.
-The model generated from =mlpipe= can in turn be used to generate the det-level cuts using =model_to_cuts= post-processing module. Note that this is not the final version of cuts that can be used in production as it only contains the det-level results. To generate full results, one needs to run a modified cuts pipeline that will merge in all other cuts including partial cuts, etc. The modules required to do this is written in =cutslib.thirdparty= and the binary code that executes it is named =update_cuts= in bin folder.
+After the main cuts pipeline and post-processing pipeline finish, run
+the =generate_h5= post-processing module to create the h5 file for
+=mlpipe= to use.  The model generated from =mlpipe= can in turn be
+used to generate the det-level cuts using =model_to_cuts=
+post-processing module. Note that this is not the final version of
+cuts that can be used in production as it only contains the det-level
+results. To generate full results, one needs to run a modified cuts
+pipeline that will merge in all other cuts including partial cuts,
+etc. The modules required to do this is written in
+=cutslib.thirdparty= and the binary code that executes it is named
+=update_cuts= in bin folder.
 
 *** 10. What's the main changes in the base-line cuts in s17 onwards compared with before?
 1. calibration is purely based on planet flatfield and bias-step responsivity. No atmosphere gain is applied anymore. This is achieved by including the freq in the noAtmFreq in the cutParams file.
@@ -391,6 +400,41 @@ in the reject_depot list.
 #+BEGIN_SRC bash
 cuts run errors_tod cutparams_v0.par presel > skip_tods.txt
 #+END_SRC
+*** 17. How to add or recover detector cuts for different TODs?
+In the cutParams file that is an option called =include_cuts=, which belongs to 
+=pathologyParams= section and look like
+#+BEGIN_SRC python
+     'include_cuts'         : [
+                            {
+                               "type": "exclude",
+                               "file": "/projects/ACT/yilung/cuts/pa4_f150_s17_c11/cuts_de_ge500_norm_ge2e4_rms_le1.5.hdf",
+                            },
+                            {
+                               "type": "exclude",
+                               "file": "/projects/ACT/yilung/cuts/pa4_f150_s17_c11/cuts_gain_le0.2_rms_le1.5.hdf",
+                            },
+     ]
+#+END_SRC
+There are two types of operations supported at this moment: =exclude=
+and =recover=. =exclude= means to remove dets from some TODs, and
+=recover= means to prevent these list of dets being cut for some
+TODs. A good use case of this is to recover some of the detectors cut
+in low pwv TODs. The file format supported is an hdf file that is
+generated with the name of tod as key and a boolean mask representing
+dets selection. This file can be easily generated using =cutslib.season.SeasonStats=
+object. 
+*** 18. Quickly update crit or dets cuts without rerunning =findPathologies=
+I have mentioned using =cuts submit update_crit= to update the cuts criteria
+without rerunning the entire pathology finding pipeline. This is useful when
+one wants to submit jobs to slurm and don't mind the queuing process, if a quick
+look is needed, there is a module doing similar thing in =cutslib.modules.update_cuts=.
+It is mpi-enabled so running through 1000 TODs takes about a minute on one node.
+One just need to add to the configuration file
+#+BEGIN_SRC 
+[update_cuts]
+mpi=True
+#+END_SRC
+and include in the =pipeline= section. Run it like =mpirun -n 40 cutspipe post.ini=.
 ** Useful links
 - ACT roundtable: [[https://actexperiment.info/roundtable]]
 - TOD visualizer: [[https://github.com/guanyilun/tod_viz]]

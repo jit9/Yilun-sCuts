@@ -33,5 +33,7 @@ class Module:
             print(f"{p.rank:2d} {i:5d}/{len(obsnames)}: {obs}")
             # load data without actually loading it
             try: report.appendResult(obs)
-            except: continue
+            except Exception as e:
+                print(type(e))
+                continue
         p.comm.Barrier()

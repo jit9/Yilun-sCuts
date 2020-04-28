@@ -12,6 +12,7 @@ from moby2.scripting import products
 from moby2.util.database import TODList
 from cutslib import pathologies
 import h5py
+from moby2.tod.cuts import CutsVector
 
 
 def get_pathologies(tod, params):
