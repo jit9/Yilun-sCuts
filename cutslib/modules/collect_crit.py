@@ -60,7 +60,7 @@ class Module:
                 res['tod_sel'].append(False)
                 continue
             if os.path.isfile(depot.get_full_path(Pathologies, tod=tod, tag=p.tag)) and \
-               os.path.isfile(depot.get_full_path(moby2.TODCuts, tod=tod, tag=params["tag_out"])):
+               os.path.isfile(depot.get_full_path(moby2.TODCuts, tod=tod, tag=p.tag)):
                 pa = get_pathologies({'depot': p.depot,
                                       'tag': p.tag}, tod=tod)
                 # get final cuts

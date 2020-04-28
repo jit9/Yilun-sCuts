@@ -29,7 +29,7 @@ class Module:
         outfile = op.join(outdir, f"{p.tag}.h5")
         # specify keys in the data of interests
         # data per tod per det
-        keys_ptd = ['psel', 'resp', 'respSel', 'cal', 'corrLive',
+        keys_ptd = ['psel', 'resp', 'resp_sel', 'cal', 'corrLive',
                     'DELive', 'MFELive', 'rmsLive', 'skewLive',
                     'kurtLive', 'normLive', 'gainLive', 'jumpLive']
         # data per det

@@ -44,7 +44,7 @@ class Module:
         # get pwv for each of the tods
         loadings = get_pwv(data['name'])
         gains = data["gainLive"].copy()
-        sel = np.asarray(data['sel'],dtype=bool)*np.asarray(data['respSel'],dtype=bool)
+        sel = np.asarray(data['sel'],dtype=bool)*np.asarray(data['resp_sel'],dtype=bool)
         # create bins of loadings
         # [0,1), [1,2), [2,3), [3,4)
         nbins = 4

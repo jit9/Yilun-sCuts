@@ -35,9 +35,6 @@ cuts run, so it is different than the number above.
 The fraction of data with valid bias-step is shown in the figure
 below
 
-#+ATTR_LATEX: :width 16cm
-[[{resp_hist}]]
-
 - Cuts parameters:
 {cuts_summary}
 * Statistics
@@ -128,7 +125,7 @@ class Module:
         #############
         # resp hist #
         #############
-        res['resp_hist'] = op.join(p.o.cal.resp, "resp_hist.png")
+        # res['resp_hist'] = op.join(p.o.cal.resp, "resp_hist.png")
 
         ####################
         # detector numbers #

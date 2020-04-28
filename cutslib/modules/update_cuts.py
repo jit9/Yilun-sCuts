@@ -28,9 +28,10 @@ class Module:
         # initialize reportPathologies object to collect results
         report = reportPathologies(p.i.cutparam)
         report.depot_file += f".{p.rank}"
-        for i in range(len(obsnames)):
+        for i in range(p.rank,len(obsnames),p.size):
             obs = obsnames[i]
-            print(f"f{p.rank:2d} {i:5d}/{len(obsnames)}: {obs}")
+            print(f"{p.rank:2d} {i:5d}/{len(obsnames)}: {obs}")
             # load data without actually loading it
-            report.appendResult(obs)
+            try: report.appendResult(obs)
+            except: continue
         p.comm.Barrier()

@@ -50,7 +50,7 @@ class Module:
         stable0 = ff_old.get_property("stable",det_uid=list(range(Ndets)),default=False)[1]
 
         gains = data["gainLive"].copy()
-        sel = np.asarray(data['sel'],dtype=bool)*np.asarray(data['respSel'],dtype=bool)
+        sel = np.asarray(data['sel'],dtype=bool)*np.asarray(data['resp_sel'],dtype=bool)
         if ffpar.get("normalize",True):
             normalizeGains(gains, sel, stable0)
 
