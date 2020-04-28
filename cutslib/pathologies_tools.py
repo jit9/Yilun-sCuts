@@ -249,9 +249,6 @@ class reportPathologies( object ):
                     det_cuts.set_always_cut(det)
                     pa.liveSel[det] = False
 
-        # MERGE DETECTOR CUTS
-        c_obj.merge_tod_cuts(det_cuts)
-
         # Load external cuts to include
         include_cuts = cutParams.get_deep(('pathologyParams','include_cuts'))
         for entry in include_cuts:
@@ -261,16 +258,25 @@ class reportPathologies( object ):
             if name in hf:
                 mask = hf[name][:]
                 det_uid = np.where(mask)[0]
-                # we only support this now but potentially may have more
+                # we only support these types now but potentially may have more
+                # exclude means to exclude the given list of dets
+                # recover means to prevent the list of dets from being cut
                 if entry['type'] == 'exclude':
-                    c_obj.set_always_cut(det_uid)
-                else: raise ValueError("unsupported type")
+                    # cuts these detectors
+                    det_cuts.set_always_cut(det_uid)
+                elif entry['type'] == 'recover':
+                    for d in det_uid:
+                        # cut nothing
+                        det_cuts.cuts[d] = CutsVector([], det_cuts.nsamps)
+                else: raise ValueError("Unsupported external cut type!")
+
+        # MERGE DETECTOR CUTS
+        c_obj.merge_tod_cuts(det_cuts)
 
         # ADD CALIRBATION CUTS (IF Calibration CANNOT BE COMPUTED, KILL WHOLE TOD)
         sel = pa.liveSel*pa.calData["respSel"]*(pa.crit["gainLive"]["values"] != 0)*pa.calData["stable"]
         if sel.sum() == 0:
             c_obj.set_always_cut(tod.info.det_uid)
-
 
         # GET DARK DETECTORS
         dd = pathologies.darkDets(patho = pa)
