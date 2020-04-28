@@ -10,6 +10,7 @@ from matplotlib import pyplot as plt
 from matplotlib import cm, patches
 import matplotlib.animation as animation
 from matplotlib.collections import PatchCollection
+from cycler import cycler
 
 # moby2 dependency
 import moby2
@@ -18,6 +19,57 @@ from moby2.libactpol import time_space_waterfall
 from moby2.scripting import products
 from moby2.tod.array_data import ArrayData
 moby2.pointing.set_bulletin_A()
+
+
+def set_plotstyle(options={}, style='default', tex=None):
+    """Define common plot style"""
+    import seaborn as sns
+    import matplotlib.pyplot as plt
+
+    default = {}
+    if style == 'default':
+        # style from Cristobal
+        for tick in ('xtick', 'ytick'):
+            default['{0}.major.size'.format(tick)] = 8
+            default['{0}.minor.size'.format(tick)] = 4
+            default['{0}.major.width'.format(tick)] = 1
+            default['{0}.minor.width'.format(tick)] = 1
+            default['{0}.labelsize'.format(tick)] = 20
+            default['{0}.direction'.format(tick)] = 'in'
+        default['xtick.top'] = True
+        default['ytick.right'] = True
+        default['axes.linewidth'] = 1
+        default['axes.labelsize'] = 22
+        default['font.size'] = 22
+        default['font.family']='sans-serif'
+        default['legend.fontsize'] = 18
+        default['lines.linewidth'] = 2
+        default['axes.prop_cycle'] = cycler(color=['#2424f0','#df6f0e','#3cc03c','#d62728','#b467bd','#ac866b','#e397d9','#9f9f9f','#ecdd72','#77becf'])
+    elif style == 'ap':
+        # from astropaint
+        plt.style.use("seaborn-poster")
+        default["figure.figsize"] = (6, 4)
+        default["text.usetex"] = True
+        default["font.size"] = 16
+        default["font.family"] = "serif"
+        default['font.serif'] = 'Ubuntu'
+        default["figure.dpi"]= 100
+    elif style == 'clp':
+        # from cmblensplus
+        default['axes.labelsize'] = 8
+        default['legend.fontsize'] = 10
+        default['xtick.labelsize'] = 10
+        default['ytick.labelsize'] = 10
+        default['text.usetex'] = False
+    else:  # try to load matplotlib internal styles
+        plt.style.use(style)
+    for key in default:
+        plt.rcParams[key] = default[key]
+    # overwrite if necessary
+    for key in options:
+        plt.rcParams[key] = options[key]
+    if tex is not None:
+        plt.rcParams['text.usetex'] = tex
 
 
 def plot_with_cuts(tod, det, cuts=None, color='r'):
@@ -643,7 +695,7 @@ def array_plots( param,
 ided")
         return 0
 
-    # det = np.asarray(det, dtype = int)
+    det = np.asarray(det, dtype = int)
     param = np.asarray(param, dtype = float)
 
     if tod is not None:
@@ -674,18 +726,18 @@ ided")
 
     # if we want to force a frequency
     # YG: hacky
-    det_uid = array_data['det_uid']
+    # det_uid = array_data['det_uid']
     if fr:
-        # det_uid = array_data['det_uid']
+        det_uid = array_data['det_uid']
         det_uid = det_uid[array_data['nom_freq']==fr]
         Detid = np.intersect1d(Detid, det_uid)
         # also update param
-        # tmp = np.zeros(max(det)+1)
-        # tmp[det] = param
-        # param = tmp[Detid]
-        # del tmp
+        tmp = np.zeros(max(det)+1)
+        tmp[det] = param
+        param = tmp[Detid]
+        del tmp
 
-    pos, polfamily, freq = get_position( det_uid, instrument, array, season )
+    pos, polfamily, freq = get_position( Detid, instrument, array, season )
     x, y = pos
 
     if pmin == None:
