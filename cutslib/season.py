@@ -6,11 +6,15 @@ from matplotlib import pyplot as plt
 from functools import reduce
 from tqdm import tqdm
 import h5py
+from scipy.signal import savgol_filter
+import moby2
 
 # cutslib dependency
 from .depot import Depot
-from .util import update_if_not_exist, get_rundir, tag_to_afsv
+from .util import update_if_not_exist, get_rundir, tag_to_afsv, deep_merge
+from .util import get_cutParam
 from .pathologyReport import pathoReport
+
 
 
 class SeasonStats:
@@ -24,6 +28,7 @@ class SeasonStats:
 
         """
         # store metadata
+        self.tag = tag
         array, freq, season, ver = tag_to_afsv(tag)
         self.array, self.freq = array, freq
         self.season, self.ver = season, ver
@@ -115,6 +120,21 @@ class SeasonStats:
             self.db = pathoReport(db)
             self.db.addPWV()
             print("patho report loaded")
+        # load cutparam
+        self.cutParam = moby2.util.MobyDict.from_file(get_cutParam(tag))
+        # populate cuts crit applied
+        live_par = self.cutParam.get_deep(('pathologyParams', 'liveSelParams'))
+        for k, v in live_par.items():
+            f = f"{k}Live"
+            if f in self.style and v['apply']:
+                self.style[f]['crit'] = v['absCrit']
+        # make sure theta2 crit is propogated
+        if use_theta2 and 'crit' in self.style['corrLive']:
+            crit = self.style['corrLive']['crit']
+            crit[0] = 2*(1-crit[0])
+            crit[1] = 2*(1-crit[1])
+            self.style['corrLive']['crit'] = crit
+        print("cuts thresholds loaded")
 
     def __getattr__(self, item):
         if item in self.__dict__:
@@ -149,9 +169,9 @@ class SeasonStats:
         return sel
 
     # plotting utilities
-    def find_matches(self, *conds):
+    def find_matches(self, *conds, alone=False):
         """multiple conditions"""
-        conds += (self.stats['sel'],)
+        if not alone: conds += (self.stats['sel'],)
         sel = reduce(np.logical_and, conds)
         fig, axes = plt.subplots(2,3,figsize=(15,10))
         axes[0,0].plot(self.ctime, np.sum(sel, axis=0),'k.',alpha=0.3)
@@ -197,6 +217,24 @@ class SeasonStats:
         axes[2].set_ylabel('# of Live Dets')
         fig.subplots_adjust(hspace=0)
 
+    def view_cuts(self, window=501, **kwargs):
+        """view individual cuts vs. pwv"""
+        fields = [k for k in self.stats if 'sel' in k]
+        plt.figure(figsize=(10,8))
+        for f in fields:
+            if len(self.stats[f].shape) == 1: continue  # only 2d sel
+            idx = np.argsort(self.pwv)
+            # corrected by resp sel
+            remain = np.sum(self.stats[f]*self.tes_sel[:,None], axis=0)[idx]
+            # smooth remain
+            remain = savgol_filter(remain, window_length=window, polyorder=2)
+            plt.plot(self.pwv[idx], remain, '-', markersize=1, label=f, **kwargs)
+            plt.xlim(left=0)
+            plt.xticks(np.linspace(0, 4, 17))
+            plt.xlabel('Loading (mm)')
+            plt.ylabel('# of remaining dets')
+        plt.legend()
+
     def hist_pwv(self, figsize=(8,6), **kwargs):
         plt.figure(figsize=figsize)
         pwv = self.pwv[self.pwv>0]
@@ -207,14 +245,42 @@ class SeasonStats:
         plt.xlabel('PWV/sin(alt) (mm)')
         plt.ylabel('# of TODs')
 
-    def hist(self, sel=None, figsize=(20, 12), nbins=100, style={}, hist_opts={}, show_sel=False, axes=None):
+    def view_hist(self, field, sel=None, nbins=100, hist_opts={}, **kwargs):
+        if sel is None: sel = self.sel
+        # get style
+        style = copy.deepcopy(self.style[field])
+        style.update(kwargs)
+        fig, ax = plt.subplots(1,1,figsize=(10,8))
+        d = self.stats[field][sel]
+        lo, hi = self._find_limits(d, style)
+        if lo == 0: lo += 0.01
+        # get bins right
+        if style['scale'] == 'log':
+            bins = np.logspace(np.log10(lo), np.log10(hi), nbins)
+        else: bins = np.linspace(lo, hi, nbins)
+        # actually plot it
+        ax.hist(d, bins=bins, **hist_opts)
+        # show threshold if we have thresholds loaded
+        if 'crit' in style:
+            crit = style['crit']
+            ax.axvline(crit[0],color='r',ls='--')
+            ax.axvline(crit[1],color='r',ls='--')
+        # get axis scale right
+        if style['scale'] == 'log':
+            ax.set_xscale('log')
+        ax.set_title(style['name'])
+        ax.get_yaxis().set_visible(False)
+
+
+    def hist(self, sel=None, figsize=(20, 12), nbins=100, style={}, hist_opts={}, show_crit=True,
+             show_sel=False, axes=None, show_all=False):
         data = self.stats
         if sel is None:
             sel = data['sel'].astype(bool)
         # start to plot
         # get styles right -> make sure we don't overwrite defaults
         mystyle = copy.deepcopy(self.style)
-        mystyle.update(style)
+        mystyle = deep_merge(mystyle, style)
         style = mystyle  # a better name
         fields = list(style.keys())
         if axes is None:
@@ -222,7 +288,8 @@ class SeasonStats:
         for i in range(len(fields)):
             ax = axes[i//3, i%3]
             f = fields[i]
-            d = data[f][sel]
+            if not show_all: d = data[f][sel]
+            else: d = data[f]
             # find axis limit
             lo, hi = self._find_limits(d, style[f])
             # get bins right
@@ -231,6 +298,10 @@ class SeasonStats:
             else: bins = np.linspace(lo, hi, nbins)
             # actually plot it
             ax.hist(d, bins=bins, **hist_opts)
+            if show_crit and 'crit' in style[f]:
+                crit = style[f]['crit']
+                ax.axvline(crit[0],color='r',ls='--')
+                ax.axvline(crit[1],color='r',ls='--')
             # get axis scale right
             if style[f]['scale'] == 'log':
                 ax.set_xscale('log')
@@ -247,7 +318,7 @@ class SeasonStats:
         # start to plot
         # get styles right -> make sure we don't overwrite defaults
         mystyle = copy.deepcopy(self.style)
-        mystyle.update(style)
+        mystyle = deep_merge(mystyle, style)
         style = mystyle  # a better name
         # loop over pairs of crit
         fields = list(style.keys())
