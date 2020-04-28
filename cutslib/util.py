@@ -2,7 +2,7 @@
 
 import os, pickle, numpy as np
 import moby2
-
+from toolz.dicttoolz import merge_with
 from . import environ as env
 
 def tag_to_afsv(tag, ar=True):
@@ -36,6 +36,19 @@ def get_rundir(tag):
     ver = tag.split('_')[-1]
     run_dir = os.path.join(env.CUTS_DIR, dirname, f'run_{ver}')
     return run_dir
+
+def get_cutparam(tag):
+    """Get cutparam file from a given tag"""
+    dirname = '_'.join(tag.split('_')[:-1])  # everything but the version
+    ver = tag.split('_')[-1]
+    cutparam = os.path.join(env.CUTS_DIR, dirname, f'cutparams_{ver}.par')
+    return cutparam
+
+def get_cutParam(tag):
+    dirname = '_'.join(tag.split('_')[:-1])  # everything but the version
+    ver = tag.split('_')[-1]
+    cutParam = os.path.join(env.CUTS_DIR, dirname, f'cutParams_{ver}.par')
+    return cutParam
 
 def mkdir(dir, comm=None, rank=0):
     if comm: return mkdir(dir, None, comm.Get_rank())
@@ -198,3 +211,12 @@ def update_if_not_exist(old, new):
     nonexist_keys = [k for k in new if k not in old]
     for k in nonexist_keys: old[k] = new[k]
     return old
+
+
+def deep_merge(*ds):
+    def combine(vals):
+        if len(vals) == 1 or not all(isinstance(v, dict) for v in vals):
+            return vals[-1]
+        else:
+            return deep_merge(*vals)
+    return merge_with(combine, *ds)
