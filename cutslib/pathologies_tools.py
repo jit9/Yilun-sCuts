@@ -877,7 +877,7 @@ class pathoList( object ):
         @params   selection  selected data points
         @params   addHeader  wether to add the header to the output
         """
-        fb = moby2.scripting.get_filebase()
+        # fb = moby2.scripting.get_filebase()
 
         if selection is None:
             selection = np.ones(self.ndata, dtype = 'bool')
@@ -891,7 +891,8 @@ class pathoList( object ):
                     header += '    %30s = %12.4g\n' % (kk,float(self.selParams[k][kk]))
         header += '#\n# END HEADER\n'
         selTODs = self.data["todName"][selection].tolist()
-        tl = TODList([fb.filename_from_name(name)[0] for name in selTODs])
+        # tl = TODList([fb.filename_from_name(name)[0] for name in selTODs])
+        tl = TODList([name for name in selTODs])
         tl.to_file(filename, header = header)
 
     def outputSubset(self, filename, keys = None, selection = None, addHeader = True):

@@ -252,7 +252,6 @@ class Module:
         p0 = np.exp( np.polyval(p,0) )
         p1 = np.exp( np.polyval(p,0.5/np.sin(np.radians(50))) )
         df['residual'] = df.peak_mean - np.exp( np.polyval(p,df.loading) )
-        # import ipdb;ipdb.set_trace()
 
         # Make the plot
         plt.ioff()

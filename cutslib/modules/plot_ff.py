@@ -37,7 +37,6 @@ class Module:
             ff_name = flatfield
         print("Plotting: %s" % ff_name)
         ff = moby2.util.MobyDict.from_file(op.join(p.o.root, ff_name))
-
         det_uid = np.asarray(ff['det_uid'], dtype=int)
         cal = np.asarray(ff['cal'], dtype=float)
         stable = np.asarray(ff['stable'], dtype=int)

@@ -8,7 +8,6 @@ class Module:
 
     def run(self, proj):
         include_time = self.include_time
-
         params = MobyDict.from_file(proj.i.cutparam)
         datafile = str(proj.i.db)
         pl = pathoList(datafile)
