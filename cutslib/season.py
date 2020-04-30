@@ -14,11 +14,13 @@ import moby2
 from .depot import Depot
 from .util import update_if_not_exist, get_rundir, tag_to_afsv, deep_merge
 from .util import get_cutParam
-from .pathologyReport import pathoReport
+from .pathologyReport import pathoReport, pathoList
+from .visual import array_plots
+from .catalog import Catalog
 
 
 class SeasonStats:
-    def __init__(self, tag, calibrate=False, use_theta2=False):
+    def __init__(self, tag, calibrate=False, use_theta2=False, sort=False):
         """Show the season stats using the collected pickle
         file containing all pathological parameters
 
@@ -35,11 +37,15 @@ class SeasonStats:
         # store a selection for reference
         # define default plotting style, common style
         common_style = {
-            'extend': 2,
+            'extend': 3,
             'type': 'percentile',
             'scale': 'log'
         }
         # field specific styles
+        # unfortunately i have now start to use this dict for all sort of things
+        # and style is no longer an adequete name. I will leave it like this
+        # for the time-being, just to note that this is not purely style but
+        # also defining crits that lots of functions depend on
         self.style = {
             'gainLive': {
                 'name': 'Gain',
@@ -110,7 +116,7 @@ class SeasonStats:
                 'type': 'percentile',
             })
         self.stats = data
-        print(f"stats loaded with {len(data['name'])} tods")
+        print(f"stats loaded with {len(data['name'])} tods in ss.stats")
         # save an empty sel for future restriction work
         self.sel = np.ones_like(data['sel'], dtype=bool)
         # load db file from the run that contains some cuts stats
@@ -119,7 +125,14 @@ class SeasonStats:
         if op.exists(db):
             self.db = pathoReport(db)
             self.db.addPWV()
-            print("patho report loaded")
+            print("patho report loaded in ss.db")
+            # get catalog merged in with patho db
+            cat = Catalog().narrow_down(list(self.stats['name']))
+            self.db.data = self.db.data.merge(cat.data,left_on='todName',right_on='tod_name')
+            print("catalog merged in ss.db")
+            # get patholist
+            self.pl = pathoList(db)
+            print("pathoList loaded in ss.pl")
         # load cutparam
         self.cutParam = moby2.util.MobyDict.from_file(get_cutParam(tag))
         # populate cuts crit applied
@@ -134,13 +147,15 @@ class SeasonStats:
             crit[0] = 2*(1-crit[0])
             crit[1] = 2*(1-crit[1])
             self.style['corrLive']['crit'] = crit
-        print("cuts thresholds loaded")
+        print("cuts thresholds loaded in ss.styles[*]['crit']")
         # try to load planet calibration dataframe
         planet_file = Depot().get_deep(('Postprocess', tag, 'calibration',
                                         f'{tag}.csv'))
         if op.exists(planet_file):
             self.planet = pd.read_csv(planet_file)
-            print("planet measurements loaded")
+            print("planet measurements loaded ss.planet")
+        # sort values if that's what we want
+        if sort: self.sort_values()
 
     def __getattr__(self, item):
         if item in self.__dict__:
@@ -150,6 +165,11 @@ class SeasonStats:
         elif f"{item}Live" in self.stats:
             return self.stats[f"{item}Live"]
         else: raise ValueError(f"{item} does not exist!")
+
+    def print_thresholds(self):
+        for f in self.style:
+            if 'crit' in self.style[f]:
+                print(f"{f}: {self.style[f]['crit']}")
 
     def sel2hdf(self, filename, sel=None):
         """Save a given sel or the internal sel into a hdf file
@@ -173,6 +193,63 @@ class SeasonStats:
             if obs in f:
                 sel[:,i] = f[obs][:]
         return sel
+
+    def sort_values(self):
+        """Sort stats and db in the same order by ctime, since i don't have
+        multiple observations at the same time now that we are using single
+        frequency and array stats.
+
+        """
+        # depending on the meaning of the fields (axes), sort them accordingly. Here i am
+        # avoiding have a general loop that checks the shape of things before sorting, because
+        # i don't want to have the bug of sometimes having 1024 TODs get mistaken as 1024 dets, etc.
+        t_fields = ['name', 'scan_freq', 'ctime', 'alt', 'pwv', 'tod_sel', 'tes_sel']
+        td_fields = ['sel', 'psel', 'resp', 'resp_sel', 'cal','gainLive', 'gainLive_sel', \
+                     'corrLive', 'corrLive_sel', 'normLive', 'normLive_sel', 'rmsLive', 'rmsLive_sel', \
+                     'kurtLive', 'kurtLive_sel', 'skewLive', 'skewLive_sel', 'MFELive', 'MFELive_sel', \
+                     'DELive', 'DELive_sel', 'jumpLive', 'jumpLive_sel']
+        # sorted index
+        sorted_idx = np.argsort(self.stats['ctime'])
+        for f in t_fields:
+            self.stats[f] = self.stats[f][sorted_idx]
+        for f in td_fields:
+            self.stats[f] = self.stats[f][:,sorted_idx]
+        print("ss.stats sorted by ctime")
+        # sort patho db in self.db if that's loaded
+        if hasattr(self,'db'):
+            self.db.data = self.db.data.sort_values(by=['ctime_x'])
+            print("ss.db sorted by ctime")
+
+    def update_critsel(self, verbose=True):
+        """redo the sel based on new crit defined in the class attribute style, this
+        goes through the list of pathologies and get sel based on the abs crit specified
+        in the style attribute of this object, recalculate the total sel and repopulate
+        that into the dictionary"""
+        fields = [f for f in self.style if 'crit' in self.style[f]]
+        for f in fields:
+            # get crit corresponding to the field
+            crit = self.style[f]['crit']
+            # get pathology values
+            values = self.stats[f]
+            # apply the cuts
+            sel = np.ones_like(values, dtype=bool)
+            lo, hi = crit
+            if crit[0] > crit[1]: lo, hi = crit[1], crit[0]
+            if lo: sel *= values > lo
+            if hi: sel *= values < hi
+            # repopulate the sel back to the stats
+            self.stats[f"{f}_sel"] = sel
+            if verbose: print(f"-> {f}_sel updated: {np.sum(sel)} dets passed")
+        # update total sel
+        self.stats['sel'] = reduce(np.logical_and, [self.stats[f"{f}_sel"] for f in fields])
+        if verbose: print("-> sel updated")
+        return self
+
+    def update_style(self, style={}):
+        """Update the internal style in place, one use case is to change the crit and
+        then call update_critsel to regenerate det cuts"""
+        self.style = deep_merge(self.style, style)
+        return self
 
     # plotting utilities
     def find_matches(self, *conds, alone=False):
@@ -226,7 +303,8 @@ class SeasonStats:
 
     def view_cuts(self, window=501, **kwargs):
         """view individual cuts vs. pwv"""
-        fields = [k for k in self.stats if 'sel' in k]
+        fields = [k for k in self.stats if 'sel' in k and \
+                  k not in ['psel','kurtLive_sel', 'skewLive_sel']]
         plt.figure(figsize=(10,8))
         for f in fields:
             if len(self.stats[f].shape) == 1: continue  # only 2d sel
@@ -253,7 +331,6 @@ class SeasonStats:
         plt.xlabel('PWV/sin(alt) (mm)')
         plt.ylabel('# of TODs')
 
-
     def planet_peaks(self, c=None, ylim=[0,1e-10]):
         """View the planet peak measurements as function of optical loading"""
         assert hasattr(self, 'planet'), "Planet measurements not available!"
@@ -266,6 +343,13 @@ class SeasonStats:
         plt.ylabel('Peak measurements')
         plt.ylim(ylim)
         if c: plt.colorbar().set_label(c)
+
+    def array_plots(self, field, dets=None, **kwargs):
+        """Quick array plots for a given field"""
+        if isinstance(field, str): field = getattr(self, field)
+        if dets is None: dets = np.arange(self.stats['sel'].shape[0])
+        assert dets.shape == field.shape, "dets and field mismatch!"
+        array_plots(field, det=dets, array=self.array,season=self.season,fr=self.freq, **kwargs)
 
     def view_hist(self, field, sel=None, nbins=100, hist_opts={}, **kwargs):
         """View the histogram of a particular criteria field"""
@@ -293,7 +377,6 @@ class SeasonStats:
             ax.set_xscale('log')
         ax.set_title(style['name'])
         ax.get_yaxis().set_visible(False)
-
 
     def hist(self, sel=None, figsize=(20, 12), nbins=100, style={}, hist_opts={}, show_crit=True,
              show_sel=False, axes=None, show_all=False):
