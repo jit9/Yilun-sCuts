@@ -3,6 +3,7 @@
 # general dependency
 import numpy as np, pickle, copy, os.path as op
 from matplotlib import pyplot as plt
+import pandas as pd
 from functools import reduce
 from tqdm import tqdm
 import h5py
@@ -14,7 +15,6 @@ from .depot import Depot
 from .util import update_if_not_exist, get_rundir, tag_to_afsv, deep_merge
 from .util import get_cutParam
 from .pathologyReport import pathoReport
-
 
 
 class SeasonStats:
@@ -135,6 +135,12 @@ class SeasonStats:
             crit[1] = 2*(1-crit[1])
             self.style['corrLive']['crit'] = crit
         print("cuts thresholds loaded")
+        # try to load planet calibration dataframe
+        planet_file = Depot().get_deep(('Postprocess', tag, 'calibration',
+                                        f'{tag}.csv'))
+        if op.exists(planet_file):
+            self.planet = pd.read_csv(planet_file)
+            print("planet measurements loaded")
 
     def __getattr__(self, item):
         if item in self.__dict__:
@@ -203,6 +209,7 @@ class SeasonStats:
         return self
 
     def view_sel(self, sel=None):
+        """View the selected mask as a function of various things for debugging"""
         if sel is None: sel = self.stats['sel']
         fig, axes = plt.subplots(3,1,figsize=(20, 10), sharex=True)
         idx = np.argsort(self.ctime)
@@ -236,6 +243,7 @@ class SeasonStats:
         plt.legend()
 
     def hist_pwv(self, figsize=(8,6), **kwargs):
+        """View histogram of PWV in the season"""
         plt.figure(figsize=figsize)
         pwv = self.pwv[self.pwv>0]
         opts = {'rwidth': 0.75, 'bins': 50}
@@ -245,7 +253,22 @@ class SeasonStats:
         plt.xlabel('PWV/sin(alt) (mm)')
         plt.ylabel('# of TODs')
 
+
+    def planet_peaks(self, c=None, ylim=[0,1e-10]):
+        """View the planet peak measurements as function of optical loading"""
+        assert hasattr(self, 'planet'), "Planet measurements not available!"
+        df = self.planet
+        plt.figure(figsize=(8,6))
+        if c: plt.scatter(df.loading, df.peak_mean, s=100, c=df[c],
+                          edgecolor='None', cmap='copper')
+        else: plt.plot(df.loading, df.peak_mean, '.')
+        plt.xlabel('Loading (PWV / sin(alt))')
+        plt.ylabel('Peak measurements')
+        plt.ylim(ylim)
+        if c: plt.colorbar().set_label(c)
+
     def view_hist(self, field, sel=None, nbins=100, hist_opts={}, **kwargs):
+        """View the histogram of a particular criteria field"""
         if sel is None: sel = self.sel
         # get style
         style = copy.deepcopy(self.style[field])
@@ -274,6 +297,7 @@ class SeasonStats:
 
     def hist(self, sel=None, figsize=(20, 12), nbins=100, style={}, hist_opts={}, show_crit=True,
              show_sel=False, axes=None, show_all=False):
+        """View histograms of all crit fields"""
         data = self.stats
         if sel is None:
             sel = data['sel'].astype(bool)
