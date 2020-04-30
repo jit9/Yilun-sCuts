@@ -103,6 +103,7 @@ class Catalog():
         else:
             raise ValueError("tod_list format not recognized!")
         self.select({'tod_name': content})
+        return self
 
     def __repr__(self):
         return f"Catalog(n_entry={len(self.data)})"

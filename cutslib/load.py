@@ -6,8 +6,10 @@ from .pathologies import Pathologies, get_pathologies
 from .pathologies_tools import get_pwv
 
 
-def load_tod(todname, tag=None, planet=None, partial=None, rd=True):
-    tod = moby2.scripting.get_tod({'filename': todname, 'repair_pointing':True})
+def load_tod(todname, tag=None, planet=None, partial=None, rd=True, **kwargs):
+    opts = {'filename': todname, 'repair_pointing':True}
+    opts.update(kwargs)
+    tod = moby2.scripting.get_tod(opts)
     print("tod loaded")
     # load metadata with tag
     if tag:
