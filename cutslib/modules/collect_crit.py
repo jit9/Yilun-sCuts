@@ -4,9 +4,9 @@ import os, os.path as op
 import moby2
 import pickle, numpy as np, sys, os
 from moby2.util.database import TODList
-from cutslib.pathologies_tools import fix_tod_length, get_pwv
+from cutslib.pathologies_tools import fix_tod_length, get_pwv, get_pathologies
 from cutslib import Catalog
-from cutslib.pathologies import get_pathologies, Pathologies
+from cutslib.pathologies import Pathologies
 from cutslib import util
 
 class Module:
@@ -61,9 +61,10 @@ class Module:
                 continue
             if os.path.isfile(depot.get_full_path(Pathologies, tod=tod, tag=p.tag)) and \
                os.path.isfile(depot.get_full_path(moby2.TODCuts, tod=tod, tag=p.tag)):
-                pa = get_pathologies({'depot': p.depot,
-                                      'tag': p.tag}, tod=tod)
-                # get final cuts
+                pa = get_pathologies(tod, cpar)
+                # get all crit cuts
+                # for final cuts we will get from TODCuts objects instead of here
+                # because the externally included cuts will not be stored here
                 pa.makeNewSelections()
                 # store pathologies crits
                 for k in all_keys:
@@ -72,10 +73,9 @@ class Module:
                     if "sel" in pa.crit[k]:
                         res[f"{k}_sel"].append(pa.crit[k]["sel"])
                 # fix_tod_length(tod, pa.offsets)
-                res['sel'].append(pa.liveSel)
+                # get preselection
                 res['psel'].append(pa.preLiveSel)
                 resp, _, _, re_sel, _, _ = pa.getpWCalibration()
-                # get preselection
                 res['tods'].append(tod.info.name)
                 res['scanf'].append(pa.scan_freq)
                 res['resp'].append(resp)
@@ -84,6 +84,9 @@ class Module:
                 res['ctimes'].append(tod.info.ctime)
                 res['alt'].append(np.mean(tod.alt))
                 res['tod_sel'].append(True)
+                # get final cuts
+                cuts = depot.read_object(moby2.TODCuts, tod=tod, tag=p.tag)
+                res['sel'].append(cuts.get_mask())
             else:
                 res['tod_sel'].append(False)
 
