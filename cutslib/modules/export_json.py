@@ -14,12 +14,14 @@ class Module:
         self.tod_list = config.get("tod_list",None)
         self.limit = config.getint("limit", None)
         self.debug = config.getboolean("debug", False)
+        self.overwrite = config.get("overwrite", True)
 
     def run(self, p):
         todname = self.todname
         tod_list = self.tod_list
         limit = self.limit
         debug = self.debug
+        overwrite = self.overwrite
 
         # load cut parameters
         params = moby2.util.MobyDict.from_file(p.i.cutparam)
@@ -56,14 +58,15 @@ class Module:
 
         # dump metadata as well
         outfile = op.join(p.o.patho.viz, "metadata.json")
-        oldfile = outfile
-        existing = False
-        while op.isfile(oldfile):
-            oldfile += ".old"
-            existing = True
-        if existing:
-            print(f"Found existing: renaming existing file to {oldfile}")
-            os.system(f"mv {outfile} {oldfile}")
+        if not overwrite:
+            oldfile = outfile
+            existing = False
+            while op.isfile(oldfile):
+                oldfile += ".old"
+                existing = True
+            if existing:
+                print(f"Found existing: renaming existing file to {oldfile}")
+                os.system(f"mv {outfile} {oldfile}")
         print("Writing: %s" % outfile)
         with open(outfile,"w") as f:
             f.write(json.dumps(metadata))
