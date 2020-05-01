@@ -252,6 +252,7 @@ class reportPathologies( object ):
 
         # Load external cuts to include
         include_cuts = cutParams.get_deep(('pathologyParams','include_cuts'))
+        if include_cuts is None: include_cuts = []
         for entry in include_cuts:
             # exclude these dets if that's what we want
             hf = h5py.File(entry['file'], "r")

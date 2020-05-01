@@ -6,7 +6,7 @@ import os.path as op, os
 import moby2
 from cutslib import TODList
 from cutslib.pathologies_tools import reportPathologies
-
+import traceback
 
 class Module:
     def __init__(self, config):
@@ -35,5 +35,6 @@ class Module:
             try: report.appendResult(obs)
             except Exception as e:
                 print(type(e))
+                traceback.print_exc()
                 continue
         p.comm.Barrier()

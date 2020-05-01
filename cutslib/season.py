@@ -301,10 +301,12 @@ class SeasonStats:
         axes[2].set_ylabel('# of Live Dets')
         fig.subplots_adjust(hspace=0)
 
-    def view_cuts(self, window=501, **kwargs):
+    def view_cuts(self, window=None, **kwargs):
         """view individual cuts vs. pwv"""
         fields = [k for k in self.stats if 'sel' in k and \
                   k not in ['psel','kurtLive_sel', 'skewLive_sel']]
+        if not window: window = int(self.sel.shape[-1]/10)
+        if window % 2 ==0: window += 1
         plt.figure(figsize=(10,8))
         for f in fields:
             if len(self.stats[f].shape) == 1: continue  # only 2d sel
