@@ -33,7 +33,7 @@ class Pathologies( object ):
     _depot_structure = '{class}/{tag}/{first_five}/{tod_name}.pickle'
 
 
-    def __init__(self, tod, params, calibrated=False, calibratedTOD=False, noExclude=False):
+    def __init__(self, tod, params, calibrated=False, calibratedTOD=False, noExclude=True):
         """
         @brief Initialize the pathologies object.
         @param   tod          TOD object to analyze.
@@ -194,7 +194,7 @@ class Pathologies( object ):
         self.chunkParams = None
         self.report = None
 
-    def setParams(self, noExclude=False):
+    def setParams(self, noExclude=True):
         """
         Update parameters in pathologies object
         """
@@ -206,6 +206,8 @@ class Pathologies( object ):
         else:
             self.exclude = self.tod.info.array_data.select_inner(
             {'row': exclude['rows'], 'col': exclude['cols']}, mask = True, det_uid = self.dets)
+        # this noExclude is really confusing, in practice noExclude is always True so
+        # this line is never executed, otherwise its confusing.
         if not(noExclude): self.exclude[list(self.tod.cuts.get_cut())] = True
         if 'det_uid' in dark:
             self.origDark = self.tod.info.array_data.select_inner(
@@ -493,6 +495,9 @@ class Pathologies( object ):
         # Update parameters if needed
         if params is not None:
             self.params.update(params)
+            # re-populate dets list in the object if needed
+            self.setParams(noExclude=True)
+            # re-populate self.crit, etc.
             self.initializeCriteria()
 
         if not(self.calibrated): self.calibrateValues()
