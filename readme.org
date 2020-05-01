@@ -313,8 +313,12 @@ Author: (default: Yilun Guan)
 }
 Write to: (default: /projects/ACT/yilung/depot/release_20200328.txt)
 #+end_example
-This is written in json format which should be easily digestible by modules in the downstream.
-An example module that read the release is the =create_todinfo= module which generates the enki compatible =todinfo.txt= file.
+This is written in json format which should be easily digestible by
+modules in the downstream.  An example module that read the release is
+the =create_todinfo= module which generates the enki compatible
+=todinfo.txt= file. After the release json file is generated, tag
+the =cutparam= repo with the same tag to keep track of the parameters
+used in the given tag.
 
 *** 12. How to run final processing pipeline
 What i call final processing pipeline is practically the same as the
@@ -401,7 +405,7 @@ in the reject_depot list.
 cuts run errors_tod cutparams_v0.par presel > skip_tods.txt
 #+END_SRC
 *** 17. How to add or recover detector cuts for different TODs?
-In the cutParams file that is an option called =include_cuts=, which belongs to 
+In the cutParams file that is an option called =include_cuts=, which belongs to
 =pathologyParams= section and look like
 #+BEGIN_SRC python
      'include_cuts'         : [
@@ -422,7 +426,7 @@ TODs. A good use case of this is to recover some of the detectors cut
 in low pwv TODs. The file format supported is an hdf file that is
 generated with the name of tod as key and a boolean mask representing
 dets selection. This file can be easily generated using =cutslib.season.SeasonStats=
-object. 
+object.
 *** 18. Quickly update crit or dets cuts without rerunning =findPathologies=
 I have mentioned using =cuts submit update_crit= to update the cuts criteria
 without rerunning the entire pathology finding pipeline. This is useful when
@@ -430,13 +434,93 @@ one wants to submit jobs to slurm and don't mind the queuing process, if a quick
 look is needed, there is a module doing similar thing in =cutslib.modules.update_cuts=.
 It is mpi-enabled so running through 1000 TODs takes about a minute on one node.
 One just need to add to the configuration file
-#+BEGIN_SRC 
+#+BEGIN_SRC
 [update_cuts]
 mpi=True
 #+END_SRC
 and include in the =pipeline= section. Run it like =mpirun -n 40 cutspipe post.ini=.
+It's good to remove the previous TODCuts, calibration from depot, though
+i haven't encountered a case where not doing so causes noticable issues. It's good
+to run this in a debug note because this is very quick to run, here is the command
+to launch a debug node with 40 tasks required
+#+BEGIN_SRC
+salloc -pdebug --nodes 1 --ntasks-per-node=40 --time=1:00:00
+#+END_SRC
+*** 19. How to setup enki for a given cut release?
+Here is what i do:
+
+1. create an =.enkirc= in the home directory with, for example,
+#+BEGIN_SRC
+root = '/scratch/gpfs/yilung/mapdata'
+#+END_SRC
+2. make sure environment variable =CUTS_MAPDATA= points to the same path specified
+in =.enkirc=. Also specify the path to the cuts depot in =CUTS_DEPOT= environment
+variable. For example,
+#+BEGIN_SRC bash
+export CUTS_DEPOT="/projects/ACT/yilung/depot/"
+export CUTS_MAPDATA="/scratch/gpfs/yilung/mapdata"
+#+END_SRC
+3. Build metadata for a given release. Use the following cutspipe modules
+#+BEGIN_SRC
+[create_todinfo]
+cut_release = 20200327
+obs_details_cmb = wide_01h_n
+obs_details_noncmb = uranus
+dataset = s17_subset
+outfile = ${cuts_mapdata}/${dataset}/todinfo.txt
+
+[create_filedb]
+cut_release = 20200327
+dataset = s17_subset
+template = default
+outfile = ${cuts_mapdata}/${dataset}/filedb.txt
+
+[build_todinfo]
+n_tasks = 10
+dataset = s17_subset
+sel = s17
+#+END_SRC
+The fields should be self explanary. These modules produce =todinfo.txt=, =filedb.txt=
+and =todinfo.hdf= based on a given =cut_release= tag. with this we are all set to run
+enki. Some of existing mapping routines in cutslib include =map_tods= which produces
+binned map of TODs, and =tod2map2= which produce maximum likelihood code using =tod2map2=
+in =tenki=. here are the default configurations for them, one only needs to overwrite
+relevant fields when running.
+#+BEGIN_SRC
+[map_tods]
+type=command
+ntasks=10
+module_load=enki so_stack
+area=wide_01h_n
+dataset=s17_subset
+sel=s17,cmb
+tag=test
+nrandom=100
+mapdata=${cuts_mapdata}
+command=mpirun -n {ntasks} python map_tod.py ${mapdata}/area/${area}.fits \
+        "${sel}" ${CUTS_MAPDATA}/{dataset}/{tag} --dataset ${dataset} \
+        --nrandom ${nrandom}
+
+[tod2map2]
+type = command
+module_load = enki so_stack
+ntasks = 4
+area = wide_01h_n
+sel = s17,cmb
+dataset = s17_subset
+tag = test
+downsample = 4
+verbosity = 2
+nomp = 4
+mapdata = ${cuts_mapdata}
+command = srun -n ${ntasks} enki tod2map2 -S sky:${area} "${sel}" ${mapdata}/${tag} --verbosity=${verbosity} --downsample=${downsample} --dataset ${dataset}
+#+END_SRC
+more relevant mapping script written by Adri that's relevant for cuts
+can be found in cuts_validation repo linked in the useful link section.
 ** Useful links
+- inputs for mapping: https://phy-wiki.princeton.edu/polwiki/pmwiki.php?n=Calibration.InputsForMapping
+- cutparams repo: [[https://github.com/guanyilun/cutparams]]
+- cuts validation repo: https://github.com/ACTCollaboration/cuts_validation
 - ACT roundtable: [[https://actexperiment.info/roundtable]]
 - TOD visualizer: [[https://github.com/guanyilun/tod_viz]]
 - Emacs plugins for cuts: [[https://github.com/guanyilun/cuts.el]]
-- cutparams repo: [[https://github.com/guanyilun/cutparams]]
