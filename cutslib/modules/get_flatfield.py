@@ -1,6 +1,15 @@
 """This module wraps around generateFlatfield script in moby2 to
 create a flatfield dictionary that can be used as the input to the
-next iteration of cuts
+next iteration of cuts.
+
+Options:
+--------
+legacy: True if we are using loic's gain in pickle file. The main difference
+  is that i no longer remove the flatfield in the gain in the pickle file,
+  so in legacy mode the gain will come directly from the gainLive field in
+  the pickle file but for not legacy mode the gain will be the gain in the
+  pickle file multiplying with the flatfield.
+
 """
 
 import os.path as op
@@ -10,9 +19,11 @@ import pickle, numpy as np, os, sys
 
 class Module:
     def __init__(self, config):
-        pass
+        self.legacy = config.get("legacy",False)
 
     def run(self, proj):
+        legacy = self.legacy
+
         params = moby2.util.MobyDict.from_file(proj.i.cutparam)
         ffpar = params["ff_params"]
 
@@ -49,7 +60,10 @@ class Module:
         calRMS0 = ff_old.get_property("cal",det_uid=list(range(Ndets)),default=0.)[1]
         stable0 = ff_old.get_property("stable",det_uid=list(range(Ndets)),default=False)[1]
 
-        gains = data["gainLive"].copy()
+        if legacy:
+            gains = data["gainLive"].copy()
+        else:
+            gains = data["gainLive"]*data["ff"][:,None]
         sel = np.asarray(data['sel'],dtype=bool)*np.asarray(data['resp_sel'],dtype=bool)
         if ffpar.get("normalize",True):
             normalizeGains(gains, sel, stable0)
@@ -100,13 +114,13 @@ def getArrayStats(gains, sels, ffpar, selTODs):
     means = np.zeros(Ndets)
     stds = np.zeros(Ndets)
     for d in range(Ndets):
-        # calib = np.array(gains[d])
+        # notice the division here
         calib = 1./np.array(gains[d])
         calib[np.isnan(calib)] = 0.0
         sel = (np.abs(calib) < ffpar['gainLimit'])*(np.abs(calib) > 1./ffpar['gainLimit'])*selTODs
         if ffpar['useSel'] and len(sels[d]) > 0: sel *= np.array(sels[d])
         if np.array(sel, dtype = int).sum() < ffpar['minSamples']:
-            print("Failed minSample test %d"%d)
+            # print("Failed minSample test %d"%d)
             continue
         tmp = np.sort(calib[sel])
         n = len(calib[sel])

@@ -295,6 +295,7 @@ class reportPathologies( object ):
             if pathop.get('getPartial',True):
                 depot.write_object(section_cuts, tod = tod, force = True,
                                    tag=params.get('tag_out')+"_sec")
+            # save pathologies if parameters have been updated
             # less verbose here
             # print("cuts exported to %s"%params.get('tag_out'))
 

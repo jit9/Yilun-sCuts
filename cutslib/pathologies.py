@@ -387,6 +387,11 @@ class Pathologies( object ):
         self.res = res
 
         # Undo flatfield correction
+        # this is division because suppose ff is absolutely correct
+        # the gains we measured should be constly 1. This means that
+        # the gain without ff should be the same as the gain of the ff
+        # that is gain = 1/ff -> gain_wo_ff = gain_w_ff / ff
+        # NOT multiplication!
         self.crit["gainLive"]["values"] /= np.abs(ff)
 
         # Get slow Common Mode
