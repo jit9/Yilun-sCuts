@@ -63,7 +63,7 @@ class Module:
         if legacy:
             gains = data["gainLive"].copy()
         else:
-            gains = data["gainLive"]*data["ff"][:,None]
+            gains = data["gainLive"]/data["ff"][:,None]
         sel = np.asarray(data['sel'],dtype=bool)*np.asarray(data['resp_sel'],dtype=bool)
         if ffpar.get("normalize",True):
             normalizeGains(gains, sel, stable0)

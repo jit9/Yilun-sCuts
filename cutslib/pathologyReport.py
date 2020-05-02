@@ -28,7 +28,6 @@ class pathoReport(object):
     def addPWV(self):
         self.data['PWV'] = get_pwv(self.data.ctime)
 
-
     def select_time(self, time):
         """Select a subset of the data by time. The subset can be chosen as:
            - a year: 'YYYY'
@@ -46,7 +45,6 @@ class pathoReport(object):
                                                          self.data.shape[0]))
         self.ndata = self.data.shape[0]
 
-
     def select_hours(self,hour_min, hour_max):
         """Select a subset of the data by hour of the day.
         """
@@ -55,7 +53,6 @@ class pathoReport(object):
         print("%i TODs have been discarded. %i remain." %(self.ndata-self.data.shape[0],
                                                          self.data.shape[0]))
         self.ndata = self.data.shape[0]
-
 
     def select_tods(self, todlist):
         """Select a subset of the data from a list of TODs
@@ -81,7 +78,6 @@ class pathoReport(object):
                                                          self.data.shape[0]))
 
         self.ndata = self.data.shape[0]
-
 
     def revert_selection(self):
         if not hasattr(self,'data_original'):
@@ -122,7 +118,6 @@ class pathoReport(object):
             fig.savefig(filename)
             plt.close()
 
-
     def killedbyplot(self, filename=None, dets_lim = (0,1056), type="violin"):
         """Show the distribution of live detectors after
         applying each criteria individually"""
@@ -146,8 +141,6 @@ class pathoReport(object):
             fig.savefig(filename)
             plt.close(fig)
 
-
-
     def scatter_plot(self, crit1, crit2, x_lim=None, y_lim=None,filename=None):
         # self.data.plot(x=crit1,y=crit2,
         #                kind='hexbin',gridsize=50,
@@ -165,10 +158,8 @@ class pathoReport(object):
             plt.savefig(filename)
             plt.close('all')
 
-
-
     def gridlive(self):
-        plt.ioff()
+        """pair-wise killed by plots"""
         if not hasattr(self, 'livedata'):
             livekeys = [k for k in list(self.data.keys()) if k[-4:] == 'Live']
             self.livedata = self.data[livekeys]
@@ -178,5 +169,3 @@ class pathoReport(object):
             g.map_lower(plt.hexbin, cmap="bone_r", bins='log',gridsize=15,
                         edgecolors='none')
             g.map_upper(plt.scatter, marker='.', alpha=0.1)
-        plt.savefig('toto.png')
-        plt.close()
