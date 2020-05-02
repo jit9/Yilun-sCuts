@@ -53,7 +53,6 @@ them myself):
   #+BEGIN_SRC bash
   cuts run errors cutparam_v3.par
   #+END_SRC
-  To see more than the latest version use =cuts run list all=
 - =cuts.recipes.update.submit=:
   submit jobs (on tiger) for updating cut crits with a given cutparam file (i.e. cutparam_v3.par)
   #+BEGIN_SRC bash
@@ -449,18 +448,18 @@ salloc -pdebug --nodes 1 --ntasks-per-node=40 --time=1:00:00
 *** 19. How to setup enki for a given cut release?
 Here is what i do:
 
-1. create an =.enkirc= in the home directory with, for example,
+- create an =.enkirc= in the home directory with, for example,
 #+BEGIN_SRC
 root = '/scratch/gpfs/yilung/mapdata'
 #+END_SRC
-2. make sure environment variable =CUTS_MAPDATA= points to the same path specified
+- make sure environment variable =CUTS_MAPDATA= points to the same path specified
 in =.enkirc=. Also specify the path to the cuts depot in =CUTS_DEPOT= environment
 variable. For example,
 #+BEGIN_SRC bash
 export CUTS_DEPOT="/projects/ACT/yilung/depot/"
 export CUTS_MAPDATA="/scratch/gpfs/yilung/mapdata"
 #+END_SRC
-3. Build metadata for a given release. Use the following cutspipe modules
+- Build metadata for a given release. Use the following cutspipe modules
 #+BEGIN_SRC
 [create_todinfo]
 cut_release = 20200327
@@ -517,6 +516,86 @@ command = srun -n ${ntasks} enki tod2map2 -S sky:${area} "${sel}" ${mapdata}/${t
 #+END_SRC
 more relevant mapping script written by Adri that's relevant for cuts
 can be found in cuts_validation repo linked in the useful link section.
+*** 20. Why is gain calculation in moby2 so confusing?
+The manipulation of gains in moby2 / loic's codes are beyond
+confusing. I kept getting confused on the calculation and every time
+needing to spend lots of time recapping what's done. Let me write down
+what i understand now before i forget again...
+- gains are calculated with SVD using calibrated TODs (with input
+  flatfield and resp) as part of =lowFreqAnal= [[https://github.com/ACTCollaboration/moby2/blob/master/python/analysis/tod_ana/pathologies.py#L1883][here]] for each frequency
+  window.
+- the gains for each frequency window are then normalized by mean of a
+  set of "reliable" detectors. This set of dets is determined by the
+  preselection, that is, dets that are preselected in more than half
+  of the frequency windows. See [[https://github.com/ACTCollaboration/moby2/blob/master/python/analysis/tod_ana/pathologies.py#L1691][this line]].
+- estimate detector gains using the mean of the gains measured from
+  different frequency windows, this is similar to how other low
+  frequency pathological parameters are derived. See [[https://github.com/ACTCollaboration/moby2/blob/master/python/analysis/tod_ana/pathologies.py#L1700][this line]].
+- The gains estimated above is then divided by the input flatfield to
+  "remove" the effects of flatfield. In the case that the input
+  flatfield 100% accurate for a TOD, the gain without removing
+  flatfield will be exactly 1, so after removing the flatfield the
+  gain will be 1/ff which matches with the gains from the input
+  flatfield. See [[https://github.com/ACTCollaboration/moby2/blob/master/python/analysis/tod_ana/pathologies.py#L416][this line]].
+- This gains will be stored in the crit field in the pathologies
+  object and saved to disk.
+- When cuts are to be generated based on the pathologies object, that
+  is, in the =recoverScanCuts= method of a =reportPathologies= object,
+  it calls the =calibrateValues= method in the =makeNewSelections=
+  method of pathology object. Here the flatfield effects are added
+  back again to the gain (=gain <- gain * ff=). See [[https://github.com/ACTCollaboration/moby2/blob/master/python/analysis/tod_ana/pathologies.py#L695][this line]]. This
+  gain is normalized once again in the =normalizeGains= function by
+  the mean of the gain from a good subset of the detectors which is
+  found after outlier removal. See [[https://github.com/ACTCollaboration/moby2/blob/master/python/analysis/tod_ana/pathologies.py#L2266][this line]]. It is this set of gains
+  that the cut criteria specified in the cut parameter scripts apply
+  to.
+- On the other hand, the gain stored in the pathology object is later
+  collected into a pickle file by =collectSeasonCrit= script and
+  stored under =gainLive= in the pickle file. Note that these gains
+  have flatfield removed. See [[https://github.com/ACTCollaboration/moby2/blob/master/bin/collectSeasonCrit][this script]]. Atmosphere flatfields are
+  generated based on these =gainLive= field as =mean(1/gain)= using 
+  a subset of dets after outlier rejection. See [[https://github.com/ACTCollaboration/moby2/blob/master/bin/generateFlatfield#L32][this line]]. These gains
+  are normalized again by the mean of this subset of dets which is also 
+  labelled as stable. This process of taking =mean(1/gain)= and normalization
+  is repeated for a total of *10 times*... The results of which, after some
+  threshold-based cuts become the output atmosphere flatfield.
+
+This is the life story of the gains in =moby2=.
+  
+*** 21. How to pre-process the bias-step measurements such that they match with TODs?
+BS measurements provided by Patty is aranged in ctimes, i will first
+need to match them to TODs. To do this matching for a given season and
+array, first make sure that the bias-step files from Patty is rsync-ed
+to the depot with an example structure like this (for pa4), notice
+this should be the same as the file-structure used by Patty.
+#+begin_example
+/home/yilung/work/depot/biasstep/2019/calibration_20200328/pa4
+#+end_example
+After re-assuring that the bias-steps files are rsync-ed completely,
+one can then use the module =match_bs_tod= to match them to tods with
+a configuration file like this:
+#+BEGIN_SRC 
+[pipeline]
+cutparam = cutparams_v0.par
+output_dir = /projects/ACT/yilung/depot/Postprocess/
+pipeline = match_bs_tod
+[match_bs_tod]
+tag = calibration_20200328
+#+END_SRC
+i store it in =pre.ini= and run =cutspipe pre.ini= to complete the
+step. It should take one or two minutes to complete the matching. Note
+that this only needs to be done once per array. When this is done, one
+can supply it to the cutParams config with something like
+#+begin_example
+'config'   : [
+{
+   "type": "depot_cal",
+   "tag": "pa6_s18_bs_calibration_20200325",
+   "depot": '/projects/ACT/yilung/depot',
+   "name": "biasstep"
+}],
+#+end_example
+Substitute the season, array and bs tag accordingly. 
 ** Useful links
 - inputs for mapping: https://phy-wiki.princeton.edu/polwiki/pmwiki.php?n=Calibration.InputsForMapping
 - cutparams repo: [[https://github.com/guanyilun/cutparams]]

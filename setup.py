@@ -21,6 +21,7 @@ setup(
                       'ipdb',
                       'jinja2',
                       'tqdm',
+                      'toolz',
                       'future', # from here onwards will be moby2 deps
                       'numpy',
                       'matplotlib',
