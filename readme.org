@@ -53,6 +53,11 @@ them myself):
   #+BEGIN_SRC bash
   cuts run errors cutparam_v3.par
   #+END_SRC
+- =cuts.recipes.run.errors_tod=:
+  grep errors during the run of a given cutparam file (i.e. cutparams_v0.par)
+  #+BEGIN_SRC bash
+  cuts run errors_tod cutparams_v0.par notfound > skip.txt
+  #+END_SRC
 - =cuts.recipes.update.submit=:
   submit jobs (on tiger) for updating cut crits with a given cutparam file (i.e. cutparam_v3.par)
   #+BEGIN_SRC bash
@@ -77,6 +82,20 @@ them myself):
   same as above but to find the intersection instead of the union
   #+BEGIN_SRC bash
   cuts dets intersection exclude.dict unstable.dict
+  #+END_SRC
+- =cuts.recipes.release.tags=:
+  generate release json file for selected list of cutparams
+  #+BEGIN_SRC bash
+  cuts release tags *s17*
+  #+END_SRC
+- =cuts.recipes.params.quickfix=:
+  quickly fix cutparams in the command-line
+  #+BEGIN_SRC bash
+  cuts params quickfix forceNoResp False cutParams_v3.par > cutParams_v4.par
+  #+END_SRC
+  or for inplace fix
+  #+BEGIN_SRC bash
+  cuts params quickfix forceNoResp False cutParams_v3.par -i
   #+END_SRC
 ** Modules:
 Notable mentions
@@ -119,7 +138,26 @@ Notable mentions
   using this [[https://github.com/guanyilun/tod_viz][web-based tool]].
 - =todlist_for_map=:
   generate the list of TODs that is available for mapping
-
+- =build_todinfo=:
+  generate =todinfo.hdf= file for =enki=
+- =create_filedb=:
+  generate =filedb.txt= for =enki= based on a given cut release
+- =create_todinfo=:
+  generate =todinfo.txt= for =enki= based on a given cut release
+- =generate_h5=:
+  convert cut crit pickle file to hdf5 format
+- =init_cutparam=:
+  generate boilerplate cutparams based on templates
+- =match_bs_tod=:
+  match bias step files to each tod
+- =merge_for_cmb=:
+  merge all cuts for cmb
+- =plot_waterfall=:
+  produce time space and frequency space waterfall plots for list of tods
+- =select_good_tods=:
+  identify list of tods good for atmosphere flatfielding.
+- =update_cuts=:
+  update cuts crit or excluded detector list without re-runing the entire cut-pipeline
 ** Q&A
 *** 1. How is this different from moby2 cuts?
 Most of the relevant scripts for cuts in moby2 have been migrated here. The purpose is
