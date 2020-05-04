@@ -4,17 +4,15 @@ from past.builtins import basestring
 
 import moby2
 import pandas as pd
+from matplotlib import pyplot as plt
+import seaborn as sns
 
 from .pathologies_tools import pathoList, get_pwv
-from matplotlib import pyplot as plt
-
-import seaborn as sns
-# sns.set(style="white")
+from .catalog import Catalog
 
 
 class pathoReport(object):
     """Provide tools to analyze a pathologies report"""
-
     def __init__( self, filename):
         pl = pathoList(filename)
         self.data = pd.DataFrame.from_dict(pl.data)

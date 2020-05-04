@@ -553,15 +553,23 @@ what i understand now before i forget again...
   collected into a pickle file by =collectSeasonCrit= script and
   stored under =gainLive= in the pickle file. Note that these gains
   have flatfield removed. See [[https://github.com/ACTCollaboration/moby2/blob/master/bin/collectSeasonCrit][this script]]. Atmosphere flatfields are
-  generated based on these =gainLive= field as =mean(1/gain)= using 
+  generated based on these =gainLive= field as =mean(1/gain)= using
   a subset of dets after outlier rejection. See [[https://github.com/ACTCollaboration/moby2/blob/master/bin/generateFlatfield#L32][this line]]. These gains
-  are normalized again by the mean of this subset of dets which is also 
+  are normalized again by the mean of this subset of dets which is also
   labelled as stable. This process of taking =mean(1/gain)= and normalization
   is repeated for a total of *10 times*... The results of which, after some
   threshold-based cuts become the output atmosphere flatfield.
 
-This is the life story of the gains in =moby2=.
-  
+This is the life story of the gains in =moby2=. To make things less
+(maybe more) confusing, some of these scripts are changed in cutslib,
+in particular, the =collectSeasonCrit= script has been superseded by the
+=collect_crit= module, apart from adding lots of new fields to the pickle
+file, i changed it such that the gain stored in this pickle file is the
+same as what the cuts crit, that is, =calibrateValues= is called before
+collecting. =generateFlatfield= script is now superseded by the
+=get_flatfield= module and the =plot_ff= module, where i manually
+remove the input flatfield to be comparable with the input flatfield.
+
 *** 21. How to pre-process the bias-step measurements such that they match with TODs?
 BS measurements provided by Patty is aranged in ctimes, i will first
 need to match them to TODs. To do this matching for a given season and
@@ -574,7 +582,7 @@ this should be the same as the file-structure used by Patty.
 After re-assuring that the bias-steps files are rsync-ed completely,
 one can then use the module =match_bs_tod= to match them to tods with
 a configuration file like this:
-#+BEGIN_SRC 
+#+BEGIN_SRC
 [pipeline]
 cutparam = cutparams_v0.par
 output_dir = /projects/ACT/yilung/depot/Postprocess/
@@ -595,7 +603,7 @@ can supply it to the cutParams config with something like
    "name": "biasstep"
 }],
 #+end_example
-Substitute the season, array and bs tag accordingly. 
+Substitute the season, array and bs tag accordingly.
 ** Useful links
 - inputs for mapping: https://phy-wiki.princeton.edu/polwiki/pmwiki.php?n=Calibration.InputsForMapping
 - cutparams repo: [[https://github.com/guanyilun/cutparams]]

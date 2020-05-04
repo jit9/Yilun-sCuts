@@ -59,6 +59,7 @@ stare = False
 # by default 20 processes will be allocated to one node.
 tpn=16
 nnode=4
+nomp=4
 jobname = "{{ jobname }}"  # stand for pa5,s17,f090
 runtime = "00:30:00"  # hours
 qos = "short"

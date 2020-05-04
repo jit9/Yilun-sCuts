@@ -73,7 +73,7 @@ class Module:
                 source_scan = self.source_scan.format(**autofill)
                 # generate slurmjob name like p5s18f0 which stands
                 # for pa5 s18 f090
-                jobname = pa[0]+pa[2]+season+freq[:1]
+                jobname = pa[0]+pa[2]+season+freq[:2]
                 # render template
                 res = tpl.render(
                     depot=p.depot.root,
