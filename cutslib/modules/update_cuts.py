@@ -25,6 +25,11 @@ class Module:
         # load tod source list
         source_scans = cpar.get("source_scans")
         obsnames = TODList.from_file(source_scans)
+        # remove existing obs in the db files
+        if op.exists(p.i.db):
+            completed = TODList.from_file(p.i.db)
+            print(f"Remove {len(completed)} completed TODs from the list")
+            obsnames -= completed
         # initialize reportPathologies object to collect results
         report = reportPathologies(p.i.cutparam)
         report.depot_file += f".{p.rank}"
