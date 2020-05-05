@@ -288,15 +288,76 @@ Post-processing
 - select post-processing modules to run with =c-c m=
 - press =F= to run the post-processing pipeline
 - rsync the report to a local machine to view the reports
+*** 9. What's my typical workflow when evaluating cuts?
+Here are what Loic suggested: 1. look for outlying statistics in the
+pathological parameters, if they don't represent a significant portion
+of the data, one can remove them. 2. Look at the cut parameters on the
+array to identify systematic effects. 3. Look at the number of dets
+cut by each crit, usually =norm=, =gain=, and =rms= cut are most
+stringent, if that's not the case it's worth investigating, it could
+mean the crit is applied to stictly. 4. Look at the Uranus calibration
+plot to evaluate the performance of the gain and flatfield. If the scatter
+is about 3-4%, it's very good.
 
-*** 8. How did i generate the lists of tods for preliminary studies?
+Here are what i found informative to do in addition to what's
+above: Load the season stats with =cutslib.SeasonStats=.
+#+BEGIN_SRC python
+from cutslib import SeasonStats
+ss = SeasonStats(tag='pa4_f150_s17_c11_v0', use_theta2=True)
+#+END_SRC
+The option =use_theta2= represents converting the =corr= parameter which
+roughly stands for the cosine angle between a det with the common mode, into
+the angle^2 (theta2). I found this to be a nicer variable to look at. Make a
+histogram of cut parameters with the thresholds (not guidline) shown.
+#+BEGIN_SRC python
+ss.hist()
+#+END_SRC
+Look for signs of thresholds falling in the middle of a very smooth distribution.
+This could be a sign of a threshod being too strict. Look at the pair-wise histogram
+triangular plot with
+#+BEGIN_SRC python
+ss.tri()
+# or with density plot instead of histogram plot
+# ss.tri(density=True)
+#+END_SRC
+This is often useful to show clusters of dets that have different statistics. Look for these
+clusters and inspect them with, for example,
+#+BEGIN_SRC python
+ss.find_matches(ss.gain<0.6, ss.rms<1.5, alone=True)
+#+END_SRC
+This will show you what these dets are in row/col space and if they correlate with pwv, etc.
+If some stats fall out of lower bounds in the low pwv, it could mean the lower bound is not
+set properly. I expect a systematic problem to be pwv independent, and perhaps have a unique
+pattern in row/col space, look for these patterns with the =find_matches= functions. The
+thresholds can be dynamically changed via
+#+BEGIN_SRC python
+ss.update_style({'normLive':{'crit':[200,300000]},'gainLive':{'crit':[0.7, 5]}})
+ss.update_critsel()
+#+END_SRC
+Then i can look at the histograms / tri plots again to see the effects of these new thresholds.
+Another very useful thing to look at is the number of dets cut by each criteria at various pwv.
+This can be plotted with
+#+BEGIN_SRC python
+ss.view_cuts()
+#+END_SRC
+It shows which cut is most stringent at various ranges of pwv. I often
+identify the most stringent cuts at low pwv and ask myself whether
+that's necessarily bad or just very good weather without a good
+atmosphere common mode. If one wants to save some dets at low pwv only,
+one can do something like
+#+BEGIN_SRC python
+ss.find_match(ss.gain<0.6, ss.rms<1.6, ss.pwv<0.6, alone=True)
+ss.sel2hdf(ss.sel, 'recover.hdf')
+#+END_SRC
+Then one can include this hdf to the cut parameters to save these dets.
+*** 10. How did i generate the lists of tods for preliminary studies?
 From s17 onwards, we genenerate a list of 1000 TODs for preliminary studies before running on the full season. To generate the list of tods, i used the binary script =select_tod_adv= in the bin folder. It takes in a parameter file such as =tod.par= in the template folder. For example, in the bin folder,
 #+BEGIN_SRC bash
 ./select_tod_adv ../templates/tod.par
 #+END_SRC
 The parameters in =tod.par= is explained in the commends in =select_tod_adv= script.
 
-*** 9. How did i prepare the cuts h5 file for machine learning studies?
+*** 11. How did i prepare the cuts h5 file for machine learning studies?
 After the main cuts pipeline and post-processing pipeline finish, run
 the =generate_h5= post-processing module to create the h5 file for
 =mlpipe= to use.  The model generated from =mlpipe= can in turn be
@@ -309,13 +370,13 @@ etc. The modules required to do this is written in
 =cutslib.thirdparty= and the binary code that executes it is named
 =update_cuts= in bin folder.
 
-*** 10. What's the main changes in the base-line cuts in s17 onwards compared with before?
+*** 12. What's the main changes in the base-line cuts in s17 onwards compared with before?
 1. calibration is purely based on planet flatfield and bias-step responsivity. No atmosphere gain is applied anymore. This is achieved by including the freq in the noAtmFreq in the cutParams file.
 2. detectors without valid calibrations are no longer included. As we now calibrate by planet flatfield and bias-step responsivity, dets without flatfield or responsivity cannot be included reliably.
 3. scan chunk level cuts are turned off by default as we no longer expect our detectors to behave drastically different in the duration of 10 mins.
 4. pre-selection is no longer used to generate the cuts but instead used to calculate the common modes. The cuts are purely determined by the cuts thresholds, modulos manually exclusion.
 
-*** 11. How does release work
+*** 13. How does release work
 Before i forget, this is how to generate a cut release. First go to the root cutparam directory. Suppose i want to release the latest cuts for s17, simply run
 #+BEGIN_SRC bash
 cuts release tags *s17*
@@ -357,7 +418,7 @@ the =create_todinfo= module which generates the enki compatible
 the =cutparam= repo with the same tag to keep track of the parameters
 used in the given tag.
 
-*** 12. How to run final processing pipeline
+*** 14. How to run final processing pipeline
 What i call final processing pipeline is practically the same as the
 normal post-processing pipeline except that it doesn't depend on a
 specific cut version. It is supposed to depend on all cuts version. An
@@ -382,14 +443,14 @@ obs_details_noncmb = uranus
 The only difference is that it doesn't depend on the cutparams, except
 that everything should be the same as normal post-processing
 pipelines.
-*** 13. How to setup environment for enki
+*** 15. How to setup environment for enki
 To setup environment to run enki or enki related modules do
 #+BEGIN_SRC
 module load enki
 module load so_stack
 #+END_SRC
 on tiger.
-*** 14. What are different types of modules?
+*** 16. What are different types of modules?
 At the moment, the post-processing pipeline (=cutspipe=) supports
 different types of modules. By default the module is an =internal=
 type which means it will be loaded from =cutslib.modules= by
@@ -419,7 +480,7 @@ command = ls ${dir}
 Note that we have enabled and used the =ExtendedInterpolation= syntax
 for variable substitution. Refer to =ConfigParser= for more
 documentation on how to use this.
-*** 15. How to use =cutspipe= modules with mpi?
+*** 17. How to use =cutspipe= modules with mpi?
 The post-processing pipeline =cutspipe= is made to support mpi. In
 order for a module to make use of mpi, it needs to be supported in the
 module explicitly. The relevant dependencies are injected through the
@@ -430,7 +491,7 @@ program to pass mpi control to the module instead of forcing it to run
 with =rank=0= for other modules that do not support mpi. See
 =cutslib.modules.collect_crit= module for an example of how mpi is
 supported.
-*** 16. How do i remove tod runs specific errors from running next time?
+*** 18. How do i remove tod runs specific errors from running next time?
 Sometimes errors are unavoidable. For example, preselection errors are unavoidable
 sometimes and this happens at the very end of the pipeline so if we know for sure a
 tod is going to fail pre-selection, we shoudn't have spent long time to run the previous
@@ -441,7 +502,7 @@ in the reject_depot list.
 #+BEGIN_SRC bash
 cuts run errors_tod cutparams_v0.par presel > skip_tods.txt
 #+END_SRC
-*** 17. How to add or recover detector cuts for different TODs?
+*** 19. How to add or recover detector cuts for different TODs?
 In the cutParams file that is an option called =include_cuts=, which belongs to
 =pathologyParams= section and look like
 #+BEGIN_SRC python
@@ -464,7 +525,7 @@ in low pwv TODs. The file format supported is an hdf file that is
 generated with the name of tod as key and a boolean mask representing
 dets selection. This file can be easily generated using =cutslib.season.SeasonStats=
 object.
-*** 18. Quickly update crit or dets cuts without rerunning =findPathologies=
+*** 20. Quickly update crit or dets cuts without rerunning =findPathologies=
 I have mentioned using =cuts submit update_crit= to update the cuts criteria
 without rerunning the entire pathology finding pipeline. This is useful when
 one wants to submit jobs to slurm and don't mind the queuing process, if a quick
@@ -483,7 +544,7 @@ to launch a debug node with 40 tasks required
 #+BEGIN_SRC
 salloc -pdebug --nodes 1 --ntasks-per-node=40 --time=1:00:00
 #+END_SRC
-*** 19. How to setup enki for a given cut release?
+*** 21. How to setup enki for a given cut release?
 Here is what i do:
 
 - create an =.enkirc= in the home directory with, for example,
@@ -554,7 +615,7 @@ command = srun -n ${ntasks} enki tod2map2 -S sky:${area} "${sel}" ${mapdata}/${t
 #+END_SRC
 more relevant mapping script written by Adri that's relevant for cuts
 can be found in cuts_validation repo linked in the useful link section.
-*** 20. Why is gain calculation in moby2 so confusing?
+*** 22. Why is gain calculation in moby2 so confusing?
 The manipulation of gains in moby2 / loic's codes are beyond
 confusing. I kept getting confused on the calculation and every time
 needing to spend lots of time recapping what's done. Let me write down
@@ -608,7 +669,7 @@ collecting. =generateFlatfield= script is now superseded by the
 =get_flatfield= module and the =plot_ff= module, where i manually
 remove the input flatfield to be comparable with the input flatfield.
 
-*** 21. How to pre-process the bias-step measurements such that they match with TODs?
+*** 23. How to pre-process the bias-step measurements such that they match with TODs?
 BS measurements provided by Patty is aranged in ctimes, i will first
 need to match them to TODs. To do this matching for a given season and
 array, first make sure that the bias-step files from Patty is rsync-ed
