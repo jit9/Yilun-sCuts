@@ -4,7 +4,7 @@ import os, os.path as op
 import moby2
 import pickle, numpy as np, sys, os
 from moby2.util.database import TODList
-from cutslib.pathologies_tools import fix_tod_length, get_pwv, get_pathologies
+from cutslib.pathologies_tools import get_pathologies
 from cutslib import Catalog
 from cutslib.pathologies import Pathologies
 from cutslib import util
@@ -82,6 +82,7 @@ class Module:
                 res['resp_sel'].append(re_sel)
                 res['cal'].append(resp*pa.calData['ff'])
                 res['ctimes'].append(tod.info.ctime)
+                res['pwv'].append(pwv)
                 res['alt'].append(np.mean(tod.alt))
                 res['tod_sel'].append(True)
                 # get final cuts
@@ -101,7 +102,7 @@ class Module:
         data["cal"] = util.allgatherv(res['cal'], p.comm).T
         data["ctime"] = util.allgatherv(res['ctimes'], p.comm)
         data["alt"] = util.allgatherv(res['alt'], p.comm)
-        data["pwv"] = util.allgatherv(get_pwv(np.array(res['ctimes'])),p.comm)
+        data["pwv"] = util.allgatherv(res['ctimes'],p.comm)
         data['tod_sel'] = util.allgatherv(res['tod_sel'],p.comm)
         for k in all_keys:
             data[k] = util.allgatherv(np.array(res[k]), p.comm).T
@@ -124,5 +125,6 @@ class Module:
             outfile = p.o.pickle_file
             print("Saving data: %s" % outfile)
             with open(outfile, 'wb') as f:
-                p = pickle.Pickler(f,2)
-                p.dump(data)
+                pkl = pickle.Pickler(f,2)
+                pkl.dump(data)
+        p.comm.Barrier()
