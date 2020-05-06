@@ -102,7 +102,7 @@ class Module:
         data["cal"] = util.allgatherv(res['cal'], p.comm).T
         data["ctime"] = util.allgatherv(res['ctimes'], p.comm)
         data["alt"] = util.allgatherv(res['alt'], p.comm)
-        data["pwv"] = util.allgatherv(res['ctimes'],p.comm)
+        data["pwv"] = util.allgatherv(res['pwv'], p.comm)
         data['tod_sel'] = util.allgatherv(res['tod_sel'],p.comm)
         for k in all_keys:
             data[k] = util.allgatherv(np.array(res[k]), p.comm).T

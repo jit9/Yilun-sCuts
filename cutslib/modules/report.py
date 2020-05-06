@@ -32,8 +32,14 @@ cuts run, so it is different than the number above.
   | {mld:.1f} | {ndets}    | {ldfrac:.1f}\% | {tfrac:.1f}\% |
   |-----------+------------+----------------+---------------|
 
-The fraction of data with valid bias-step is shown in the figure
-below
+The number of detectors with valid bias-step measurement is shown in
+the figure below
+
+[[{resp_frac}]]
+
+Below is a histogram of the PWV of the TODs
+
+[[{hist_pwv}]]
 
 - Cuts parameters:
 {cuts_summary}
@@ -41,16 +47,36 @@ below
 - Uncut vs. loading
 #+ATTR_LATEX: :width 16cm
 [[{ld_vs_loading}]]
+
+- live dets
+#+ATTR_LATEX: :width 16cm
+[[{view_sel}]]
+
 - Histogram:
 #+ATTR_LATEX: :width 16cm
 [[{cuts_threshold}]]
 
 Note that the vertical lines on the histograms are for reference
-only, they are not the same as the cuts applied on them.
+only, they are not the same as the cuts applied on them. The thresholds
+are shown in the plots below
+
+#+ATTR_LATEX: :width 16cm
+[[{hist_cuts}]]
+
+Triangular plot (if produced it will show up below)
+
+#+ATTR_LATEX: :width 16cm
+[[{tri}]]
+
 - Killed by:
 Number of detectors that passes each criteria
 
 [[{killed_by_plot}]]
+
+Number of dets that passes each criteria at various pwv
+
+[[{view_cuts}]]
+
 - Live fraction:
 Fraction of the time that a detector is uncut
 
@@ -69,7 +95,7 @@ Fraction of the time that a detector is uncut
 The plot on the left (input) refers to the input flatfield for the
 cuts pipeline. For this case it refers to the planet flatfield. On
 the right is the output flatfield estimated from the atmosphere gain.
-* Array plots
+* Pathologies
 #+BEGIN_center
 #+ATTR_LaTeX: :height 0.45\\textwidth :center
 [[{gain_plot}]]
@@ -125,7 +151,12 @@ class Module:
         #############
         # resp hist #
         #############
-        # res['resp_hist'] = op.join(p.o.cal.resp, "resp_hist.png")
+        res['resp_frac'] = op.join(p.o.cal.resp, "resp_frac.png")
+
+        ############
+        # pwv hist #
+        ############
+        res['hist_pwv'] = op.join(p.o.root, 'pwv_hist.png')
 
         ####################
         # detector numbers #
@@ -177,11 +208,33 @@ class Module:
         #################
         res['ld_vs_loading'] = op.join(p.o.root, 'ld_vs_loading.png')
 
+        ############
+        # view sel #
+        ############
+        res['view_sel'] = op.join(p.o.patho.root, 'view_sel.png')
+
+        #############
+        # view cuts #
+        #############
+        res['view_cuts'] = op.join(p.o.patho.root, 'view_cuts.png')
+
         #######################
         # cut threshold plots #
         #######################
         cuts_threshold = glob.glob(op.join(p.o.patho.root, "seasoncrit_hist*.png"))[0]
         res['cuts_threshold'] = cuts_threshold
+
+        ########################################
+        # cut threshold plot (with thresholds) #
+        ########################################
+        res['hist_cuts'] = op.join(p.o.patho.root, 'hist_with_crits.png')
+
+        ###################
+        # triangular plot #
+        ###################
+        tri = op.join(p.o.patho.root, 'tri.png')
+        if op.exists(tri):
+            res['tri'] = tri
 
         ##################
         # killed_by_plot #

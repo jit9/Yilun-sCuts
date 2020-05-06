@@ -44,5 +44,7 @@ class Module:
                     if op.exists(planet_path):
                         planet_cuts = depot.read_object(moby2.TODCuts, tag=tag_planet, tod=tod)
                         cuts.merge_tod_cuts(planet_cuts)
-                    depot.write_object(cuts, tag=tag_cmb, force=True, tod=tod, make_dirs=True)
+                    try:
+                        depot.write_object(cuts, tag=tag_cmb, force=True, tod=tod, make_dirs=True)
+                    except: continue
         p.comm.Barrier()
