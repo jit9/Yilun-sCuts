@@ -21,6 +21,7 @@ class Module:
                          calibrate=self.calibrate)
         # produce resp hist
         ndet_wresp = np.sum(ss.stats['resp_sel']*ss.stats['tes_sel'][:,None],axis=0)
+        plt.figure(figsize=(8,6))
         plt.plot(np.sort(ndet_wresp),'k-')
         plt.xlabel('TOD')
         plt.ylabel('# of dets with resp')

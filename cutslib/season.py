@@ -316,7 +316,7 @@ class SeasonStats:
             # smooth remain
             remain = savgol_filter(remain, window_length=window, polyorder=2)
             plt.plot(self.pwv[idx], remain, '-', markersize=1, label=f, **kwargs)
-            plt.xlim(left=0)
+            plt.xlim([0,4])
             plt.xticks(np.linspace(0, 4, 17))
             plt.xlabel('Loading (mm)')
             plt.ylabel('# of remaining dets')
@@ -324,14 +324,14 @@ class SeasonStats:
 
     def hist_pwv(self, figsize=(8,6), **kwargs):
         """View histogram of PWV in the season"""
-        plt.figure(figsize=figsize)
+        fig, ax = plt.subplots(1,1,figsize=figsize)
         pwv = self.pwv[self.pwv>0]
-        opts = {'rwidth': 0.75, 'bins': 50}
+        opts = {'rwidth': 0.75, 'bins': np.linspace(0,4)}
         opts.update(kwargs)
-        plt.hist(pwv, **opts);
-        plt.xlim([0,3])
-        plt.xlabel('PWV/sin(alt) (mm)')
-        plt.ylabel('# of TODs')
+        ax.hist(pwv, **opts);
+        ax.set_xlim([0,3])
+        ax.set_xlabel('PWV/sin(alt) (mm)')
+        ax.set_ylabel('# of TODs')
 
     def planet_peaks(self, c=None, ylim=[0,1e-10]):
         """View the planet peak measurements as function of optical loading"""
