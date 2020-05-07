@@ -8,8 +8,9 @@ digested by the mapping crew
 
 def tags(*tags):
     """get release for input tags"""
-    import os.path as op, glob, datetime, os
+    import os.path as op, glob, datetime, os, shutil
     import moby2
+    from cutslib import Depot
     release = {}
     # add meta information
     # date
@@ -19,7 +20,8 @@ def tags(*tags):
     release['tags'] = {}
     release['author'] = prompt("Author", "Yilun Guan")
     release['depot'] = os.environ.get("CUTS_DEPOT")
-    # for each tag, find the latest cuts version
+    # for each tag, find the latest cuts version and relevant tags
+    reports = []
     for tag in tags:
         # find latest version
         cutparams = glob.glob(op.join(tag, 'cutparams_v*'))
@@ -37,14 +39,28 @@ def tags(*tags):
             'tag_source': cpar.get('tag_source'),
             'tag_cmb': cpar.get('tag_cmb'),
         }
+        # find report
+        tag_out = cpar.get('tag_out')
+        report = Depot().get_deep(('Postprocess', tag_out,'report', f'{tag_out}.pdf'))
+        reports.append(report)
     import json
     print(json.dumps(release, indent=2))
-    outfile_default = op.join(release['depot'],
-                              f"release_{release['version']}.txt")
-    outfile = prompt("Write to", outfile_default)
+    # release dir
+    release_dir = op.join(release['depot'], f"release_{release['version']}")
+    # create it if doesn't exists
+    outdir = prompt("Write to", release_dir)
+    if not op.exists(outdir): os.makedirs(outdir)
+    # write release file
+    outfile = op.join(outdir, 'release.txt')
     with open(outfile, "w") as f:
         f.write(json.dumps(release, indent=2))
     print("Release written: %s" % outfile)
+    # copy reports to the release dir
+    for report in reports:
+        if not op.exists(report): continue
+        outfile = op.join(outdir, op.basename(report))
+        shutil.copyfile(report, outfile)
+        print("Report written: %s" % outfile)
 
 
 #####################
