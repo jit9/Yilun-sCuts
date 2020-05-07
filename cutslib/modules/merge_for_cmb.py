@@ -9,9 +9,10 @@ import os.path as op
 
 class Module:
     def __init__(self, config):
-        pass
+        self.force = config.getboolean('force', False)
 
     def run(self, p):
+        force = self.force
         # get basic tags
         cpar = MobyDict.from_file(p.i.cutparam)
         tag_cuts = cpar.get('tag_out')
@@ -36,7 +37,7 @@ class Module:
                 tod = moby2.scripting.get_tod(params_loadtod)
             except: continue
             cmb_path = depot.get_full_path(moby2.TODCuts, tag=tag_cmb, tod=tod)
-            if not op.exists(cmb_path):
+            if not op.exists(cmb_path) or force:
                 cuts_path = depot.get_full_path(moby2.TODCuts, tag=tag_cuts, tod=tod)
                 planet_path = depot.get_full_path(moby2.TODCuts, tag=tag_planet, tod=tod)
                 if op.exists(cuts_path):
