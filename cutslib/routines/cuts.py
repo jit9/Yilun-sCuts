@@ -156,6 +156,7 @@ class CutPlanets(Routine):
         self._shift_params = params.get('mask_shift_generator', None)
         self._depot_path = params.get('depot', None)
         self._write_depot = params.get('write_depot', False)
+        self._force_planet = params.get('force_planet', False)
 
     def initialize(self):
         self._depot = moby2.util.Depot(self._depot_path)
@@ -170,7 +171,7 @@ class CutPlanets(Routine):
                 moby2.TODCuts, tag=self._tag_planet, tod=tod))
 
         # if planetCuts exist load it into variable pos_cuts_planets
-        if planetResult:
+        if planetResult and not self._force_planet:
             self.logger.info("Loading time stream cuts (%s)" % self._tag_planet)
             pos_cuts_planets = self._depot.read_object(
                 moby2.TODCuts, tag=self._tag_planet, tod=tod)

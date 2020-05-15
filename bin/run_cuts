@@ -54,8 +54,10 @@ loop = TODLoop()
 loop.add_tod_list(cutparam.get('source_scans'))
 outdir = cutparam.get('outdir')
 loop.set_output_dir(outdir)
-loop.add_done_list(os.path.join(outdir, cutparam.get('report')+".db"))
-loop.add_reject_list(cutparam.get('reject_depot'))
+if cutparam.get('skipDone', True):
+    loop.add_done_list(os.path.join(outdir, cutparam.get('report')+".db"))
+if cutparam.get('reject_depot'):
+    loop.add_reject_list(cutparam.get('reject_depot'))
 
 # find rebias time
 config = {
@@ -114,6 +116,7 @@ config = {
     'mask_params': planet_mask_params,
     'mask_shift_generator': planet_shift_params,
     'write_depot': True,
+    'force_planet': cutparam.get('forcePlanet', False)
 }
 loop.add_routine(CutPlanets(**config))
 
