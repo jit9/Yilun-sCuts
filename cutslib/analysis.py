@@ -1,6 +1,7 @@
 """Grab some of the codes written for SO"""
 import scipy, numpy as np
 from moby2.tod.cuts import CutsVector
+import scipy.stats as stat
 
 
 def analyze_scan(tod, qlim=1, vlim=0.01, n_smooth=0):
@@ -110,7 +111,7 @@ def analyze_common_mode(fdata, nsamps=1, preselector=None):
     cm_params['corr'] = corr
     return cm_params
 
-def analyze_detector_noise(fdata, preselector=None, n_deproject=0):
+def analyze_detector_noise(fdata, preselector=None, n_deproject=0, nsamps=1):
     """Perform a simple analysis of noise property of dets in a given
     frequency range. In particular, we look for noise level (rms) and
     deviation from gaussian statistics (skew, kurt). Results will be
@@ -125,6 +126,7 @@ def analyze_detector_noise(fdata, preselector=None, n_deproject=0):
       estimate noise properties
 
     """
+    noises = {}
     # find det-to-det covariance and deproject first few common modes
     # before estimating noise properties
     c = fdata @ fdata.T.conj()
@@ -142,21 +144,22 @@ def analyze_detector_noise(fdata, preselector=None, n_deproject=0):
         # deproject these modes
         coeff = modes @ fdata.T.conj()
         fdata -= coeff.T.conj() @ modes
+        noises['s2'] = s2
     # compute the rms for the detectors
     # use: var(real space) * Nsamps = var(freq space)
-    rms = np.sqrt(np.var(fdata, axis=1)/tod.samps.count)
+    rms = np.sqrt(np.var(fdata, axis=1)/nsamps)
     # compute higher order statistics back in time domain
     tdata = fmodes_to_tmodes(fdata)
     skew = stat.skewtest(tdata,axis=1)
     kurt = stat.kurtosistest(tdata,axis=1)
-    noises = {}
+
     noises['c'] = c
     noises['rms'] = rms
-    noises['s2'] = s2
-    noises['kurt'] = kurt.statistics
+    noises['kurt'] = kurt[0]
     noises['kurt_pval'] = kurt.pvalue
-    noises['skew'] = skew.statistics
+    noises['skew'] = skew[0]
     noises['skew_pval'] = skew.pvalue
+    return noises
 
 def deproject_modes(fdata, n_modes=0, preselector=None, inplace=False):
     c = fdata @ fdata.T.conj()
@@ -202,7 +205,7 @@ def fmodes_to_tmodes(fmodes, pad_left=1, pad_right=0, nsamps=1):
         pad_right += 1
     with_pad = np.pad(fmodes,((0,0),(pad_left,pad_right)))
     normalization = np.sqrt(2*fmodes.shape[-1]/nsamps)
-    modes = np.fft.irfft(fcm) * normalization
+    modes = np.fft.irfft(with_pad) * normalization
     return modes
 
 def corrmat(fmodes):
