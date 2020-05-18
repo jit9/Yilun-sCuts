@@ -57,6 +57,7 @@ class CutSources(Routine):
         self._depot_path = params.get('depot', None)
         self._write_depot = params.get('write_depot', False)
         self._hdf_cuts = params.get("hdf_source_cuts", None)
+        self._force = params.get("force_source", False)
 
     def initialize(self):
         # get the depot
@@ -90,7 +91,7 @@ class CutSources(Routine):
                 sourceResult = True
 
         # if cuts exist, load it now
-        if sourceResult:
+        if sourceResult and not self._force:
             self.logger.info("Loading time stream cuts (%s)" % self._tag_source)
             # load source cut
             source_cuts = self._depot.read_object(
@@ -105,18 +106,17 @@ class CutSources(Routine):
 
             # supply focal plane information to tod
             tod.fplane = products.get_focal_plane(self._pointing_par, tod.info)
-            pointint_shift = (0,0)
+            pointing_shift = (0,0)
             mask_params = self._mask_params
             shift_params = self._shift_params
 
             # check if shift is needed
             if shift_params is not None:
-                pointint_shift = products.get_pointing_offset(
+                pointing_shift = products.get_pointing_offset(
                     shift_params, tod=tod, source_offset=True)
-
-            # find sources that fall in the given TOD
-            matched_sources = moby2.ephem.get_sources_in_patch(
-                tod=tod, source_list=self._source_list)
+            mask_params['offset'] = pointing_shift
+            matched_sources = moby2.ephem.get_sources_in_tod(
+                tod=tod, source_list=self._source_list, pointing_shift=pointing_shift)
             self.logger.info("matched sources: %s" % matched_sources)
 
             # create a placeholder cut object to store our source cuts
