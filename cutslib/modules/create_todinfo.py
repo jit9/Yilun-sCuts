@@ -10,8 +10,12 @@ from cutslib.util import tag_to_afsv, to_scode, to_pa
 class Module:
     def __init__(self, config):
         self.cut_release = config.get("cut_release", None)
-        self.od_cmb = config.get("obs_details_cmb").split()
-        self.od_noncmb = config.get("obs_details_noncmb").split()
+        self.od_cmb = config.get("obs_details_cmb", None)
+        if self.od_cmb: self.od_cmb = self.od_cmb.split()
+        else: self.od_cmb = []
+        self.od_noncmb = config.get("obs_details_noncmb")
+        if self.od_noncmb: self.od_noncmb = self.od_noncmb.split()
+        else: self.od_noncmb = []
         self.outfile = config.get("outfile", "todinfo.txt")
 
     def run(self, p):
@@ -20,7 +24,7 @@ class Module:
         od_noncmb = self.od_noncmb
         outfile = self.outfile
         # load cut release
-        cr_file = p.depot.get_deep((f'release_{cr}.txt',))
+        cr_file = p.depot.get_deep((f'release_{cr}','release.txt'))
         with open(cr_file, "r") as f:
             release = json.loads(f.read())
         # load tags

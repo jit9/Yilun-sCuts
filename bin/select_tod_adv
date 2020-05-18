@@ -49,6 +49,7 @@ output_dir = params.get("output_dir", ".")
 
 # load catalog of tods and convert to pandas dataframe
 catalog = Catalog().data
+import pdb;pdb.set_trace()
 
 # select tods based on the specified criteria
 # 1st iteration
@@ -181,8 +182,7 @@ if 0:
 if "calibration" in list(params.keys()):
     planet = params.get("calibration")
     print("include %s calibration tods..." % planet)
-    catalog = pd.DataFrame.from_records(npcat)
-    catalog.index = pd.to_datetime(catalog.date)
+    catalog = Catalog().data
     # select tods based on the specified criteria
     # 1st iteration
     sel = np.ones(catalog.shape[0], dtype=bool)
