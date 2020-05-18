@@ -2,11 +2,12 @@ from __future__ import print_function
 from __future__ import absolute_import
 from past.builtins import basestring
 
-import os
+import os, os.path as op
 import numpy as np
 import h5py
 
 import moby2
+from moby2.tod.cuts import TODCuts
 from moby2.scripting import products
 from moby2.analysis import hwp
 
@@ -226,6 +227,42 @@ class CutPlanets(Routine):
         # fill planet cuts into tod
         moby2.tod.fill_cuts(tod, pos_cuts_planets, no_noise=self._no_noise)
 
+        # pass the processed tod back to data store
+        store.set(self.outputs.get('tod'), tod)
+
+
+class FillCuts(Routine):
+    def __init__(self, **params):
+        """A routine that fill cuts from a given directory or a tag
+
+        Parameters
+        ----------
+        cuts_dir: if cuts are stored in a given directory
+        """
+        Routine.__init__(self)
+        # retrieve the inputs and outputs keys from data store
+        self.inputs = params.get('inputs', None)
+        self.outputs = params.get('outputs', None)
+
+        # retrieve other parameters
+        self.cuts_dir = params.get('cuts_dir', None)
+        self.no_noise = params.get('no_noise', True)
+
+    def execute(self, store):
+        # retrieve tod
+        tod = store.get(self.inputs.get('tod'))
+
+        # load cuts from a given directory
+        if self.cuts_dir:
+            fname = self.get_name() + '.cuts'
+            infile = op.join(self.cuts_dir, fname)
+        else:  # to be implemented
+            raise NotImplementedError
+        mask_cuts = TODCuts.from_actpol_cuts_file(infile)
+        # fill the source cuts to the tod
+        cuts = TODCuts.for_tod(tod, assign=False)
+        cuts.merge_tod_cuts(mask_cuts)
+        moby2.tod.fill_cuts(tod, cuts, no_noise=self.no_noise)
         # pass the processed tod back to data store
         store.set(self.outputs.get('tod'), tod)
 
