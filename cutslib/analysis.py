@@ -1,6 +1,5 @@
 """Grab some of the codes written for SO"""
 import scipy, numpy as np
-from moby2.tod.cuts import CutsVector
 import scipy.stats as stat
 
 
@@ -18,10 +17,12 @@ def analyze_scan(tod, qlim=1, vlim=0.01, n_smooth=0):
     scan_params (dict)
 
     """
+    from moby2.tod.cuts import CutsVector
+
     # first: find useful scan parameters
     scan_params = {}
     # get turnaround
-    az = tod.az
+    az = np.unwrap(tod.az)
     lo, hi = np.percentile(az, [qlim,100-qlim*1])
     scan_params['az_lo'] = lo
     scan_params['az_hi'] = hi
@@ -164,6 +165,7 @@ def analyze_detector_noise(fdata, preselector=None, n_deproject=0, nsamps=1):
 def deproject_modes(fdata, n_modes=0, preselector=None, inplace=False):
     c = fdata @ fdata.T.conj()
     presel = preselect_dets(c, preselector)
+    to_deproj = None
     # deproject `n_deproject` common modes from data
     if n_modes > 0:
         # svd to covariance matrix gives U S^2 V*
