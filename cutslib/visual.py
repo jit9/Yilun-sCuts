@@ -332,21 +332,57 @@ class freqSpaceWaterfall( object ):
         if show: plt.show()
         else: plt.close()
 
-    def plot_corr(self, selection, fmin, fmax, n_deproj=0, plot=True):
+    def plot_corr(self, selection, fmin, fmax, n_deproj=0, plot=True, colorbar=True,
+                  rd=False, title="Correlation Matrix", **kwargs):
         from . import analysis as ana
         freq = self.matfreqs
         fmask = (freq > fmin) * (freq < fmax)
-        fmodes = self.mat[np.ix_(selection, fmask)]
-        fmodes = ana.deproject_modes(fmodes, n_modes=n_deproj)
+        if selection is None: selection=np.ones(np.shape(self.mat)[0], dtype='bool')
+        # get right ordering
+        if rd: order = ['rows','cols']
+        else: order = ['cols','rows']
+        idx = np.argsort(self.sort[selection], order=order)
+        # get fmodes of interests
+        fmodes = self.mat[np.ix_(selection, fmask)][idx,:]
+        fmodes, _ = ana.deproject_modes(fmodes, n_modes=n_deproj)
         cov = ana.corrmat(fmodes)
-        if plot:
-            plt.figure(figsize=(10,10))
-            plt.imshow(cov, cmap='jet', origin='lower')
-            plt.colorbar(shrink=0.8)
-            plt.xlabel('dets')
-            plt.ylabel('dets')
-            plt.title(f'noise cov [{fmin}Hz, {fmax}Hz] deproj={n_deproj}')
+        fig, ax = plt.subplots(1,1,figsize=(10,10.5))
+        opts = {'cmap':'jet'}
+        opts.update(kwargs)
+        m = ax.imshow(cov, **opts)
+        if colorbar: plt.colorbar(m, ax=ax, shrink=0.8).set_label("Correlation")
+        if rd: title += " (row dominance)"
+        else: title += " (col dominance)"
+        ax.set_title(title + f'\n[{fmin}Hz, {fmax}Hz] deproj={n_deproj}')
+        if rd: axv = self.rows[selection][idx]
+        else: axv = self.cols[selection][idx]
+        ticks = []; ticklabels = []
+        for i in range(np.max(axv)):
+            dets = np.where(axv==i)[0]
+            if len(dets) == 0: continue
+            ticks.append(int(np.median(dets)))
+            ticklabels.append(i)
+            ax.set_xticks(ticks)
+            ax.set_xticklabels(ticklabels)
+            ax.set_yticks(ticks)
+            ax.set_yticklabels(ticklabels)
+        ax.xaxis.set_ticks_position("bottom")
+        if rd: ax.set_xlabel('Row'); ax.set_ylabel("Row")
+        else: ax.set_xlabel('Col'); ax.set_ylabel("Col")
         return cov
+
+    def loglog(self, selection=None, fmin=None, fmax=None, vmin=None, vmax=None, **kwargs):
+        freq = self.matfreqs
+        fmask = (freq > fmin) * (freq < fmax)
+        if selection is None: selection=np.ones(np.shape(self.mat)[0], dtype='bool')
+        plt.figure(figsize=(8,6))
+        plt.loglog(freq[fmask], self.mat[np.ix_(selection, fmask)].T, **kwargs)
+        plt.xlabel("Freq (Hz)")
+        plt.ylabel("FFT power")
+        ylims = {}
+        if vmin: ylims.update({'bottom':vmin})
+        if vmax: ylims.update({'top':vmax})
+        if ylims: plt.ylim(**ylims)
 
 
 class timeSpaceWaterfall( object ):
@@ -463,6 +499,43 @@ class timeSpaceWaterfall( object ):
         if title is not None: plt.title(title)
         if filename is not None: plt.savefig(filename)
         if not(show): plt.clf()
+
+    def plot_cov(self, selection=None, colorbar=True, normalize=False,
+                 rd=False, title="Covariance", **kwargs):
+        if selection is None: selection=np.ones(np.shape(self.mat)[0], dtype='bool')
+        # get right ordering
+        if rd: order = ['rows','cols']
+        else: order = ['cols','rows']
+        idx = np.argsort(self.sort[selection], order=order)
+        # calculate covariance matrix
+        if normalize: cov = np.corrcoef(self.mat[selection][idx])
+        else: cov = np.cov(self.mat[selection][idx])
+        # get style right
+        opt = {'cmap': 'jet'}
+        opt.update(kwargs)
+        fig, ax = plt.subplots(1,1,figsize=(10.5,10))
+        m = ax.matshow(cov, **opt)
+        if rd: title += " (row dominance)"
+        else: title += " (col dominance)"
+        ax.set_title(title)
+        if colorbar: plt.colorbar(m, ax=ax, shrink=0.8).set_label("Covariance")
+        # get ticks label right
+        if rd: axv = self.rows[selection][idx]
+        else: axv = self.cols[selection][idx]
+        ticks = []; ticklabels = []
+        for i in range(np.max(axv)):
+            dets = np.where(axv==i)[0]
+            if len(dets) == 0: continue
+            ticks.append(int(np.median(dets)))
+            ticklabels.append(i)
+            ax.set_xticks(ticks)
+            ax.set_xticklabels(ticklabels)
+            ax.set_yticks(ticks)
+            ax.set_yticklabels(ticklabels)
+        ax.xaxis.set_ticks_position("bottom")
+        if rd: ax.set_xlabel('Row'); ax.set_ylabel("Row")
+        else: ax.set_xlabel('Col'); ax.set_ylabel("Col")
+        return ax
 
 
 class scanWaterfall( object ):
