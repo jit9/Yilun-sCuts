@@ -6,8 +6,8 @@ import numpy as np
 
 import moby2
 from moby2.scripting import products
-from todloop import Routine
 
+from cutslib.todloop import Routine
 from cutslib.tools import *
 
 

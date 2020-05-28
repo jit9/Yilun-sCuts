@@ -17,10 +17,6 @@ pip install -e .
 Most of the dependency libraries should automatically install, with a few
 exceptions that require manual installation
 - =moby2=
-- =todloop=:
-  #+BEGIN_SRC
-  pip install git+https://github.com/guanyilun/todloop
-  #+END_SRC
 
 ** Recipes
 Located in =cuts.recipes=. Notable mentions (such that i don't forget

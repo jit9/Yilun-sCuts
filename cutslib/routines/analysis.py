@@ -9,10 +9,9 @@ import scipy.stats.mstats as ms
 from scipy import stats as stat
 from scipy.cluster.vq import kmeans2
 import logging
-
 import moby2
-from todloop import Routine
 
+from cutslib.todloop import Routine
 from cutslib.tools import *
 
 

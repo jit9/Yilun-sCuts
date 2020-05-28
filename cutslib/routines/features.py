@@ -10,7 +10,7 @@ from scipy import signal
 import numpy as np
 from scipy.fftpack import fft
 
-from todloop import Routine
+from cutslib.todloop import Routine
 from cutslib.tools import nextregular
 
 

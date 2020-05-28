@@ -7,14 +7,12 @@ import numpy as np
 import h5py
 
 import moby2
-from moby2.tod.cuts import TODCuts
+from moby2.tod.cuts import TODCuts, CutsVector
 from moby2.scripting import products
 from moby2.analysis import hwp
 
-from todloop import Routine
-from profilehooks import profile
-
-from cutslib import pathologies
+from cutslib.todloop import Routine
+from cutslib import pathologies, analysis as ana
 from cutslib.tools import *
 
 
@@ -44,10 +42,6 @@ class CutSources(Routine):
     def __init__(self, **params):
         """A routine that cuts the point sources"""
         Routine.__init__(self)
-        # retrieve the inputs and outputs keys from data store
-        self.inputs = params.get('inputs', None)
-        self.outputs = params.get('outputs', None)
-
         # retrieve other parameters
         self._tag_source = params.get('tag_source', None)
         self._source_list = params.get('source_list', None)
@@ -148,8 +142,6 @@ class CutPlanets(Routine):
     def __init__(self, **params):
         """A routine that perform the planet cuts"""
         Routine.__init__(self)
-        self.inputs = params.get('inputs', None)
-        self.outputs = params.get('outputs', None)
         self._no_noise = params.get('no_noise', True)
         self._tag_planet = params.get('tag_planet', None)
         self._pointing_par = params.get('pointing_par', None)
@@ -240,10 +232,6 @@ class FillCuts(Routine):
         cuts_dir: if cuts are stored in a given directory
         """
         Routine.__init__(self)
-        # retrieve the inputs and outputs keys from data store
-        self.inputs = params.get('inputs', None)
-        self.outputs = params.get('outputs', None)
-
         # retrieve other parameters
         self.cuts_dir = params.get('cuts_dir', None)
         self.no_noise = params.get('no_noise', True)
@@ -267,12 +255,43 @@ class FillCuts(Routine):
         store.set(self.outputs.get('tod'), tod)
 
 
+class CutAz(Routine):
+    def __init__(self, **params):
+        """A routine that fill cuts from a given directory or a tag
+
+        Parameters
+        ----------
+        cuts_dir: if cuts are stored in a given directory
+        """
+        Routine.__init__(self)
+        self.tag = params.get('tag_az')
+        self.depot = params.get('depot')
+
+    def initialize(self):
+        self.depot = moby2.util.Depot(self.depot)
+
+    def execute(self, store):
+        # retrieve tod
+        tod = store.get(self.inputs.get('tod'))
+        # analyze scan
+        scan = ana.analyze_scan(tod)
+        sflag = np.logical_or(scan['scan_flags'], scan['turn_flags'])
+        cvec = CutsVector.from_mask(sflag).get_buffered(100)
+        cuts = TODCuts.for_tod(tod, assign=False)
+        # add az cuts for each det
+        for d in tod.det_uid:
+            cuts.add_cuts(d, cvec)
+        # pass the processed tod back to data store
+        store.set(self.outputs.get('azcut'), cuts)
+        self.logger.info(f"Writing to depot: {self.tag}")
+        self.depot.write_object(cuts, tag=self.tag, force=True, tod=tod,
+                                make_dirs=True)
+
+
 class RemoveSyncPickup(Routine):
     def __init__(self, **params):
         """This routine fit / removes synchronous pickup"""
         Routine.__init__(self)
-        self.inputs = params.get('inputs', None)
-        self.outputs = params.get('outputs', None)
         self._remove_sync = params.get('remove_sync', False)
         self._force_sync = params.get('force_sync', False)
         self._tag_sync = params.get('tag_sync', None)
@@ -330,8 +349,6 @@ class CutPartial(Routine):
     def __init__(self, **params):
         """A routine that performs the partial cuts"""
         Routine.__init__(self)
-        self.inputs = params.get('inputs', None)
-        self.outputs = params.get('outputs', None)
         self._tag_partial = params.get('tag_partial', None)
         self._force_partial = params.get('force_partial', False)
         self._glitchp = params.get('glitchp', {})
@@ -435,8 +452,6 @@ class SubstractHWP(Routine):
 class FindJumps(Routine):
     def __init__(self, **params):
         Routine.__init__(self)
-        self.inputs = params.get('inputs', None)
-        self.outputs = params.get('outputs', None)
         self._dsStep = params.get('dsStep', None)
         self._window = params.get('window', None)
 
