@@ -72,7 +72,7 @@ def set_plotstyle(options={}, style='default', tex=None):
         plt.rcParams['text.usetex'] = tex
 
 
-def plot_with_cuts(tod, det, cuts=None, color='r'):
+def plot_with_cuts(tod, det, cuts=None, color='r', show_orig=True):
     """Plot a tod with cuts marked as red
 
     Parameters
@@ -88,10 +88,19 @@ def plot_with_cuts(tod, det, cuts=None, color='r'):
     for c in cuts.cuts[det]:
         sel[c[0]:c[1]] = False
     t = tod.ctime - tod.ctime[0]
-    plt.plot(t, tod.data[det], "k-", alpha=0.5)
+    if show_orig:
+        plt.plot(t, tod.data[det], "k-", alpha=0.5)
     plt.plot(t[~sel], tod.data[det][~sel], ".", markersize=4, c=color)
     return plt.gca()
 
+def plot_tod(tod, det=None, ds=10, cuts=None, alpha=0.1):
+    if det is None: det = np.arange(tod.data.shape[0], dtype=int)
+    if cuts is not None: det = cuts.get_uncut()
+    t = (tod.ctime - tod.ctime[0])
+    plt.plot(t[::ds], tod.data[det,::ds].T, 'k-', alpha=alpha)
+    plt.xlabel("Time (s)")
+    plt.ylabel("DAC")
+    return plt.gca()
 
 class freqSpaceWaterfall( object ):
     """
