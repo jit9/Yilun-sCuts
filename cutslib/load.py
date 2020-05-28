@@ -75,3 +75,18 @@ def load_tod(todname, tag=None, planet=None, partial=None, rd=True, fs=True, **k
 def get_tes(tod):
     """return tes dets mask"""
     return tod.info.array_data['det_type'] == 'tes'
+
+def quick_transform(tod, steps=['detrend','remove_mean']):
+    for step in steps:
+        if step == 'detrend':
+            moby2.tod.detrend_tod(tod)
+        elif step == 'remove_mean':
+            tod.data -= np.mean(tod.data, axis=1)[:,None]
+        elif step == 'cal':
+            if not hasattr(tod, 'cal'): continue
+            tod.data[tod.cal.det_uid,:]*= tod.cal.cal[:,None]
+        elif step == 'fill_cuts':
+            if not hasattr(tod, 'cuts'): continue
+            moby2.tod.cuts.fill_cuts(tod, tod.cuts)
+        else:
+            raise NotImplementedError
