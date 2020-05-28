@@ -17,9 +17,9 @@ class Module:
             f.write(f"#                  tod_id band_id          cal\n")
             for i, r in cat.data.iterrows():
                 todname = r.tod_name
-                if 'ar4' in 'todname':
+                if 'ar4' in todname:
                     freqs = ['f150', 'f220']
-                elif 'ar5' in 'todname':
+                elif 'ar5' in todname:
                     freqs = ['f090', 'f150']
                 else:
                     freqs = ['f090', 'f150']

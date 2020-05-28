@@ -6,8 +6,8 @@ from .pathologies import Pathologies, get_pathologies
 from .pathologies_tools import get_pwv
 
 
-def load_tod(todname, tag=None, planet=None, partial=None, rd=True, **kwargs):
-    opts = {'filename': todname, 'repair_pointing':True}
+def load_tod(todname, tag=None, planet=None, partial=None, rd=True, fs=True, **kwargs):
+    opts = {'filename': todname, 'repair_pointing':True, 'read_data': rd, 'fix_sign': fs}
     opts.update(kwargs)
     tod = moby2.scripting.get_tod(opts)
     print("tod loaded")
@@ -18,7 +18,6 @@ def load_tod(todname, tag=None, planet=None, partial=None, rd=True, **kwargs):
             cuts = moby2.scripting.get_cuts({
                 'depot': CUTS_DEPOT,
                 'tag': tag,
-                'read_data': rd
             }, tod=tod)
             tod.cuts = cuts
             print("-> cuts loaded in tod.cuts")

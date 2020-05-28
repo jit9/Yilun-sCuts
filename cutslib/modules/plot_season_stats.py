@@ -13,7 +13,7 @@ class Module:
     def __init__(self, config):
         self.use_theta2 = config.getboolean('use_theta2', True)
         self.calibrate = config.getboolean('calibrate', False)
-        self.tri = config.getboolean('tri',False)
+        self.tri = config.getboolean('tri',True)
 
     def run(self, p):
         # create SeasonStats object from the given tag

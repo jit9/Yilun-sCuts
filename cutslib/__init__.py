@@ -7,3 +7,4 @@ from .season import SeasonStats
 from moby2.util.database import TODList
 from moby2.util import MobyDict
 from moby2 import TODCuts
+from moby2.tod.cuts import CutsVector
