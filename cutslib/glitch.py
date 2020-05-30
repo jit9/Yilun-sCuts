@@ -1,5 +1,6 @@
 """Utility functions related to glitch analysis"""
 import numpy as np
+import moby2
 
 class TODSnippet:
     def __init__(self, tod, det_uid, tslice):
@@ -72,7 +73,7 @@ def peaks_radius_from_max(snippet, ref='array'):
     r = np.sqrt((x-x_c)**2+(y-y_c)**2)
     return r, peaks
 
-def glitch_det_count(cuts):
+def glitch_det_count(cuts, dets=None):
     """Count number of dets affected as a time series
 
     Parameters
@@ -80,7 +81,16 @@ def glitch_det_count(cuts):
     cuts: TODCuts object
 
     """
-    return np.sum([c.get_mask() for c in cuts.cuts], axis=0)
+    if dets is None:
+        return np.sum([c.get_mask() for c in cuts.cuts], axis=0)
+    else:
+        return np.sum([c.get_mask() for i, c in enumerate(cuts.cuts)
+                       if cuts.det_uid[i] in dets], axis=0)
+
+def pcuts2mask(cuts):
+    """Convert partial cuts to a 2d boolean mask"""
+    mask = np.stack([c.get_mask() for c in cuts.cuts], axis=0)
+    return mask
 
 def is_cut(cv, t):
     """check if a specific time is cut in a det (provided CutVector)
@@ -133,11 +143,21 @@ def pixels_affected_at_t(cuts, t, pr):
     pixels = np.unique(pr.dets2pixels(dets))
     return pixels
 
+def fill_cv(data, cv, fill_value=0, inplace=True):
+    """Fill an array-like data with a CutsVector, by default
+    it acts on the last axis.
+
+    """
+    ss = cv2slices(cv)
+    if not inplace: data = data.copy()
+    for s in ss:
+        data[...,s] = fill_value
+    return data
+
 class PixelReader:
     def __init__(self, season='2016', array='AR3', mask=None):
         """Utility class to find information about each pixel (feedhorn), migrated
         from todloop.util.pixels.PixelReader to manage internally"""
-        import moby2
         self._array_info = {
             'season': season,
             'array_name': array
@@ -303,6 +323,80 @@ class PixelReader:
             assert len(pixel) == 1, f"Det {det} shows up in no / multiple pixels!"
             pixels.append(pixel[0])
         return pixels
+
+class CutsVector(moby2.tod.cuts.CutsVector):
+    """Wrapper around moby2 version"""
+    def __invert__(self):
+        return self.get_complement()
+    def __add__(self, other):
+        if isinstance(other, CutsVector) or isinstance(other, moby2.tod.cuts.CutsVector):
+            return CutsVector.from_mask(self.get_mask() + other.get_mask())
+        else: return NotImplemented
+    def __radd__(self, other):
+        return self.__add__(other)
+    def __mul__(self, other):
+        if isinstance(other, CutsVector) or isinstance(other, moby2.tod.cuts.CutsVector):
+            return CutsVector.from_mask(self.get_mask() * other.get_mask())
+        else: return NotImplemented
+    def __rmul__(self, other):
+        return self.__mul__(other)
+
+class CutsMatrix:
+    """Similar to CutsVector but higher dimentional"""
+    def __init__(self, cvs=None):
+        """Wrapper for a list of CutsVector
+
+        Parameters
+        ----------
+        cvs: list of CutsVector
+
+        """
+        self.cvs = cvs
+    def __add__(self, other):
+        if isinstance(other, CutsVector):
+            return CutsMatrix([cv + other for cv in self.cvs])
+        elif isinstance(other, CutsMatrix):
+            assert self.shape == other.shape, "Shape mismatch!"
+            return CutsMatrix([cv1 + cv2 for cv1, cv2 in zip(self.cvs, other.cvs)])
+        else: return NotImplemented
+    def __iadd__(self, other):
+        if isinstance(other, CutsVector):
+            self.cvs = [cv + other for cv in self.cvs]
+        elif isinstance(other, CutsMatrix):
+            assert self.shape == other.shape, "Shape mismatch!"
+            self.cvs = [cv1 + cv2 for cv1, cv2 in zip(self.cvs, other.cvs)]
+        else: return NotImplemented
+    def __radd__(self, other):
+        return self.__add__(self, other)
+    def __mul__(self, other):
+        if isinstance(other, CutsVector):
+            return CutsMatrix([cv * other for cv in self.cvs])
+        elif isinstance(other, CutsMatrix):
+            assert self.shape == other.shape, "Shape mismatch!"
+            return CutsMatrix([cv1 * cv2 for cv1, cv2 in zip(self.cvs, other.cvs)])
+        else: return NotImplemented
+    def __iadd__(self, other):
+        if isinstance(other, CutsVector):
+            self.cvs = [cv * other for cv in self.cvs]
+        elif isinstance(other, CutsMatrix):
+            assert self.shape == other.shape, "Shape mismatch!"
+            self.cvs = [cv1 * cv2 for cv1, cv2 in zip(self.cvs, other.cvs)]
+        else: return NotImplemented
+    def __rmul__(self, other):
+        return self.__mul__(self, other)
+    def __invert__(self):
+        return CutsMatrix([~cv for cv in self.cvs])
+    def get_mask(self):
+        return np.stack([c.get_mask() for c in self.cvs], axis=0)
+    @classmethod
+    def from_mask(cls, mask):
+        return cls([CutsVector.from_mask(m) for m in mask])
+    @property
+    def shape(self):
+        if self.cvs is None: return (0,)
+        return (len(self.cvs), self.cvs[0].nsamps)
+    def __repr__(self):
+        return f"CutsMatrix(shape={self.shape})"
 
 #############
 # utilities #
