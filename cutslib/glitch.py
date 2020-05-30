@@ -15,15 +15,51 @@ class TODSnippet:
         """
         self.det_uid = det_uid
         self.data = tod.data[det_uid,tslice]
-        self.array_data = tod.info.array_data
+        self.info = tod.info
         self.tslice = tslice
     def demean(self):
         """Remove the mean of the snippet"""
         self._mean = self.data.mean(axis=1)
         self.data -= self._mean[:,None]
         return self
+    def deslope(self):
+        self._slope = (self.data[:,-1] - self.data[:,0]) / self.data.shape[-1]
+        self.data -= self._slope[:,None] * np.arange(self.data.shape[-1])
+        return self
     def __repr__(self):
         return f"TODSnippet(ndet={len(self.det_uid)},tslice={self.tslice})"
+    def plot(self, demean=False, deslope=False, debuffer=0, **kwargs):
+        return plot_snippet(self, demean, deslope, debuffer, **kwargs)
+    def peaks_radius(self):
+        """Peaks radius from the maximum peak"""
+        return peaks_radius_from_max(self)
+    def peaks(self):
+        """Get peak amplitudes"""
+        return np.max(np.abs(self.data), axis=1)
+    def plot_array(self, values=None):
+        """Plot det_uid on the array"""
+        from cutslib.visual import array_plots
+        if values is None: values = np.ones_like(self.det_uid)
+        array_plots(values, det=self.det_uid, season=self.info.season, array=self.info.array)
+    def plot_row_col(self, values=None):
+        from matplotlib import pyplot as plt
+        dets = self.det_uid
+        ad = self.info.array_data
+        row, col = ad['row'][dets], ad['col'][dets]
+        if values is None: values = np.ones_like(self.det_uid)
+        plt.scatter(row, col, c=values, s=20)
+        plt.xlabel('row')
+        plt.ylabel('col')
+        return plt.gca()
+    def plot_peaks_radius(self, bins=10, method='linear'):
+        r, p = self.peaks_radius()
+        return plot_peaks_radius_binned(r, p, bins, method)
+    def print_info(self, fields=None):
+        dets = self.det_uid
+        if fields is None: fields = list(self.info.array_data.keys())
+        print('array_info:')
+        for k in fields:
+            print(f'  {k}: {self.info.array_data[k][dets]}')
 
 def get_glitch_snippets(tod, dets, cv):
     """Generate TODSnippet from a given CutsVector
@@ -46,6 +82,25 @@ def get_glitch_snippets(tod, dets, cv):
         snippets.append(TODSnippet(tod, dets, s).demean())
     return snippets
 
+def affected_snippets_from_cv(tod, cuts, cv, dets):
+    """Get snippets from a given cut vector while only maintaining
+    those dets that are affected in each range in the cv.
+
+    Parameters
+    ----------
+    tod: base TOD object
+    cuts: TODCuts object containing the base cuts to extract affected dets from
+    cv: a CutsVector object that specifies ranges of interests
+    dets: a narrow-down list of dets to look at
+
+    """
+    dets_events = dets_affected_in_cv(cuts, cv, dets)
+    snippets = []
+    for d, s in zip(dets_events, cv2slices(cv)):
+        snippets.append(TODSnippet(tod, d, s))
+    return snippets
+
+
 def peaks_radius_from_max(snippet, ref='array'):
     """Get the peaks and corresponding radius from the highest peak
 
@@ -59,15 +114,14 @@ def peaks_radius_from_max(snippet, ref='array'):
     radius, peaks
 
     """
-    assert tod is not None, "tod is needed to get metadata!"
     # first make sure snippet has a mean of zero
-    snippet = snippet - snippet.mean(axis=1)[:,None]  # not in-place
+    data = snippet.data - snippet.data.mean(axis=1)[:,None]
     # find peak height
-    peaks = np.max(np.abs(snippet), axis=1)
+    peaks = np.max(np.abs(data), axis=1)
     # find highest peak as the reference point
     imax = np.argmax(peaks)
-    x = tod.info.array_data[f'{ref}_x'][dets]
-    y = tod.info.array_data[f'{ref}_y'][dets]
+    x = snippet.info.array_data[f'{ref}_x'][snippet.det_uid]
+    y = snippet.info.array_data[f'{ref}_y'][snippet.det_uid]
     x_c = x[imax]
     y_c = y[imax]
     r = np.sqrt((x-x_c)**2+(y-y_c)**2)
@@ -153,6 +207,19 @@ def fill_cv(data, cv, fill_value=0, inplace=True):
     for s in ss:
         data[...,s] = fill_value
     return data
+
+def dets_affected_in_cv(cuts, cv, dets):
+    """Find detectors affected in each range in a CutsVector
+
+    Parameters
+    ----------
+    cuts (TODCuts): base TODCuts object to gather the dets affected info
+    cv (CutsVector): specify the ranges of samples to find dets affected
+    dets (boolean array): an narrowed-down list of dets to look at
+
+    """
+    get_dets = lambda x: np.where((np.sum(x,axis=1)>0)*dets)[0]
+    return slices_map(get_dets, pcuts2mask(cuts), cv2slices(cv))
 
 class PixelReader:
     def __init__(self, season='2016', array='AR3', mask=None):
@@ -324,6 +391,10 @@ class PixelReader:
             pixels.append(pixel[0])
         return pixels
 
+    @classmethod
+    def for_tod(cls, tod):
+        return cls(season=tod.info.season, array=tod.info.array)
+
 class CutsVector(moby2.tod.cuts.CutsVector):
     """Wrapper around moby2 version"""
     def __invert__(self):
@@ -403,7 +474,20 @@ class CutsMatrix:
 #############
 
 def bin_data(x, y, bins=10, method='linear'):
-    """calculate binned statistics"""
+    """Calculate binned statistics
+
+    Parameters
+    ----------
+    x, y: series to bin
+    bins: number of bins
+    method: how to bin
+
+    Returns
+    -------
+    (binned x (centers), binned y, std in each bin)
+
+    """
+    from scipy import stats
     if method == 'linear': x_ = x
     elif method == 'log': x_ = np.log(x)
     elif method == 'p2': x_ = x**0.5
@@ -421,6 +505,16 @@ def cv2slices(cv):
     """Convert CutsVector to a list ot time slices"""
     return [slice(v[0],v[1],None) for v in cv]
 
+def slices_map(func, data, slices):
+    """Apply a function on the data inside given slices, by default
+    the slice is applied on the last axis
+
+    """
+    res = []
+    for s in slices:
+        res.append(func(data[...,s]))
+    return res
+
 #########################
 # visualization related #
 #########################
@@ -435,3 +529,32 @@ def view_glitches(tod, dets, cv, ncol=5, figsize=(20,20), ymax=1e-11, ymin=None)
         if ymin is None: ymin = -ymax
         axes[r, c].set_ylim([-ymax, ymax])
     return axes
+
+def plot_snippet(snippet, demean=False, deslope=False, debuffer=0, **kwargs):
+    from matplotlib import pyplot as plt
+    opts = {
+        'color': 'k',
+        'ls': '-',
+        'alpha': 0.3,
+    }
+    opts.update(kwargs)
+    data = snippet.data
+    if demean: data = data - np.mean(data,axis=1)[:,None]
+    if deslope:
+        slope = (data[:,-1] - data[:,0]) / data.shape[-1]
+        data = data - slope[:,None] * np.arange(data.shape[-1])
+    if debuffer > 0:
+        # make sure we don't go over the limit
+        debuffer = min(debuffer, data.shape[-1]//2-1)
+        data = data[:,debuffer:-debuffer]
+    plt.plot(data.T, **opts)
+    plt.xlabel('samps')
+    return plt.gca()
+
+def plot_peaks_radius_binned(r, p, bins=10, method='linear'):
+    from matplotlib import pyplot as plt
+    bc, val, err = bin_data(r, p, bins, method)
+    plt.errorbar(bc, val, yerr=err)
+    plt.xlabel('distances from max peak')
+    plt.ylabel('peak heights')
+    return plt.gca()
