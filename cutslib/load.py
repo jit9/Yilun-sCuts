@@ -1,5 +1,7 @@
 """convenient functions to load tods"""
 
+import numpy as np
+
 import moby2
 from .environ import CUTS_DEPOT
 from .pathologies import Pathologies, get_pathologies
@@ -76,17 +78,38 @@ def get_tes(tod):
     """return tes dets mask"""
     return tod.info.array_data['det_type'] == 'tes'
 
-def quick_transform(tod, steps=['detrend','remove_mean']):
+def quick_transform(tod, steps=[]):
     for step in steps:
         if step == 'detrend':
             moby2.tod.detrend_tod(tod)
-        elif step == 'remove_mean':
+        elif step == 'demean':
             tod.data -= np.mean(tod.data, axis=1)[:,None]
+        elif step == 'demean_nospike':
+            if not hasattr(tod, 'cuts'):
+                print(f"tod.cuts missing, skipping step: {step}")
+                continue
+            demean_nospike(tod, tod.cuts)
         elif step == 'cal':
-            if not hasattr(tod, 'cal'): continue
-            tod.data[tod.cal.det_uid,:]*= tod.cal.cal[:,None]
+            if not hasattr(tod, 'cal'):
+                print(f"tod.cal missing, skipping step: {step}")
+                continue
+            tod.data[tod.cal.det_uid,:] *= tod.cal.cal[:,None]
         elif step == 'fill_cuts':
-            if not hasattr(tod, 'cuts'): continue
+            if not hasattr(tod, 'cuts'):
+                print(f"tod.cuts missing, skipping step: {step}")
+                continue
             moby2.tod.cuts.fill_cuts(tod, tod.cuts)
         else:
             raise NotImplementedError
+
+def demean_nospike(tod, cuts):
+    """Remove the mean of tod without using the glitches"""
+    mask = np.stack([c.get_mask() for c in cuts.cuts], axis=0)
+    assert tod.nsamps >= cuts.nsamps
+    data_masked = np.ma.masked_array(tod.data[:,:cuts.nsamps], mask)
+    del mask
+    mean = np.mean(data_masked, axis=1)
+    del data_masked
+    tod.data -= mean[:,None]
+    del mean
+    return tod
