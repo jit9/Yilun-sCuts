@@ -1,9 +1,11 @@
 """Utility functions related to glitch analysis"""
 import numpy as np
+from scipy import stats
+
 import moby2
 
 class TODSnippet:
-    def __init__(self, tod, det_uid, tslice):
+    def __init__(self, tod=None, det_uid=None, tslice=None):
         """Create a TOD snippet with a subset of dets and a slice of samples
 
         Parameters
@@ -13,10 +15,11 @@ class TODSnippet:
         tslice: a slice object to get a subset of samples
 
         """
+        if tod is None: return
         self.det_uid = det_uid
         self.data = tod.data[det_uid,tslice]
-        self.info = tod.info
         self.tslice = tslice
+        self.info = SnippetInfo.from_todinfo(tod.info)
     def demean(self):
         """Remove the mean of the snippet"""
         self._mean = self.data.mean(axis=1)
@@ -60,6 +63,35 @@ class TODSnippet:
         print('array_info:')
         for k in fields:
             print(f'  {k}: {self.info.array_data[k][dets]}')
+    def snr_template(self, template):
+        """Return the snr for each det in the snippet after correlating
+        with a known template
+
+        Parameters
+        ----------
+        template: 1d np.ndarray
+
+        """
+        return np.apply_along_axis(lambda x: template_match(x, template), 1, self.data)
+    def max_snr_template(self, template):
+        """Return the maximum snr in the snippet after correlating
+        with a known template"""
+        return max(self.snr_template(template))
+
+class SnippetInfo:
+    def __init__(self):
+        """Subset of TODInfo to keep in each TODSnippet"""
+        pass
+    @classmethod
+    def from_todinfo(cls, todinfo):
+        # fields to copy over
+        fields = ['filename', 'basename', 'name', 'tod_id', 'instrument',
+                  'ctime', 'day_str', 'time_str', 'season', 'array', 'array_data',
+                  'sample_index', 'det_uid']
+        self = cls()
+        for f in fields:
+            self.__dict__[f] = getattr(todinfo, f)
+        return self
 
 def get_glitch_snippets(tod, dets, cv):
     """Generate TODSnippet from a given CutsVector
@@ -514,6 +546,20 @@ def slices_map(func, data, slices):
     for s in slices:
         res.append(func(data[...,s]))
     return res
+
+def template_match(data, template):
+    """1D template search, assume data and template are both 1d np array"""
+    # demean
+    data = data - np.mean(data)
+    # detrend
+    slope = (data[-1] - data[0]) / len(data)
+    data -= slope * np.arange(len(data))
+    # cross-correlate with the template
+    corr = np.correlate(data, template, mode='valid')
+    # find noise-level after correlation
+    nl = 0.741 * stats.iqr(data)
+    # find snr of the maxima
+    return np.max(np.abs(corr)) / nl
 
 #########################
 # visualization related #
