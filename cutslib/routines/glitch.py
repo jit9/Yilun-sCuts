@@ -22,6 +22,7 @@ class FindCR(Routine):
         snr_lim (int)      : signal-to-noise threshold for template matching
         template (str)     : path to a template to match (npy file)
         outdir (str)       : output dir, needs to exist
+        force (bool)       : when True existing file will be overridden
 
         """
         Routine.__init__(self)
@@ -33,10 +34,16 @@ class FindCR(Routine):
         self.snr_lim = params.get('snr_lim', 20)
         self.template = params.get('template')
         self.outdir = params.get('outdir', 'out')
+        self.force = params.get('force', False)
     def initialize(self):
         self.depot = moby2.util.Depot(Depot().root)
         self.template = np.load(self.template)
     def execute(self, store):
+        outfile = op.join(self.outdir, self.get_name()+'.pkl')
+        # skip if already done
+        if op.exists(outfile) and not self.force:
+            self.logger.info(f"{outfile} exists, skipping...")
+            return
         tod = store.get(self.inputs['tod'])
         # load cuts
         cuts = self.depot.read_object(moby2.TODCuts, tag=self.cuts_tag, tod=tod)
@@ -68,7 +75,6 @@ class FindCR(Routine):
         # filter cr by template
         cr_snippets = list(filter(lambda s: s.max_snr_template(self.template)>self.snr_lim, snippets))
         # write file
-        outfile = op.join(self.outdir, self.get_name()+'.pkl')
         with open(outfile, "wb") as f:
             pickle.dump(cr_snippets, f)
         self.logger.info(f"Written: {outfile}")

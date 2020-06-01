@@ -78,7 +78,7 @@ def get_tes(tod):
     """return tes dets mask"""
     return tod.info.array_data['det_type'] == 'tes'
 
-def quick_transform(tod, steps=[]):
+def quick_transform(tod, steps=[], safe=False):
     for step in steps:
         if step == 'detrend':
             moby2.tod.detrend_tod(tod)
@@ -87,17 +87,17 @@ def quick_transform(tod, steps=[]):
         elif step == 'demean_nospike':
             if not hasattr(tod, 'cuts'):
                 print(f"tod.cuts missing, skipping step: {step}")
-                continue
+                if not safe: continue
             demean_nospike(tod, tod.cuts)
         elif step == 'cal':
             if not hasattr(tod, 'cal'):
                 print(f"tod.cal missing, skipping step: {step}")
-                continue
+                if not safe: continue
             tod.data[tod.cal.det_uid,:] *= tod.cal.cal[:,None]
         elif step == 'fill_cuts':
             if not hasattr(tod, 'cuts'):
                 print(f"tod.cuts missing, skipping step: {step}")
-                continue
+                if not safe: continue
             moby2.tod.cuts.fill_cuts(tod, tod.cuts)
         else:
             raise NotImplementedError
