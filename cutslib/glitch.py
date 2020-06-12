@@ -505,7 +505,7 @@ class CutsMatrix:
 # utilities #
 #############
 
-def bin_data(x, y, bins=10, method='linear'):
+def bin_data(x, y, bins=10, method='linear', err_method='std'):
     """Calculate binned statistics
 
     Parameters
@@ -525,7 +525,7 @@ def bin_data(x, y, bins=10, method='linear'):
     elif method == 'p2': x_ = x**0.5
     else: raise ValueError("Unsupported binning method")
     res = stats.binned_statistic(x_, y, bins=bins, statistic='mean')
-    res_std = stats.binned_statistic(x_, y, bins=bins, statistic='std')
+    res_std = stats.binned_statistic(x_, y, bins=bins, statistic=err_method)
     bc_ = (res.bin_edges[1:] + res.bin_edges[:-1])/2
     if method == 'linear': bc = bc_
     elif method == 'log': bc = np.exp(bc_)

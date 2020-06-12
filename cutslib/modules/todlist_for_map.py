@@ -26,7 +26,7 @@ class Module:
         self.cuts_db = config.get('cuts_db', None)
         self.include_time = config.get('include_time', None)
         self.outdir = config.get('outdir', ".")
-        self.source_scan = config.getboolean('source_scan', True)
+        self.source_scan = config.getboolean('source_scan', False)
         self.selParams = config.get('selParams', {
             "liveDets": {"gt": 150},
             "PWV": {"lt": 3},
