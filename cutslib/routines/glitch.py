@@ -35,6 +35,8 @@ class FindCR(Routine):
         self.template = params.get('template')
         self.outdir = params.get('outdir', 'out')
         self.force = params.get('force', False)
+        self.force_partial = params.get('force_partial', False)
+        self.glitchp = params.get('glitchp', None)
     def initialize(self):
         self.depot = moby2.util.Depot(Depot().root)
         self.template = np.load(self.template)
@@ -44,18 +46,41 @@ class FindCR(Routine):
         if op.exists(outfile) and not self.force:
             self.logger.info(f"{outfile} exists, skipping...")
             return
-        tod = store.get(self.inputs['tod'])
+        # check whether we have cuts before running anything
+        todname = self.get_name()
+        first5 = todname[:5]
+        cuts_file = op.join(Depot().root, 'TODCuts', self.cuts_tag, first5, todname+'.cuts')
+        cuts_exist = op.exists(cuts_file)
+        if not cuts_exist:
+            return
+        # load tod
+        self.logger.info("Loading TOD")
+        tod = moby2.scripting.get_tod({'filename': self.get_name(), 'repair_pointing': True})
         # load cuts
         cuts = self.depot.read_object(moby2.TODCuts, tag=self.cuts_tag, tod=tod)
         tod.cuts = cuts
-        # load partial cuts
-        pcuts = self.depot.read_object(moby2.TODCuts, tag=self.pcuts_tag, tod=tod)
+        # get partial cuts
+        # 1. fill mce cuts
+        self.logger.info("Filling MCE cuts")
+        mce_cuts = moby2.tod.get_mce_cuts(tod)
+        moby2.tod.fill_cuts(tod, mce_cuts, no_noise=True)
+        # 2. generate partial cuts
+        if not self.force_partial:
+            # load partial cuts
+            self.logger.info("Loading partial cuts")
+            pcuts = self.depot.read_object(moby2.TODCuts, tag=self.pcuts_tag, tod=tod)
+        else:  # force partial
+            self.logger.info("Generating partial cuts")
+            pcuts = moby2.tod.get_glitch_cuts(tod=tod, params=self.glitchp)
         tod.partial = pcuts
         # load calibration
+        self.logger.info("Loading calibration")
         cal = self.depot.read_object(moby2.Calibration, tag=self.cal_tag, tod=tod)
         tod.cal = cal
         # demean and calibrate
+        self.logger.info("Transforming tod")
         quick_transform(tod, steps=['demean','cal'])
+        self.logger.info("Extracting snippets")
         # count number of dets glitching at each sample
         count = gl.glitch_det_count(tod.partial, tod.cuts.get_uncut())
         # get rid of mce cuts in the partial cuts
