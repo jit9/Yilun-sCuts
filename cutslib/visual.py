@@ -1011,7 +1011,7 @@ def set_infos( param_name, units, title, ax ):
     if type(ax) == tuple:
         ax1, ax2 = ax
         ax1.set_title( title, fontsize = 15 )
-        ax2.set_ylabel( '%s [%s]' %(param_name, units), rotation = 270, fontsize = 20 )
+        ax2.set_ylabel( '%s %s' %(param_name, units), rotation = 270, fontsize = 20 )
     else:
         ax.set_title( title, fontsize = 15 )
 
@@ -1268,3 +1268,48 @@ def plot_wafer_names(ax, array):
                  transform = ax.transAxes, fontsize = 'x-large')
         plt.text(0.03, 0.25, 'SH8B', color='gray',
                  transform = ax.transAxes, fontsize = 'x-large')
+
+############################
+# more array plots options #
+############################
+
+def row_col_plots_tod(values, dets, tod, vmin=None, vmax=None,
+                      cmap=plt.get_cmap('RdYlBu_r'), radius=100,
+                      name='', unit='', title=''):
+    plt.figure(figsize=(10,10))
+    ad = tod.info.array_data
+    x = ad['row'][dets]
+    y = ad['col'][dets]
+    if vmin == None: vmin = values.min()
+    if vmax == None: vmax = values.max()
+    # color = v.get_color(values, vmax, vmin, cmap=cmap)
+    plt.scatter(x, y, c=values, s=radius, cmap=cmap, vmin=vmin, vmax=vmax)
+    plt.xlabel('Row', fontsize=16)
+    plt.ylabel('Column', fontsize=16)
+    plt.xticks(fontsize=16)
+    plt.yticks(fontsize=16)
+    plt.title(title)
+    plt.colorbar().set_label(f'{name} {unit}')
+    return plt.gca()
+
+def array_plots_tod(values, dets, tod, vmin=None, vmax=None,
+                    cmap=plt.get_cmap('RdYlBu_r'), radius=2000,
+                    name='', unit='', title=''):
+    """array plots given a tod"""
+    # get array data
+    ad = tod.info.array_data
+    pos = np.array([ad['array_x'][dets], ad['array_y'][dets]])
+    pol = ad['pol_family'][dets]
+    freq = ad['nom_freq'][dets]
+    # get patches for detectors
+    if vmin == None: vmin = values.min()
+    if vmax == None: vmax = values.max()
+    color = get_color(values, vmax, vmin, cmap=cmap)
+    patchlist = get_patches(pos, color, pol, freq, radius=radius)
+    plt.figure(figsize=(12,10))
+    ax = create_plot(patchlist, vmin, vmax,
+                       x_lim=[1.2*pos[0].min(), 1.2*pos[0].max()],
+                       y_lim=[1.2*pos[1].min(), 1.2*pos[1].max()],
+                       array_name=tod.info.array, cmap=cmap)
+    set_infos(name, unit, title, ax)
+    return plt.gcf()
