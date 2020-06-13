@@ -7,6 +7,8 @@ from .environ import CUTS_DEPOT
 from .pathologies import Pathologies, get_pathologies
 from .pathologies_tools import get_pwv
 
+glitchp = {'nSig': 10., 'tGlitch' : 0.007, 'minSeparation': 30, \
+           'maxGlitch': 50000, 'highPassFc': 6.0, 'buffer': 50 }
 
 def load_tod(todname, tag=None, planet=None, partial=None, rd=True, fs=True, **kwargs):
     opts = {'filename': todname, 'repair_pointing':True, 'read_data': rd, 'fix_sign': fs}
@@ -78,7 +80,7 @@ def get_tes(tod):
     """return tes dets mask"""
     return tod.info.array_data['det_type'] == 'tes'
 
-def quick_transform(tod, steps=[], safe=False):
+def quick_transform(tod, steps=[], safe=False, glitchp=glitchp):
     for step in steps:
         if step == 'detrend':
             moby2.tod.detrend_tod(tod)
@@ -99,6 +101,15 @@ def quick_transform(tod, steps=[], safe=False):
                 print(f"tod.cuts missing, skipping step: {step}")
                 if not safe: continue
             moby2.tod.cuts.fill_cuts(tod, tod.cuts)
+        elif step == 'ff_mce':  # find and fill mce cuts
+            mce_cuts = moby2.tod.get_mce_cuts(tod)
+            moby2.tod.fill_cuts(tod, mce_cuts, no_noise=True)
+        elif step == 'ff_glitch':  # find and fill glitch cuts
+            pcuts = moby2.tod.get_glitch_cuts(tod=tod, params=glitchp)
+            moby2.tod.fill_cuts(tod, pcuts, no_noise=True)
+        elif step == 'get_iv':
+            cal = moby2.scripting.get_calibration({'type':'iv', 'source':'data'}, tod=tod)
+            tod.cal = cal
         else:
             raise NotImplementedError
 
