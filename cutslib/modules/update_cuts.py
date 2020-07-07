@@ -17,11 +17,8 @@ class Module:
         overwrite = self.overwrite
         cpar = moby2.util.MobyDict.from_file(p.i.cutparam)
         # check whether db file exists
-        # if op.exists(p.i.db):
-        #     if not overwrite:
-        #         raise RuntimeError("db file exists!")
-        #     else:  # remove it
-        #         os.remove(p.i.db)
+        if op.exists(p.i.db):
+            if overwrite: os.remove(p.i.db)
         # load tod source list
         source_scans = cpar.get("source_scans")
         obsnames = TODList.from_file(source_scans)
