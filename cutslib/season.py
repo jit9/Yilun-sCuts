@@ -338,13 +338,16 @@ class SeasonStats:
         assert hasattr(self, 'planet'), "Planet measurements not available!"
         df = self.planet
         plt.figure(figsize=(8,6))
-        if c: plt.scatter(df.loading, df.peak_mean, s=100, c=df[c],
-                          edgecolor='None', cmap='copper')
+        if c is not None:
+            if isinstance(c, str): c=df[c]
+            plt.scatter(df.loading, df.peak_mean, s=100, c=c,
+                        edgecolor='None', cmap='copper')
         else: plt.plot(df.loading, df.peak_mean, '.')
         plt.xlabel('Loading (PWV / sin(alt))')
         plt.ylabel('Peak measurements')
         plt.ylim(ylim)
-        if c: plt.colorbar().set_label(c)
+        clb = plt.colorbar()
+        if isinstance(c, str): clb.set_label(c)
 
     def array_plots(self, field, dets=None, **kwargs):
         """Quick array plots for a given field"""
