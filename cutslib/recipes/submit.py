@@ -33,35 +33,33 @@ def submit_command(command, cutparam, jobname=None, cluster='tiger'):
     basedir = os.path.dirname(os.path.abspath(cutparam))
     outdir = os.path.join(basedir, par["outdir"])
     runtime = par.get("runtime")
-    qos = par.get("qos")
+    qos = par.get("qos", None)
     nomp = par.get("nomp", 1)
-    # partition = par.get("partition", "serial")
+    partition = par.get("partition", None)
     # total task per node including nomp
     # note there is a maximum of 40 logical cores in della
-    if cluster == 'tiger':
-        ttpn = 40
-    elif cluster == 'della':
-        ttpn = 32
-    else:
-        ttpn = 32
+    if cluster == 'tiger':   ttpn = 40
+    elif cluster == 'della': ttpn = 32
+    else:                    ttpn = 32
 
     # find list of tods to process
     if not(os.path.isdir(outdir)): os.makedirs(outdir)
 
     # submit one slurm job on each node, so loop over node here
     for n in range(nnode):
-        f = open( '%s/submitjob.sh.%d' % (outdir, n), 'w' )
-        f.write( '#!/bin/sh\n' )
-        f.write( '#SBATCH -N 1\n')
-        f.write( '#SBATCH --ntasks-per-node=%d\n' % (ttpn))
-        f.write( '#SBATCH -J %s%d\n' % (jobname,n))
-        f.write( '#SBATCH -t %s\n' % runtime )
-        f.write( '#SBATCH --qos %s\n' % qos )
-        f.write( '#SBATCH --output=%s/slurmjob.log.%d\n' % (outdir, n))
-        f.write( 'module load gcc\n' )
-        f.write( 'module load openmpi\n' )
-        f.write( 'source activate %s\n' % CUTS_PYENV )
-        f.write( 'cd %s\n' % basedir)
+        f = open( '%s/submitjob.sh.%d' % (outdir, n), 'w')
+        f.write('#!/bin/sh\n' )
+        f.write('#SBATCH -N 1\n')
+        f.write('#SBATCH --ntasks-per-node=%d\n' % (ttpn))
+        f.write('#SBATCH -J %s%d\n' % (jobname,n))
+        f.write('#SBATCH -t %s\n' % runtime)
+        if qos:     f.write('#SBATCH --qos %s\n' % qos)
+        if partition: f.write('#SBATCH -p %s\n' % partition)
+        f.write('#SBATCH --output=%s/slurmjob.log.%d\n' % (outdir, n))
+        f.write('module load gcc\n' )
+        f.write('module load openmpi\n' )
+        f.write('source activate %s\n' % CUTS_PYENV )
+        f.write('cd %s\n' % basedir)
         start, end = n*tpn, (n+1)*tpn
         for i in range(start, end):
             f.write('OMP_NUM_THREADS=%d %s -n %d --index %d -f %s & sleep 1\n' % (nomp, command, nproc, i, cutparam))
