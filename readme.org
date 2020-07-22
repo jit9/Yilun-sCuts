@@ -699,6 +699,20 @@ can supply it to the cutParams config with something like
 }],
 #+end_example
 Substitute the season, array and bs tag accordingly.
+*** 24. What does cuts status mean?
+One of the cuts products is a so-called selectTODs file that contains
+a list of TODs each with a so-called "cuts status". It can have three
+values: 0, 1, 2. A quick way to remember what it means is to always
+use those with cuts status of 2. This value is calculated in a
+two-step process. First, all TODs that have been processed in the cuts
+pipeline that have not caused any program failures will get one score
+(cuts status += 1). Then, the TODs will be screened using with a few
+criteria that usually include a cut on PWV (i.e. <3) and a cut on the
+number of detectors alive (i.e. ld>150), and a cut on ctime range to
+exclude specific time periods (i.e. based on ObsTimes supplied in the
+act shared depot). TODs that pass this set of criteria get another
+score (cuts status += 1). At the end, we want the TODs with full score
+(cuts status = 2) for mapping.
 ** Useful links
 - inputs for mapping: https://phy-wiki.princeton.edu/polwiki/pmwiki.php?n=Calibration.InputsForMapping
 - cutparams repo: [[https://github.com/guanyilun/cutparams]]
