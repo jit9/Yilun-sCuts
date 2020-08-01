@@ -124,6 +124,8 @@ Notable mentions
   from bias-step measurements.
 - =plot_rms_gain=:
   produce a 2D histogram of responsivity versus planet flatfield gain
+- =plot_season_stats=:
+  produce season based statistics such as live dets per pwv, histograms + scatter plots of cuts parameters
 - =report=:
   generate a pdf report summarizing the latest run. It needs
   additional dependencies such as emacs and latex.
@@ -774,10 +776,29 @@ score (cuts status += 1). At the end, we want the TODs with full score
     bias-steps and write to disk.
 12. This marks the end of normal cuts pipeline. What follows is the
     post-processing pipeline which will be described next.
+*** 26. What are the main steps in post-processing pipeline?
+As of 200801, a full post-processing pipeline involves running the following modules in sequence:
+1. collect_crit
+2. select_good_tods
+3. plot_cuts_thresholds
+4. plot_array
+5. plot_killed_array
+6. get_flatfield
+7. plot_ff
+8. todlist_for_map
+9. plot_planet_cal
+10. plot_ld_loading
+11. plot_live_fraction
+12. plot_rms_gain
+13. plot_season_stats
+14. report
+15. export_json
+Refer to [[*Modules:][Modules]] section for detailed descriptions for each module.
 ** Useful links
-- inputs for mapping: https://phy-wiki.princeton.edu/polwiki/pmwiki.php?n=Calibration.InputsForMapping
-- cutparams repo: [[https://github.com/guanyilun/cutparams]]
-- cuts validation repo: https://github.com/ACTCollaboration/cuts_validation
-- ACT roundtable: [[https://actexperiment.info/roundtable]]
+- cutparams repo: [[https://github.com/ACTCollaboration/cutparams]]
+- cuts release page: https://github.com/ACTCollaboration/cutparams/releases
 - TOD visualizer: [[https://github.com/guanyilun/tod_viz]]
+- cuts validation repo: https://github.com/ACTCollaboration/cuts_validation
 - Emacs plugins for cuts: [[https://github.com/guanyilun/cuts.el]]
+- inputs for mapping: https://phy-wiki.princeton.edu/polwiki/pmwiki.php?n=Calibration.InputsForMapping
+- ACT roundtable: [[https://actexperiment.info/roundtable]]
