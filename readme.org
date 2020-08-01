@@ -410,7 +410,7 @@ Author: (default: Yilun Guan)
 Write to: (default: /projects/ACT/yilung/depot/release_20200328.txt)
 #+end_example
 This is written in json format which should be easily digestible by
-modules in the downstream.  An example module that read the release is
+modules in the downstream. An example module that read the release is
 the =create_todinfo= module which generates the enki compatible
 =todinfo.txt= file. After the release json file is generated, tag
 the =cutparam= repo with the same tag to keep track of the parameters
@@ -777,7 +777,8 @@ score (cuts status += 1). At the end, we want the TODs with full score
 12. This marks the end of normal cuts pipeline. What follows is the
     post-processing pipeline which will be described next.
 *** 26. What are the main steps in post-processing pipeline?
-As of 200801, a full post-processing pipeline involves running the following modules in sequence:
+As of 200801, a full post-processing pipeline involves running the
+following modules in sequence:
 1. collect_crit
 2. select_good_tods
 3. plot_cuts_thresholds
@@ -793,7 +794,45 @@ As of 200801, a full post-processing pipeline involves running the following mod
 13. plot_season_stats
 14. report
 15. export_json
-Refer to [[*Modules:][Modules]] section for detailed descriptions for each module.
+Refer to [[*Modules:][Modules]] section for detailed descriptions for each
+module. This produces all relevant products and debugging report
+etc. for furthur evaluation.
+*** 27. What's the meaning of cuts tags?
+Cuts are often tagged like =pa4_f150_s17_c11_v0=. The first three
+fields are array, frequency band, and season code respectively. The
+fourth field refers to the cuts software version. It tells you which
+software is running to generate this given set of cuts. For the main
+cuts pipeline will all start with a letter =c= followed by a version
+number. There may be other specially taylored cuts generated for other
+purposes, the difference will be shown in this field. For example, a
+special study of cosmic ray hits required me to generate cuts with no
+buffer, these cuts are tagged as =cr= in this field. The last field
+(=v0=) tracks the changes in the parameters used in generating cuts.
+Sometimes there is an additional field denoting the types of cuts a tag
+contains. For example, =pa4_f150_s17_c11_partial=. This indicates that
+the cuts under this given tag contain the partial cuts (glitch cuts) only.
+Here's a summary of some of the common names used in this field
+
+|---------+------------------------|
+| name    | purpose                |
+|---------+------------------------|
+| partial | glitch cuts only       |
+| source  | point source cuts only |
+| planet  | planet cuts only       |
+| det     | detector cuts only     |
+|---------+------------------------|
+
+*** 28. What's the meaning of the different tags in the release file?
+A release file may contain field like =tag_out=, =tag_cal=,
+etc. Here's a summary of some common ones
+- =tag_out=: Main cuts outputs. It contains both glitch cuts and
+  detector cuts.
+- =tag_cal=: Calibration outputs
+- =tag_partial=: Cuts that only contain glitch cuts
+- =tag_planet= / =tag_source=: Cuts that only contain planet/source cuts
+- =tag_cmb=: cuts that contains glitch cuts, detector cuts, planet
+  cuts and source cuts all merged.
+Usually it's the firs two fields that are useful.
 ** Useful links
 - cutparams repo: [[https://github.com/ACTCollaboration/cutparams]]
 - cuts release page: https://github.com/ACTCollaboration/cutparams/releases
