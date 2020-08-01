@@ -713,6 +713,67 @@ exclude specific time periods (i.e. based on ObsTimes supplied in the
 act shared depot). TODs that pass this set of criteria get another
 score (cuts status += 1). At the end, we want the TODs with full score
 (cuts status = 2) for mapping.
+*** 25. What are the major steps in the cuts pipeline?
+1. First, a list of TODs is generated from the observation catalog
+   that contains names of TODs to generate cuts for.
+2. Load TODs and check the length of TOD, if it's too short (below a specified threshol) then the TOD is removed
+3. Fix MCE frame error
+4. Generate source cuts
+   1. source cuts can be generated based on a pre-existing catalog
+   2. new idea is to use a sky mask derived from cut map
+   3. fill the source cuts
+5. Generate planet cuts, and fill the cuts
+6. Generate glitch cuts
+7. Analyze scan and flag turnarounds
+8. Calibrate TODs with bias-steps and planet flatfield
+9. Perform multi-frequency analysis
+   1. Define various frequency windows including 10 low-frequency windows,
+      a mid-frequency window, and a high-frequency windows
+   2. In low frequency windows, we expect our signal to be dominated by
+      atmosphere which becomes a common mode for all detectors.
+      1. The full correlation matrix between detectors is computed
+      2. A pre-selection is performed based on the correlation matrix
+         to identify a "majority" group of detectors that are well
+         correlated.
+      3. The pre-selected detectors are used to extract the common mode.
+      4. We then evaluate each detector in terms of how well it correlates
+         with the common mode. Three pathological parameters are computed
+         for evaluation named as gain, corr, and norm.
+      5. This step is repeated for each of the 10 low frequency windows.
+      6. A mean of different windows is taken for each of the parameters.
+   3. In the high-frequency window, we expect our signal to be white
+      noise dominated. Here we evaluate detectors based on their noise
+      levels detectors and also deviation from a white (gaussian)
+      statistics. Three pathological parameters are computed for evaluation
+      named as rms, skew, and kurt.
+   4. The mid-frequency window is defined to hopefully capture the thermal
+      1/f when the atmosphere 1/f turns off and before the white noise dominates.
+      Two pathological parameters are defined in this window named as DE and MFE
+      standing for drift error and mid-frequency error.
+   5. Finally a pathological parameter called jump is calculated that quantify
+      how much jump a detector sees.
+   6. At the end of the multi-frequency analysis, a total of 9
+      pathological parameters are collected for each detector for each TOD. These
+      are stored into the depot for furthur study
+10. Generate cuts
+    1. Based on predefined thresholds for each of the 9 pathological parameters and cut
+       detectors with outlying statistics
+    2. Cut detectors pre-supplied in a exlusion list. This is often a
+       list of known unstable detector based on inputs from previous
+       pipeline.
+    3. Merge in time-domain cuts like glitch cuts and turnaround cuts.
+    4. Detectors with a large fraction (above a predefined threshold, usually 40%)
+       of samples cut is removed entirely.
+    5. Detectors affected by more than a predefined number of glitches
+       (usually 50000) are cut.
+    6. Detectors with missing calibrations are cut
+    7. Optionally exclude / recover per detector cuts for different
+       TODs based on external inputs. This is for performing surgical
+       operations to improve cuts quality.
+11. Generate calibration based on the product of flatfield and
+    bias-steps and write to disk.
+12. This marks the end of normal cuts pipeline. What follows is the
+    post-processing pipeline which will be described next.
 ** Useful links
 - inputs for mapping: https://phy-wiki.princeton.edu/polwiki/pmwiki.php?n=Calibration.InputsForMapping
 - cutparams repo: [[https://github.com/guanyilun/cutparams]]
