@@ -11,12 +11,12 @@ tod       = "/scratch/gpfs/snaess/actpol/tod/season{sidx}/merlin/{t5}/{id}.zip"
 
 {{ cut_tags }}
 
-cut_basic = "{yilun}/TODCuts/pa{pa}_{freq}_s17_c11_{ptag}_partial/{t5}/{id}.cuts"
+cut_basic = "{yilun}/TODCuts/pa{pa}_{freq}_s{season}_c11_{ptag}_partial/{t5}/{id}.cuts"
 cut_noiseest = cut_basic
-cut_quality  = "{yilun}/TODCuts/pa{pa}_{freq}_s17_c11_{ctag}/{t5}/{id}.cuts"
+cut_quality  = "{yilun}/TODCuts/pa{pa}_{freq}_s{season}_c11_{ctag}/{t5}/{id}.cuts"
 cut = {"type":"union", "subs":[cut_quality, "{skn}/sidelobe_cut/s17v5_20190301_pa{pa}_{freq}_sidelobe_cut.hdf:cuts"]}
 
-gain         = "{yilun}/Calibration/pa{pa}_{freq}_s17_c11_{ctag}/{t5}/{id}.cal"
+gain         = "{yilun}/Calibration/pa{pa}_{freq}_s{season}_c11_{ctag}/{t5}/{id}.cal"
 
 gain_mode       = "mce"
 gain_correction = "{shared}/TODAbsCal/abscal_190126.h5/abscal"
