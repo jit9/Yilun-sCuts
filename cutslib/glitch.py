@@ -297,7 +297,7 @@ class PixelReader:
     def calibrate_array(self, season):
         """Calibrate the array_data based on season since different
         seasons have different array_data units"""
-        if season == '2017':
+        if season == '2017' or season == '2018' or season == '2019':
             self.ad['array_x'] /= 10000.0
             self.ad['array_y'] /= 10000.0
 
@@ -341,20 +341,17 @@ class PixelReader:
             return self._pixel_dict[str(pixel)]['f2']
 
     def get_dets(self, pixel):
-        if self._mask is not None:
-            return [det for det in self._pixel_dict[str(pixel)]['f1'] if self._mask[det] == 1]
-        else:
-            return self._pixel_dict[str(pixel)]['f1']
+        return self.get_f1(pixel) + self.get_f2(pixel)
 
     def get_adjacent_pixels(self, pixel):
         all_adj_det = self.get_adjacent_detectors(pixel)
         return [int(det) for det in all_adj_det if str(det) in self._pixel_dict]
 
 
-    def get_pixels_within_radius(self, pixel, radius):
-        ar = self._array_pos
-        dist = np.sqrt(np.sum((ar - ar[pixel, :])**2, axis=1))
-        return [det for det in np.arange(1056)[dist < radius] if str(det) in self._pixel_dict]
+    # def get_pixels_within_radius(self, pixel, radius):
+    #     ar = self._array_pos
+    #     dist = np.sqrt(np.sum((ar - ar[pixel, :])**2, axis=1))
+    #     return [det for det in np.arange(1056)[dist < radius] if str(det) in self._pixel_dict]
 
     def plot(self, pixels=None):
         plt.plot(self.ad['array_x'], self.ad['array_y'], 'r.')

@@ -1,3 +1,4 @@
+
 import moby2, pickle
 import os.path as op, numpy as np
 from cutslib import glitch as gl
@@ -23,12 +24,16 @@ class FindCR(Routine):
         template (str)     : path to a template to match (npy file)
         outdir (str)       : output dir, needs to exist
         force (bool)       : when True existing file will be overridden
+        glitchp (dict)     : glitch parameters
+        steps (list)       : list of pre-processing steps
+        uncut_only (bool)  : whether to use the uncut detectors only
 
         """
         Routine.__init__(self)
         self.cuts_tag = params.get('cuts_tag')
         self.pcuts_tag = params.get('pcuts_tag')
         self.cal_tag = params.get('cal_tag')
+        self.filter_mce = params.get('filter_mce', False)
         self.mce_ndet_lim = params.get('mce_ndet_lim', 200)
         self.mce_len_lim = params.get('mce_len_lim', 100)
         self.snr_lim = params.get('snr_lim', 20)
@@ -37,6 +42,8 @@ class FindCR(Routine):
         self.force = params.get('force', False)
         self.force_partial = params.get('force_partial', False)
         self.glitchp = params.get('glitchp', None)
+        self.steps = params.get('steps',['demean','cal'])
+        self.uncut_only = params.get('uncut_only', True)
     def initialize(self):
         self.depot = moby2.util.Depot(Depot().root)
         self.template = np.load(self.template)
@@ -51,8 +58,7 @@ class FindCR(Routine):
         first5 = todname[:5]
         cuts_file = op.join(Depot().root, 'TODCuts', self.cuts_tag, first5, todname+'.cuts')
         cuts_exist = op.exists(cuts_file)
-        if not cuts_exist:
-            return
+        if not cuts_exist: return
         # load tod
         self.logger.info("Loading TOD")
         tod = moby2.scripting.get_tod({'filename': self.get_name(), 'repair_pointing': True})
@@ -73,30 +79,34 @@ class FindCR(Routine):
             self.logger.info("Generating partial cuts")
             pcuts = moby2.tod.get_glitch_cuts(tod=tod, params=self.glitchp)
         tod.partial = pcuts
-        # load calibration
-        self.logger.info("Loading calibration")
-        cal = self.depot.read_object(moby2.Calibration, tag=self.cal_tag, tod=tod)
-        tod.cal = cal
-        # demean and calibrate
+        if 'cal' in self.steps:
+            # load calibration
+            self.logger.info("Loading calibration")
+            cal = self.depot.read_object(moby2.Calibration, tag=self.cal_tag, tod=tod)
+            tod.cal = cal
+        # demean and calibrate if needed
         self.logger.info("Transforming tod")
-        quick_transform(tod, steps=['demean','cal'])
+        quick_transform(tod, steps=self.steps)
         self.logger.info("Extracting snippets")
         # count number of dets glitching at each sample
-        count = gl.glitch_det_count(tod.partial, tod.cuts.get_uncut())
+        dets = tod.cuts.get_uncut() if self.uncut_only else None
+        count = gl.glitch_det_count(tod.partial, None)
         # get rid of mce cuts in the partial cuts
         # this can be done by filtering out time ranges that more than 200 dets
         # are affected by cuts and also check for a cuts shorter than bufferred
         # duration
-        excess = count > self.mce_ndet_lim  # 200 by default
-        if np.sum(excess) > 0:
-            cv = gl.CutsVector.from_mask(excess)
-            len_mask = (cv[:,1] - cv[:,0]) < self.mce_len_lim  # 100 by default
-            cv = cv[len_mask]
-            gl.fill_cv(count, cv)
+        if self.filter_mce:
+            excess = count > self.mce_ndet_lim  # 200 by default
+            if np.sum(excess) > 0:
+                cv = gl.CutsVector.from_mask(excess)
+                len_mask = (cv[:,1] - cv[:,0]) < self.mce_len_lim  # 100 by default
+                cv = cv[len_mask]
+                gl.fill_cv(count, cv)
         # get "events" that correspond to a localized range of time that many dets
         # are affected
         events = gl.CutsVector.from_mask(count>0)
-        snippets = gl.affected_snippets_from_cv(tod, tod.partial, events, tod.cuts.get_mask())
+        dets = tod.cuts.get_mask() if self.uncut_only else np.ones_like(tod.det_uid, dtype=bool)
+        snippets = gl.affected_snippets_from_cv(tod, tod.partial, events, dets)
         # filter cr by template
         cr_snippets = list(filter(lambda s: s.max_snr_template(self.template)>self.snr_lim, snippets))
         # write file
