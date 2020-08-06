@@ -135,7 +135,7 @@ def analyze_detector_noise(fdata, preselector=None, n_deproject=0, nsamps=1):
     # deproject `n_deproject` common modes from data
     if n_deproject > 0:
         # svd to covariance matrix gives U S^2 V*
-        u, s2, v = scipy.linalg.svd(c[presel][presel], full_matrices=False)
+        u, s2, v = scipy.linalg.svd(c[np.ix_(presel, presel)], full_matrices=False)
         # get first `n_deproject` common mode
         # kernel => (nmode, ndet)
         kernel = v[:n_deproject]/np.sqrt(s2[:n_deproject])[:,None]

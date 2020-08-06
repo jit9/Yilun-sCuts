@@ -1,4 +1,5 @@
 import numpy as np
+import inspect
 
 class PreselectionError(RuntimeError): pass
 
@@ -36,11 +37,25 @@ def preselector(fun):
                 except PreselectionError:
                     return other(cc)
             return preselector(fun_prod)()
+    # get help from someone
+    presel_func.__doc__ = fun.__doc__
+    # get arguments from someone after removing the partial args (first 2)
+    args = [v for k, v in inspect.signature(fun).parameters.items()][2:]
+    presel_func.__signature__ = inspect.Signature(parameters=args)
     return presel_func
 
 
 @preselector
 def by_median(corrmat, min_corr=0.6, min_sel=10, min_frac=0.1):
+    """Preselect by median. The number of detectors needs to be larger
+    than the maximum of min_sel and ndet*min_frac
+
+    Parameters
+    ----------
+    min_corr: minimum correlation for preselected detectors
+    min_sel: minimum number of preselected detectors before failing
+    min_frac: minimum fraction of preselected detectors before failing
+    """
     # select dets with median above `min_corr`
     sel = np.nanmedian(np.abs(corrmat), axis=1) > min_corr
     # check whether we have enough dets
@@ -48,3 +63,14 @@ def by_median(corrmat, min_corr=0.6, min_sel=10, min_frac=0.1):
     if np.sum(sel) < min_dets:
         raise PreselectionError
     return sel
+
+@preselector
+def by_mask(corrmat, mask):
+    """Preselect by mask. A simple wrapper for boolean mask
+
+    Parameters
+    ----------
+    mask: boolean mask
+
+    """
+    return mask
