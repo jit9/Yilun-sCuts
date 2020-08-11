@@ -37,21 +37,50 @@ parser.add_argument('-F', '--force', help='whether to force overwriting cache', 
 parser.add_argument('--cache-name', help='filename for caching, no extension', default="cache_bsinfo")
 parser.add_argument('-V', '--verbose', help='more verbose', action="store_true")
 parser.add_argument('-W', '--write', help='write to file', action="store_true")
+parser.add_argument('-Y', '--yes', help='skip asking y/n and proceed with yes', action="store_true")
 args = parser.parse_args()
 
 #####################
 # utility functions #
 #####################
 
-def find_fix_map(ctimes, bcs):
+def find_fix_map(ctimes, ivtimes, bcs):
     to_ = np.where(bcs==0)[0]
     from_ = []
-    for i in to_:
+    for i in tqdm(to_):
+        # get the iv time for the biasstep to patch
+        ivt = ivtimes[i]
+        # sort biasstep time from nearest to furthest
         idx = np.argsort(np.abs(ctimes - ctimes[i]))
-        j = 1
-        while idx[j] in to_: j += 1
-        from_.append(idx[j])
-    return {'from':from_, 'to':to_}
+        # narrow down to biassteps taken under the same iv
+        idx = [i_ for i_ in idx if i_ in np.where(ivtimes == ivt)[0]]
+        # if we can't find any, indicate with a None
+        to_append = -1
+        if len(idx) > 1:
+            for j in range(1,len(idx)):
+                if idx[j] not in to_: to_append=idx[j]; break
+        from_.append(to_append)
+    return {'from':np.asarray(from_), 'to':np.asarray(to_)}
+
+def find_iv(ctimes, ivtimes):
+    """find iv to use for each time in given in the ctimes list
+
+    Parameters
+    ----------
+    ctimes: list / array of ctimes when bias-step are taken
+    ivtimes: list / array of times when iv are taken
+
+    Returns
+    -------
+    array of iv times to use for each time in ctimes list
+
+    """
+    ivs = np.zeros_like(ctimes)
+    for i in range(len(ctimes)):
+        # find nearest preceeding iv to use
+        try: ivs[i] = ivtimes[np.where(ivtimes < ctimes[i])[0][-1]]
+        except: ivs[i] = -1
+    return ivs
 
 def patch_bs(from_path, to_path, bc, ad, write):
     """patch bias-step files
@@ -91,6 +120,20 @@ def patch_bs(from_path, to_path, bc, ad, write):
 
 # search path
 search_path = op.join(args.depot, args.season, args.tag, args.array, "*/*.cal")
+
+# ivtimes lookup table
+iv_lookup = {
+    '2017_pa4': '/projects/ACT/yilung/depot/biasstep/IV_ctime_S5_mce1',
+    '2017_pa5': '/projects/ACT/yilung/depot/biasstep/IV_ctime_S5_mce2',
+    '2017_pa6': '/projects/ACT/yilung/depot/biasstep/IV_ctime_S5_mce3',
+    '2018_pa4': '/projects/ACT/yilung/depot/biasstep/IV_ctime_S6_mce1',
+    '2018_pa5': '/projects/ACT/yilung/depot/biasstep/IV_ctime_S6_mce2',
+    '2018_pa6': '/projects/ACT/yilung/depot/biasstep/IV_ctime_S6_mce3',
+    '2019_pa4': '/projects/ACT/yilung/depot/biasstep/IV_ctime_S7_mce1',
+    '2019_pa5': '/projects/ACT/yilung/depot/biasstep/IV_ctime_S7_mce2',
+    '2019_pa6': '/projects/ACT/yilung/depot/biasstep/IV_ctime_S7_mce3',
+}
+ivtimes = np.sort(np.loadtxt(iv_lookup[f"{args.season}_{args.array}"]))
 
 # get array data for bias_card info
 ad = moby2.scripting.get_array_data({'season':args.season,'array_name':args.array})
@@ -153,6 +196,18 @@ else:
         pickle.dump(to_save, f)
         print("Cache saved")
 
+# match ivtimes to biasstep times
+ivtimes = find_iv(ctimes, ivtimes)
+# skip bias-steps without iv to use
+mask = ivtimes != -1
+bc1s = bc1s[mask]
+bc2s = bc2s[mask]
+bc3s = bc3s[mask]
+ctimes = ctimes[mask]
+ivtimes = ivtimes[mask]
+ndets = ndets[mask]
+fnames = fnames[mask]
+
 # produce plots
 if args.plot:
     print("Generating debug plots")
@@ -181,13 +236,15 @@ if args.plot:
 
 # come up with fix table
 fixes = {
-    'bc1':find_fix_map(ctimes, bc1s),
-    'bc2':find_fix_map(ctimes, bc2s),
-    'bc3':find_fix_map(ctimes, bc3s)
+    'bc1':find_fix_map(ctimes, ivtimes, bc1s),
+    'bc2':find_fix_map(ctimes, ivtimes, bc2s),
+    'bc3':find_fix_map(ctimes, ivtimes, bc3s)
 }
+
 fixes_df = []
 for bc in fixes:
     for from_, to_ in zip(fixes[bc]['from'], fixes[bc]['to']):
+        if from_ == -1: continue
         fixes_df.append({
             'from_ctime': ctimes[from_],
             'to_ctime': ctimes[to_],
@@ -197,12 +254,12 @@ for bc in fixes:
         })
 fixes_df = pd.DataFrame(fixes_df)
 outfile = f"fix_{args.season}_{args.array}.csv"
-fixes_df.sort_values(by=['to_ctime']).to_csv(outfile, index=False, columns=['to_ctime','from_ctime','bc_fix'], sep=' ')
+fixes_df.sort_values(by=['to_ctime']).to_csv(outfile, index=False, columns=['to_ctime','from_ctime','bc_fix'], sep=' ', na_rep='-')
 
 # show the fix table
 print("Showing fix table")
-os.system(f"cat {outfile} | less")
-if input("proceed to fix? y/n ") == 'y':
+if not args.yes: os.system(f"cat {outfile} | less")
+if args.yes or input("proceed to fix? y/n ") == 'y':
     print("Start fixing...")
     if not args.write: print("write flag off: performing a dry-run")
     for i, row in fixes_df.iterrows():
