@@ -2,6 +2,7 @@
 
 import os, glob
 from cutslib.environ import CUTS_DIR, CUTS_PYENV
+import numpy as np
 
 ######################
 # interactive action #
@@ -58,6 +59,26 @@ def errors_tod(cpar_path, match):
     basedir = os.path.dirname(os.path.abspath(cpar_path))
     run_dir = os.path.join(basedir, f"run_v{ver}")
     os.system("cat %s/error_list.txt | grep -i %s | awk '{print $2}' | sort | uniq" % (run_dir, match))
+
+def errors_stats(cpar_path):
+    ver = cpar_path.split(".par")[0][-1]  # FIXME
+    basedir = os.path.dirname(os.path.abspath(cpar_path))
+    run_dir = os.path.join(basedir, f"run_v{ver}")
+    ntod_total = int(get_total_tod(cpar_path))
+    # load error_list.txt
+    with open(f"{run_dir}/error_list.txt", "r") as f:
+        lines = f.readlines()
+    lines = [l.strip() for l in lines]
+    # todnames = [l.split(' ')[1] for l in lines]
+    # get everything after todname and with whitespace striped
+    texts = [' '.join(l.split(' ')[2:]).strip() for l in lines]
+    errors = np.unique(texts)
+    print(" num| rel%| abs%|text")
+    for e in errors:
+        ntod = texts.count(e)
+        pctg = ntod / len(texts)
+        pctg2 = ntod / ntod_total
+        print(f"{texts.count(e):4d}|{pctg*100:4.1f}%|{pctg2*100:4.1f}%|{e}")
 
 ####################
 # utility function #
