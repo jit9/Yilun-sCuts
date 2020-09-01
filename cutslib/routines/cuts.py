@@ -234,6 +234,8 @@ class FillCuts(Routine):
         Routine.__init__(self)
         # retrieve other parameters
         self.cuts_dir = params.get('cuts_dir', None)
+        self.depot = params.get('depot', None)
+        self.tag = params.get('tag', None)
         self.no_noise = params.get('no_noise', True)
 
     def execute(self, store):
@@ -241,12 +243,17 @@ class FillCuts(Routine):
         tod = store.get(self.inputs.get('tod'))
 
         # load cuts from a given directory
-        if self.cuts_dir:
+        if self.cuts_dir is not None:
             fname = self.get_name() + '.cuts'
             infile = op.join(self.cuts_dir, fname)
-        else:  # to be implemented
-            raise NotImplementedError
-        mask_cuts = TODCuts.from_actpol_cuts_file(infile)
+            mask_cuts = TODCuts.from_actpol_cuts_file(infile)
+        # load from a given depot + tag
+        elif self.depot is not None and self.tag is not None:
+            mask_cuts = moby2.scripting.get_cuts({
+                'depot': self.depot,
+                'tag': self.tag
+            }, tod=tod)
+
         # fill the source cuts to the tod
         cuts = TODCuts.for_tod(tod, assign=False)
         cuts.merge_tod_cuts(mask_cuts)
