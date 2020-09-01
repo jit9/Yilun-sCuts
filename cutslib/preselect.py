@@ -39,14 +39,14 @@ def preselector(fun):
             return preselector(fun_prod)()
     # get help from someone
     presel_func.__doc__ = fun.__doc__
-    # get arguments from someone after removing the partial args (first 2)
-    args = [v for k, v in inspect.signature(fun).parameters.items()][2:]
+    # get arguments from someone after removing the partial args (first 1)
+    args = [v for k, v in inspect.signature(fun).parameters.items()][1:]
     presel_func.__signature__ = inspect.Signature(parameters=args)
     return presel_func
 
 
 @preselector
-def by_median(corrmat, min_corr=0.6, min_sel=10, min_frac=0.1):
+def by_median(corrmat, min_corr=0.6, min_sel=10, min_frac=None, dets=None):
     """Preselect by median. The number of detectors needs to be larger
     than the maximum of min_sel and ndet*min_frac
 
@@ -55,13 +55,16 @@ def by_median(corrmat, min_corr=0.6, min_sel=10, min_frac=0.1):
     min_corr: minimum correlation for preselected detectors
     min_sel: minimum number of preselected detectors before failing
     min_frac: minimum fraction of preselected detectors before failing
+    dets: if we want to narrow down to look at a subset of dets only
     """
+    if dets is None: dets = np.ones(corrmat.shape[0], dtype=bool)
     # select dets with median above `min_corr`
-    sel = np.nanmedian(np.abs(corrmat), axis=1) > min_corr
+    sel = np.nanmedian(np.abs(corrmat)[:,dets], axis=1) > min_corr
     # check whether we have enough dets
-    min_dets = max(min_sel, int(corrmat.shape[0]*min_frac))
+    if min_frac is None: min_frac=min_sel/corrmat.shape[0]
+    min_dets = max(min_sel, round(corrmat.shape[0]*min_frac))
     if np.sum(sel) < min_dets:
-        raise PreselectionError
+        raise PreselectionError(f"sel={np.sum(sel)}, min_dets={min_dets}")
     return sel
 
 @preselector
