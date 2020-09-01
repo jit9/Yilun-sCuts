@@ -7,6 +7,7 @@ import numpy as np, sys, os
 from enlib import enmap, config, log, pmat, mpi, utils, errors, scan as enscan
 from enact import actscan, filedb, files, actdata
 from moby2.tod.cuts import CutsVector, TODCuts
+from moby2.util import Depot
 
 config.default("downsample", 1, "Factor with which to downsample the TOD")
 config.default("verbosity",  1, "Verbosity for output. Higher means more verbose. 0 outputs only errors etc. 1 outputs INFO-level and 2 outputs DEBUG-level messages.")
@@ -14,8 +15,10 @@ config.default("verbosity",  1, "Verbosity for output. Higher means more verbose
 parser = config.ArgumentParser(os.environ["HOME"] + "/.enkirc")
 parser.add_argument("sel")
 parser.add_argument("mask")
-parser.add_argument("odir")
 parser.add_argument("--buffer", type=int, default=10)
+parser.add_argument("--widen", type=int, default=0, help="widen the mask by the specified arcmin")
+parser.add_argument("--depot", help="depot to store the output file", required=True)
+parser.add_argument("--tag", help="tag under which the cuts will be stored", required=True)
 parser.add_argument("prefix",nargs="?")
 args = parser.parse_args()
 
@@ -27,14 +30,17 @@ dtype = np.float64
 
 # Load input mask
 imask = enmap.read_map(args.mask)
+# Widen if necessary
+if args.widen > 0:
+    radius = args.widen*utils.arcmin
+    imask = (~imask).distance_transform(rmax=radius)<radius
 # Expand to 3 components, as the pointing code expects that
 mask = enmap.zeros((3,)+imask.shape[-2:], imask.wcs, dtype)
 mask[0] = imask.reshape((-1,)+imask.shape[-2:])[0]
 del imask
 
-# Prepare output directory
-utils.mkdir(args.odir)
-root = args.odir + "/" + (args.prefix + "_" if args.prefix else "")
+# Setup depot
+depot = moby2.util.Depot(args.depot)
 
 # Set up logging
 utils.mkdir(root + "log")
@@ -84,8 +90,6 @@ for ind in myinds:
     # add buffer if that's what we want
     cuts.buffer(args.buffer)
     # write cuts to file
-    outfile = root + entry.id + '.cuts'
-    L.debug(f"Write cuts: {outfile}")
-    cuts.write(outfile)
+    depot.write_object(cuts, tag=args.tag, tod=entry.id)
 
 L.info("Done")
