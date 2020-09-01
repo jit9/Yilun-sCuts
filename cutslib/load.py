@@ -81,6 +81,16 @@ def get_tes(tod):
     return tod.info.array_data['det_type'] == 'tes'
 
 def quick_transform(tod, steps=[], safe=False, glitchp=glitchp):
+    """Short-hand notation for some common processings. Steps specified
+    will be executed in order. Here are some possible steps:
+      detrend: detrend tod for each det
+      demean: remove the mean of the tod for each det
+      demean_nospike: remove the mean with glitches masked
+      cal: calibrate tod with tod.cal
+      fill_cuts: fill cuts using tod.cuts
+      ...
+      more to add
+    """
     for step in steps:
         if step == 'detrend':
             moby2.tod.detrend_tod(tod)
