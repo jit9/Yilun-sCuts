@@ -1313,3 +1313,32 @@ def array_plots_tod(values, dets, tod, vmin=None, vmax=None,
                        array_name=tod.info.array, cmap=cmap)
     set_infos(name, unit, title, ax)
     return plt.gcf()
+
+class ArrayPlot:
+    def __init__(self):
+        pass
+    @classmethod
+    def for_tod(cls, tod):
+        ap = cls()
+        ap.ad = tod.info.array_data
+        ap.array = tod.info.array
+        return ap
+    def plot(self, values, dets, vmin=None, vmax=None,
+             cmap=plt.get_cmap('RdYlBu_r'), radius=3000, name='', unit='',
+             title=''):
+        ad = self.ad
+        pos = np.array([ad['array_x'][dets], ad['array_y'][dets]])
+        pol = ad['pol_family'][dets]
+        freq = ad['nom_freq'][dets]
+        # get patches for detectors
+        if vmin == None: vmin = values.min()
+        if vmax == None: vmax = values.max()
+        color = get_color(values, vmax, vmin, cmap=cmap)
+        patchlist = get_patches(pos, color, pol, freq, radius=radius)
+        plt.figure(figsize=(12,10))
+        ax = create_plot(patchlist, vmin, vmax,
+                         x_lim=[1.2*pos[0].min(), 1.2*pos[0].max()],
+                         y_lim=[1.2*pos[1].min(), 1.2*pos[1].max()],
+                         array_name=self.array, cmap=cmap)
+        set_infos(name, unit, title, ax)
+        return plt.gcf()
