@@ -88,6 +88,20 @@ class Catalog():
         self.abuses.update(query)
         return self
 
+    def add_radec(self):
+        from moby2.ephem import ACTEphem
+        # load ephem
+        eph = ACTEphem()
+        for i, row in self.data.iterrows():
+            ctime = row['ctime']
+            alt = row['alt']
+            az = row['az']
+            eph.set_ctime(ctime)
+            ra, dec = eph.altaz_to_radec(alt, az)
+            if ra>np.pi: ra -= 2*np.pi  # make sure range is -pi to pi
+            self.data.loc[i, 'ra'] = ra
+            self.data.loc[i, 'dec'] = dec
+
     def narrow_down(self, tod_list):
         """Narrow down the catalog to a given todlist, it wraps
         around select method
