@@ -4,10 +4,11 @@ template folder and populate the tags based on season and array.
 
 """
 
-import os.path as op, json, os
+import os.path as op, os
 from jinja2 import Template
 import cutslib
 from cutslib.util import tag_to_afsv
+import yaml
 
 class Module:
     def __init__(self, config):
@@ -32,7 +33,7 @@ class Module:
         # load release
         cr_file = p.depot.get_deep((f'release_{cr}','release.txt'))
         with open(cr_file, "r") as f:
-            rl = json.loads(f.read())
+            rl = yaml.load(f)
 
         # load tags
         tags = list(rl['tags'].keys())

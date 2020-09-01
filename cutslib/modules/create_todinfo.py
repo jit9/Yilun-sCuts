@@ -3,7 +3,7 @@ that's required by mapmaker script
 
 """
 
-import json, os.path as op, json, os
+import os.path as op, os, yaml
 from cutslib.util import tag_to_afsv, to_scode, to_pa
 
 
@@ -26,7 +26,7 @@ class Module:
         # load cut release
         cr_file = p.depot.get_deep((f'release_{cr}','release.txt'))
         with open(cr_file, "r") as f:
-            release = json.loads(f.read())
+            release = yaml.load(f)
         # load tags
         tags = list(release['tags'].keys())
         # write cmb fields
