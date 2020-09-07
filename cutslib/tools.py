@@ -172,9 +172,11 @@ def presel_by_median(cc, sel=None, **kwargs):
         sl *= kwargs.get("forceSel") # NOT PRETTY
 
     if sl.sum() < np.max([cc.shape[0]//minFrac,minSel]):
+        print(f"sl.sum()={sl.sum()},minSel={minSel}")
         print("ERROR: did not find any valid detectors for low frequency analysis.")
         sl = (np.median(abs(cc),axis=0) > superMinCorr)*sel
         if sl.sum() < minSel:
+            print(f"-> sl.sum()={sl.sum()},minSel={minSel}")
             raise PreselectionError("PRESELECTION FAILED, did not find any valid detectors for low frequency analysis.")
     else:
         sl = ((abs(cc[sl]).mean(axis=0)-1./len(cc[sl]))*len(cc[sl])/(len(cc[sl])-1) > minCorr)*sel
