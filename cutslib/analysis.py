@@ -1,6 +1,7 @@
 """Grab some of the codes written for SO"""
 import scipy, numpy as np
 import scipy.stats as stat
+from cutslib import TODCuts
 
 
 def analyze_scan(tod, qlim=1, vlim=0.01, n_smooth=0):
@@ -121,7 +122,6 @@ def analyze_detector_noise(fdata, preselector=None, n_deproject=0, nsamps=1):
     Parasmeters:
     -----------
     tod: tod object of AxisManager class
-    frange: range of frequency to consider
     preselector: mask or function that generate a mask
     n_deproject: number of common modes to deproject before
       estimate noise properties
@@ -267,3 +267,164 @@ def preselect_dets(corrmat, preselector):
             raise PreselectionError
     else: raise ValueError(f"Unsupported preselector type")
     return presel
+
+
+def analyze_calibration(tod, cutparams, cuts=None, write=False, **kwargs):
+    import moby2
+    from moby2 import products
+    from moby2 import TODCuts
+    # load parameters
+    params = moby2.util.MobyDict.from_file(cutparams)
+    cutParams = moby2.util.MobyDict.from_file(cutparams.replace('cutp','cutP'))
+    pathop = cutParams['pathologyParams']
+    # initialize depot
+    depot = moby2.util.Depot(params.get("depot"))
+    if cuts is None: cuts = depot.read_object(TODCuts, tag=params.get('tag_out'), tod=tod)
+    name = tod.info.name
+    # get calibration
+    flatfield = pathop["calibration"]["flatfield"]
+    resp = products.get_calibration(pathop["calibration"]["config"], tod.info)
+    resp_sel = (resp.cal != 0.0)
+    flatfield_object = moby2.detectors.RelCal.from_dict(flatfield)
+    dets = tod.info.array_data['det_uid']
+    _, ff = flatfield_object.get_property('cal', det_uid=dets, default=1.)
+    _, stable = flatfield_object.get_property('stable', det_uid=dets, default=False)
+    if flatfield_object.calRMS is not None:
+        _, ffRMS = flatfield_object.get_property('calRMS', det_uid=dets, default=1.)
+    else: ffRMS = np.zeros_like(dets)
+
+    # Select detectors that passed the cuts and with valid responsivities
+    # and which are stable. Also make sure they are nonzero
+    sel = cuts.get_mask()*resp_sel*stable #*(gains != 0)
+    if sel.sum() == 0:
+        raise RuntimeError("Unable to calibrate")
+
+    # generate calibration
+    calib = np.zeros(dets.shape)
+    freqs = np.unique(tod.info.array_data.get('nom_freq',["single"]))
+    for freq in freqs:
+        if freq == "single":
+            sf = np.ones(pa.dets.size,dtype=bool)
+        else:
+            sf = tod.info.array_data['nom_freq'] == freq
+        calib[sf] = resp.cal[sf]*ff[sf]
+    calib *= tod.info.array_data["optical_sign"]
+
+    # Store results
+    s = cuts.get_uncut()
+    calObj = moby2.Calibration(det_uid = dets[s])
+    calObj.set_property(["cal", "calRMS"], [calib[s], ffRMS[s]])
+    if write:
+        depot.write_object(calObj,
+                           tag=params.get("tag_cal"),
+                           tod=tod,
+                           force=True)
+    return calObj
+
+class CutsManager:
+    def __init__(self, tod=None):
+        """Manage different cuts"""
+        self.tod = tod
+        self.cuts = {
+            'final': None
+        }
+    def add(self, name, cuts, merge=True):
+        if name in self.cuts:
+            raise ValueError("naming conflict")
+        # we allow cuts to be either TODCuts or mask or detid
+        # here i check which one it belongs to
+        if isinstance(cuts, np.ndarray):
+            cuts_ = TODCuts.for_tod(self.tod)
+            if cuts.dtype == np.bool_:  # if a mask is given
+                cuts_.set_always_cut(np.where(cuts==False)[0])
+            else:  # assume it's detid
+                cuts_.set_always_cut(cuts)
+        elif isinstance(cuts, TODCuts):
+            cuts_ = cuts
+        else: raise ValueError("Unrecognized cuts format")
+        self.cuts[name] = cuts_
+        if merge: self.cuts['final'].merge_tod_cuts(cuts_)
+        return self
+    @classmethod
+    def for_tod(cls, tod):
+        cm = cls(tod)
+        cm.cuts['final'] = TODCuts.for_tod(tod)
+        return cm
+    def combine_cuts(self, fields=[]):
+        # default to combine all cuts into 'final'
+        if len(fields) == 0:
+            fields = [k for k in self.cuts.keys() if k != 'final']
+        if len(fields) != 0:
+            for f in fields:
+                self.cuts['final'].merge_tod_cuts(self.cuts[f])
+        return self
+    def redo_combine(self):
+        self.cuts['final'] = TODCuts.for_tod(self.tod)
+
+class PathologyManager:
+    def __init__(self, tod=None):
+        """Manage different cuts"""
+        self.tod = tod
+        self.patho = {}
+        self.crits = {}
+        self.dets = tod.info.array_data['det_uid']
+    def add(self, name, patho, merge=True):
+        if name in self.patho:
+            raise ValueError("naming conflict")
+        self.patho[name] = patho
+        return self
+    def restrict_dets(self, dets):
+        """restrict to a list of detectors, this step discards
+        the data associated with the other dets"""
+        self.dets = dets
+        return self
+    @classmethod
+    def for_tod(cls, tod):
+        cm = cls(tod)
+        return cm
+    def add_crit(self, field, limits=[5, 95], method='rel'):
+        """add a criteria to find cuts
+
+        Parameters
+        ----------
+        field: field name to apply crit on
+        limits: lengh 2 list with lower and higher limits, if no limits
+          is needed put None accordingly, i.e. [2, None]
+        method: can be 'rel' or 'abs'. When 'rel', limits refer to percentile
+          and when 'abs', limits refer to absolute values
+        """
+        # TODO: support metadata
+        assert len(limits) == 2
+        lo, hi = limits
+        self.crits.update({field: {
+            'lo': lo, 'hi': hi,
+            'method': method
+        }})
+        return self
+    def clear_crit(self, fields=None):
+        """remove crit for a given list of fields, defaults to all"""
+        if not fields:
+            fields = list(self.patho.keys())
+        for f in fields:
+            if f in self.crits:
+                del self.crits[f]
+        return self
+    def apply_crit(self):
+        """apply crit to get a cut"""
+        crits = [crit for crit in self.crits if crit in self.patho]
+        cman = CutsManager.for_tod(self.tod)
+        for f in crits:
+            v = self.patho[f]
+            lo, hi = self.crits[f]['lo'], self.crits[f]['hi']
+            method = self.crits[f]['method']
+            m = np.ones(self.tod.data.shape[0], dtype=bool)
+            if method == 'rel':
+                if lo: lo = np.percentile(v[self.dets], lo)
+                if hi: hi = np.percentile(v[self.dets], hi)
+            if lo: m *= (v >= lo)  # open
+            if hi: m *= (v < hi)   # close
+            # add masks to CutsManager
+            cman.add(f, m)
+        # merge the flags into a cuts field and keep the origin fields
+        cman.combine_cuts()
+        return cman
