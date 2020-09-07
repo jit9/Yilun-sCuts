@@ -1,7 +1,10 @@
 """Grab some of the codes written for SO"""
-import scipy, numpy as np
-import scipy.stats as stat
+import pickle, numpy as np
+import scipy, scipy.stats as stat
+from moby2.tod.cuts import CutsVector
+
 from cutslib import TODCuts
+from cutslib.glitch import SnippetInfo
 
 
 def analyze_scan(tod, qlim=1, vlim=0.01, n_smooth=0):
@@ -18,8 +21,6 @@ def analyze_scan(tod, qlim=1, vlim=0.01, n_smooth=0):
     scan_params (dict)
 
     """
-    from moby2.tod.cuts import CutsVector
-
     # first: find useful scan parameters
     scan_params = {}
     # get turnaround
@@ -326,57 +327,88 @@ def analyze_calibration(tod, cutparams, cuts=None, write=False, **kwargs):
                            force=True)
     return calObj
 
+class TODWrapper:
+    def __init__(self, tod):
+        """This avoids storing a full tod inside the pathology
+        object. How it works is that it parses the relevant
+        information that downstream functions may need and
+        act as a thin wrapper"""
+        self.det_uid = tod.det_uid
+        self.nsamps = tod.nsamps
+        self.info = SnippetInfo.from_todinfo(tod.info)
+
 class CutsManager:
     def __init__(self, tod=None):
         """Manage different cuts"""
-        self.tod = tod
+        self.tod = TODWrapper(tod)
         self.cuts = {
             'final': None
         }
-    def add(self, name, cuts, merge=True):
+    def add(self, name, cuts):
         if name in self.cuts:
             raise ValueError("naming conflict")
         # we allow cuts to be either TODCuts or mask or detid
         # here i check which one it belongs to
-        if isinstance(cuts, np.ndarray):
+        if isinstance(cuts, TODCuts) or isinstance(cuts, CutsVector):
+            cuts_ = cuts
+        elif isinstance(cuts, np.ndarray):
             cuts_ = TODCuts.for_tod(self.tod)
             if cuts.dtype == np.bool_:  # if a mask is given
                 cuts_.set_always_cut(np.where(cuts==False)[0])
             else:  # assume it's detid
                 cuts_.set_always_cut(cuts)
-        elif isinstance(cuts, TODCuts):
-            cuts_ = cuts
         else: raise ValueError("Unrecognized cuts format")
         self.cuts[name] = cuts_
-        if merge: self.cuts['final'].merge_tod_cuts(cuts_)
         return self
     @classmethod
     def for_tod(cls, tod):
         cm = cls(tod)
         cm.cuts['final'] = TODCuts.for_tod(tod)
         return cm
-    def combine_cuts(self, fields=[]):
+    def combine_cuts(self, fields=[], exclude=[]):
         # default to combine all cuts into 'final'
         if len(fields) == 0:
-            fields = [k for k in self.cuts.keys() if k != 'final']
+            fields = [k for k in self.cuts.keys()
+                      if k not in ['final']+exclude]
         if len(fields) != 0:
             for f in fields:
-                self.cuts['final'].merge_tod_cuts(self.cuts[f])
+                fcuts = self.cuts[f]
+                if isinstance(fcuts, CutsVector):
+                    for d in self.cuts['final'].det_uid:
+                        self.cuts['final'].add_cuts(d, fcuts)
+                elif isinstance(fcuts, TODCuts):
+                    self.cuts['final'].merge_tod_cuts(fcuts)
+                else: raise ValueError
         return self
     def redo_combine(self):
         self.cuts['final'] = TODCuts.for_tod(self.tod)
 
+
 class PathologyManager:
+
+    _depot_structure = '{class}/{tag}/{first_five}/{tod_name}.pickle'
+
     def __init__(self, tod=None):
         """Manage different cuts"""
-        self.tod = tod
+        self.tod = TODWrapper(tod)
         self.patho = {}
         self.crits = {}
         self.dets = tod.info.array_data['det_uid']
-    def add(self, name, patho, merge=True):
+    def add(self, name, patho, dets=None, default=0):
         if name in self.patho:
             raise ValueError("naming conflict")
+        if dets is not None:
+            patho_ = np.ones_like(self.dets, dtype=np.float)
+            patho_ *= defaut
+            patho_[np.asarray(dets)] = patho
+            patho = patho_
         self.patho[name] = patho
+        return self
+    def drop(self, name):
+        if name in self.patho:
+            del self.patho[name]
+        if name in self.crits:
+            del self.crits[name]
         return self
     def restrict_dets(self, dets):
         """restrict to a list of detectors, this step discards
@@ -422,7 +454,7 @@ class PathologyManager:
             v = self.patho[f]
             lo, hi = self.crits[f]['lo'], self.crits[f]['hi']
             method = self.crits[f]['method']
-            m = np.ones(self.tod.data.shape[0], dtype=bool)
+            m = np.ones(self.tod.det_uid.shape[0], dtype=bool)
             if method == 'rel':
                 if lo: lo = np.percentile(v[self.dets], lo)
                 if hi: hi = np.percentile(v[self.dets], hi)
@@ -433,3 +465,15 @@ class PathologyManager:
         # merge the flags into a cuts field and keep the origin fields
         cman.combine_cuts()
         return cman
+    def __getitem__(self, attr):
+        if attr in self.patho:
+            return self.patho[attr]
+        else: raise ValueError
+    def write_to_path(self, path):
+        with open(path, "wb") as f:
+            pickle.dump(self, f)
+    @classmethod
+    def read_from_path(cls, path, tod=None, params=None):
+        with open(path, "rb") as f:
+            patho = pickle.load(f)
+        return patho
