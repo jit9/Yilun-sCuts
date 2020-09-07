@@ -86,8 +86,7 @@ class SnippetInfo:
     def from_todinfo(cls, todinfo):
         # fields to copy over
         fields = ['filename', 'basename', 'name', 'tod_id', 'instrument',
-                  'ctime', 'day_str', 'time_str', 'season', 'array', 'array_data',
-                  'sample_index', 'det_uid']
+                  'ctime', 'season', 'array', 'array_data', 'sample_index', 'det_uid']
         self = cls()
         for f in fields:
             self.__dict__[f] = getattr(todinfo, f)
