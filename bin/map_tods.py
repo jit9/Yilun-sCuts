@@ -1,5 +1,6 @@
 """This script creates a simple binned map of a given TOD.
 It depends on enki module
+
 """
 import matplotlib
 matplotlib.use('agg')
@@ -95,7 +96,7 @@ if __name__ == '__main__':
     parser.add_argument("area")
     parser.add_argument("sel")
     parser.add_argument("odir")
-    parser.add_argument("--nrandom", type=int, default=100)
+    parser.add_argument("--nrandom", type=int, default=0)
     args = parser.parse_args()
 
     filedb.init()
@@ -105,15 +106,20 @@ if __name__ == '__main__':
     mkdir(outdir, comm)
     write_settings(outdir)
     # choose nrandom ids to work on
-    if comm.rank == 0:
-        ids = np.random.choice(ids, args.nrandom, replace=False)
-    else:
-        ids = None
+    if args.nrandom > 0:
+        if comm.rank == 0:
+            ids = np.random.choice(ids, args.nrandom, replace=False)
+        else:
+            ids = None
     ids = comm.bcast(ids, root=0)
     for scan_id in range(comm.rank, len(ids), comm.size):
         id = ids[scan_id]
         entry = filedb.data[id]
         print(f'{comm.rank}:{scan_id}:{entry.id}')
+        pa, freq, season = get_afs(id)
+        outdir_scan = opj(outdir, f'pa{pa}_{freq}_s{season}', entry.id)
+        if os.path.exists(outdir_scan):
+            continue
         # read tod data
         try:
             data = read_metadata(entry)
@@ -153,8 +159,6 @@ if __name__ == '__main__':
         # write fits files
         with bench.show("write"):
             # prepare outdir for each scan
-            pa, freq, season = get_afs(id)
-            outdir_scan = opj(outdir, f'pa{pa}_{freq}_s{season}', entry.id)
             mkdir(outdir_scan)
             enmap.write_map(opj(outdir_scan, f'tod_{entry.tag}.fits'),
                             map_bin)
