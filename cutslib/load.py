@@ -8,7 +8,7 @@ from .pathologies import Pathologies, get_pathologies
 from .pathologies_tools import get_pwv
 
 glitchp = {'nSig': 10., 'tGlitch' : 0.007, 'minSeparation': 30, \
-           'maxGlitch': 50000, 'highPassFc': 6.0, 'buffer': 50 }
+           'maxGlitch': 50000, 'highPassFc': 6.0, 'buffer': 200 }
 
 def load_tod(todname, tag=None, planet=None, partial=None, rd=True, fs=True, **kwargs):
     opts = {'filename': todname, 'repair_pointing':True, 'read_data': rd, 'fix_sign': fs}
@@ -113,10 +113,12 @@ def quick_transform(tod, steps=[], safe=False, glitchp=glitchp):
             moby2.tod.cuts.fill_cuts(tod, tod.cuts)
         elif step == 'ff_mce':  # find and fill mce cuts
             mce_cuts = moby2.tod.get_mce_cuts(tod)
+            tod.mce_cuts = mce_cuts
             moby2.tod.fill_cuts(tod, mce_cuts, no_noise=True)
         elif step == 'ff_glitch':  # find and fill glitch cuts
             pcuts = moby2.tod.get_glitch_cuts(tod=tod, params=glitchp)
             moby2.tod.fill_cuts(tod, pcuts, no_noise=True)
+            tod.pcuts = pcuts
         elif step == 'get_iv':
             cal = moby2.scripting.get_calibration({'type':'iv', 'source':'data'}, tod=tod)
             tod.cal = cal
