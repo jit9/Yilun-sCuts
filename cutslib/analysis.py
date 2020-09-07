@@ -65,7 +65,7 @@ def analyze_scan(tod, qlim=1, vlim=0.01, n_smooth=0):
     return scan_params
 
 
-def analyze_common_mode(fdata, nsamps=1, preselector=None):
+def analyze_common_mode(fdata, nsamps=1, preselector=None, pman=None):
     """perform a simple common mode analysis in a given frequency range.
     It requires the fft signal (fsignal) to be available in the tod.
 
@@ -111,9 +111,12 @@ def analyze_common_mode(fdata, nsamps=1, preselector=None):
     cm_params['gain'] = gain
     cm_params['norm'] = norm
     cm_params['corr'] = corr
+    if pman:
+        for k, v in cm_params.items(): pman.add(k, v)
     return cm_params
 
-def analyze_detector_noise(fdata, preselector=None, n_deproject=0, nsamps=1):
+def analyze_detector_noise(fdata, preselector=None, n_deproject=0,
+                           nsamps=1, pman=None):
     """Perform a simple analysis of noise property of dets in a given
     frequency range. In particular, we look for noise level (rms) and
     deviation from gaussian statistics (skew, kurt). Results will be
@@ -153,13 +156,15 @@ def analyze_detector_noise(fdata, preselector=None, n_deproject=0, nsamps=1):
     tdata = fmodes_to_tmodes(fdata)
     skew = stat.skewtest(tdata,axis=1)
     kurt = stat.kurtosistest(tdata,axis=1)
-
     noises['c'] = c
     noises['rms'] = rms
     noises['kurt'] = kurt[0]
     noises['kurt_pval'] = kurt.pvalue
     noises['skew'] = skew[0]
     noises['skew_pval'] = skew.pvalue
+    if pman:
+        for k,v in noises.items():
+            pman.add(k, v)
     return noises
 
 def deproject_modes(fdata, n_modes=0, preselector=None, inplace=False):
