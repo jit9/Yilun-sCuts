@@ -6,6 +6,7 @@ the mask into TODCuts objects and store them under a given tag"""
 import numpy as np, sys, os
 from enlib import enmap, config, log, pmat, mpi, utils, errors, scan as enscan
 from enact import actscan, filedb, files, actdata
+import moby2
 from moby2.tod.cuts import CutsVector, TODCuts
 from moby2.util import Depot
 
@@ -29,11 +30,11 @@ comm  = mpi.COMM_WORLD
 dtype = np.float64
 
 # Load input mask
-imask = enmap.read_map(args.mask)
+imask = enmap.read_map(args.mask).astype(bool)  # without bool it will fail
 # Widen if necessary
 if args.widen > 0:
     radius = args.widen*utils.arcmin
-    imask = (~imask).distance_transform(rmax=radius)<radius
+    imask = enmap.distance_transform(~imask, rmax=radius)<radius
 # Expand to 3 components, as the pointing code expects that
 mask = enmap.zeros((3,)+imask.shape[-2:], imask.wcs, dtype)
 mask[0] = imask.reshape((-1,)+imask.shape[-2:])[0]
@@ -41,7 +42,7 @@ del imask
 
 # Setup depot
 depot = moby2.util.Depot(args.depot)
-
+root='./'
 # Set up logging
 utils.mkdir(root + "log")
 logfile   = root + "log/log%03d.txt" % comm.rank
