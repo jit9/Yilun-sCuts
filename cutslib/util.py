@@ -220,3 +220,8 @@ def deep_merge(*ds):
         else:
             return deep_merge(*vals)
     return merge_with(combine, *ds)
+
+def dets2sel(dets, ndet):
+    sel = np.zeros(ndet, dtype=bool)
+    sel[dets] = 1
+    return sel

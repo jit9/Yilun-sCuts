@@ -12,6 +12,7 @@ from cutslib.todloop import Routine
 from cutslib.analysis import CutsManager, PathologyManager
 from cutslib.pathologies import get_detector_params
 from cutslib.tools import nextregular
+from cutslib.util import dets2sel
 
 
 class PathologySimple(Routine):
@@ -43,16 +44,14 @@ class PathologySimple(Routine):
         cman = CutsManager.for_tod(tod)
         pman = PathologyManager.for_tod(tod)
         # find mce cuts and glitch cuts
-        cuts_partial = moby2.tod.get_glitch_cuts(
-            tod=tod, params=self.gl_param)
+        cuts_partial = moby2.tod.get_glitch_cuts(tod=tod, params=self.gl_param)
         mce_cuts = moby2.tod.get_mce_cuts(tod)
         # store in manager
         cman.add('mce', mce_cuts)
         cman.add('glitch', cuts_partial.copy())
         # fill glitches before proceeding
         cuts_partial.merge_tod_cuts(mce_cuts)
-        moby2.tod.fill_cuts(tod, cuts_partial, extrapolate=False,
-                            no_noise=True)
+        moby2.tod.fill_cuts(tod, cuts_partial, extrapolate=False, no_noise=True)
         # find detectors that are all zeros
         zero_sel = tod.data[:,::100].any(axis=1)
         cman.add('zero_sel', zero_sel)
@@ -91,10 +90,9 @@ class PathologySimple(Routine):
         freqs = fsw.matfreqs
         # low-freq analysis
         fmask = (freqs > self.lf_param['fmin']) * (freqs < self.lf_param['fmax'])
-        preselector = preselect.by_median(min_corr=self.lf_param['min_corr'],
-                                          dets=self.live)
-        cm = ana.analyze_common_mode(fsw.mat[:,fmask], preselector=preselector,
-                                     pman=pman)
+        dets4presel = dets2sel(self.live, len(tod.det_uid)) * (cal != 0)
+        preselector = preselect.by_median(min_corr=self.lf_param['min_corr'], dets=dets4presel)
+        cm = ana.analyze_common_mode(fsw.mat[:,fmask], preselector=preselector, pman=pman)
         # high-freq analysis
         fmask = (freqs > self.hf_param['fmin']) * (freqs < self.hf_param['fmax'])
         nm = ana.analyze_detector_noise(fsw.mat[:,fmask], pman=pman,
@@ -102,8 +100,11 @@ class PathologySimple(Routine):
         # narrow pathologies to the live candidates only
         pman.restrict_dets(self.live)
         # save pathologies
+        # bind useful info such as cuts manager, det lists
         pman.cman = cman
-        # to save space, drop the correlation matrices
+        pman.live = self.live
+        pman.excl = self.excl
+        pman.dark = self.dark
+        # drop the correlation matrices to save disk space
         pman.drop('cc').drop('c')
         self.depot.write_object(pman, tod=tod, **self.out_param)
-o
