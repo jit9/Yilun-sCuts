@@ -1,8 +1,8 @@
 """Grab some of the codes written for SO"""
 import pickle, numpy as np
 import scipy, scipy.stats as stat
+import moby2
 from moby2.tod.cuts import CutsVector
-
 from cutslib import TODCuts
 from cutslib.glitch import SnippetInfo
 
@@ -341,9 +341,7 @@ class CutsManager:
     def __init__(self, tod=None):
         """Manage different cuts"""
         self.tod = TODWrapper(tod)
-        self.cuts = {
-            'final': None
-        }
+        self.cuts = {}
     def add(self, name, cuts):
         if name in self.cuts:
             raise ValueError("naming conflict")
@@ -363,26 +361,37 @@ class CutsManager:
     @classmethod
     def for_tod(cls, tod):
         cm = cls(tod)
-        cm.cuts['final'] = TODCuts.for_tod(tod)
         return cm
     def combine_cuts(self, fields=[], exclude=[]):
         # default to combine all cuts into 'final'
+        final = TODCuts.for_tod(self.tod)
         if len(fields) == 0:
             fields = [k for k in self.cuts.keys()
-                      if k not in ['final']+exclude]
+                      if k not in exclude]
         if len(fields) != 0:
             for f in fields:
                 fcuts = self.cuts[f]
                 if isinstance(fcuts, CutsVector):
-                    for d in self.cuts['final'].det_uid:
-                        self.cuts['final'].add_cuts(d, fcuts)
+                    for d in final.det_uid:
+                        final.add_cuts(d, fcuts)
                 elif isinstance(fcuts, TODCuts):
-                    self.cuts['final'].merge_tod_cuts(fcuts)
+                    final.merge_tod_cuts(fcuts)
                 else: raise ValueError
+        return final
+    def merge(self, other):
+        assert isinstance(other, CutsManager)
+        overlap = [k for k in other.cuts if k in self.cuts]
+        assert len(overlap) <= 1, f"Naming conflicts, rename {overlap}"
+        if len(overlap) == 1: assert overlap[0] == 'final'  # obsolete
+        for k in other.cuts:
+            self.add(k, other.cuts[k])
         return self
-    def redo_combine(self):
-        self.cuts['final'] = TODCuts.for_tod(self.tod)
-
+    def move(self, name, newname):
+        if name not in self.cuts: return self
+        if newname is not None:
+            self.cuts[newname] = self.cuts[name].copy()
+        del self.cuts[name]
+        return self
 
 class PathologyManager:
 
@@ -463,7 +472,8 @@ class PathologyManager:
             # add masks to CutsManager
             cman.add(f, m)
         # merge the flags into a cuts field and keep the origin fields
-        cman.combine_cuts()
+        combined = cman.combine_cuts(fields=crits)
+        cman.add('all_crits', combined)
         return cman
     def __getitem__(self, attr):
         if attr in self.patho:
@@ -477,3 +487,12 @@ class PathologyManager:
         with open(path, "rb") as f:
             patho = pickle.load(f)
         return patho
+    def get_calibration(self, dets=None):
+        # generate calibration
+        cal = self.patho['ff'] * self.patho['resp']
+        cal *= self.tod.info.array_data["optical_sign"]
+        # Store results
+        if dets is None: dets = self.dets
+        cal_obj = moby2.Calibration(det_uid=dets)
+        cal_obj.set_property("cal", cal[dets])
+        return cal_obj
