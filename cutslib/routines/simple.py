@@ -39,7 +39,6 @@ class PathologySimple(Routine):
         # simple preprocessing and downsampling
         moby2.tod.remove_mean(tod)
         moby2.tod.remove_filter_gain(tod)
-        tod = tod.copy(resample=2, resample_offset=1)
         # initialize manager for cuts and pathologies
         cman = CutsManager.for_tod(tod)
         pman = PathologyManager.for_tod(tod)
@@ -52,6 +51,8 @@ class PathologySimple(Routine):
         # fill glitches before proceeding
         cuts_partial.merge_tod_cuts(mce_cuts)
         moby2.tod.fill_cuts(tod, cuts_partial, extrapolate=False, no_noise=True)
+        # downsample before proceeding
+        tod = tod.copy(resample=2, resample_offset=1)
         # find detectors that are all zeros
         zero_sel = tod.data[:,::100].any(axis=1)
         cman.add('zero_sel', zero_sel)
