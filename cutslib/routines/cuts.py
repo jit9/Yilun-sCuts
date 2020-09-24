@@ -230,6 +230,9 @@ class FillCuts(Routine):
         Parameters
         ----------
         cuts_dir: if cuts are stored in a given directory
+        depot: one can also specify a depot while leaving cuts_dir empty
+        tag: tag to load from depot
+        no_noise: whether to fill cuts with noise
         """
         Routine.__init__(self)
         # retrieve other parameters
@@ -253,7 +256,7 @@ class FillCuts(Routine):
                 'depot': self.depot,
                 'tag': self.tag
             }, tod=tod)
-
+        self.logger.info("Filling in srcmask cuts")
         # fill the source cuts to the tod
         cuts = TODCuts.for_tod(tod, assign=False)
         cuts.merge_tod_cuts(mask_cuts)
@@ -484,7 +487,6 @@ class FindPathologies(Routine):
         Routine.__init__(self)
         self._depot_path = params.get('depot', None)
         self._tag_patho = params.get('tag_patho', None)
-        self._skip_partial = params.get('skip_partial',True)
         self._force_patho = params.get('force_patho', False)
         self._pathop = params.get('pathop', {})
 
@@ -497,7 +499,7 @@ class FindPathologies(Routine):
         pathoResult = os.path.exists(
             self._depot.get_full_path(pathologies.Pathologies,
                                       tag=self._tag_patho, tod=tod))
-        skip_patho = self._skip_partial and not self._force_patho and pathoResult
+        skip_patho = (not self._force_patho) and pathoResult
 
         if skip_patho:
             self.logger.info("Using old pathologies result")
