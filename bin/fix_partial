@@ -1,0 +1,152 @@
+#!/bin/env python
+
+"""This script aims to fix the partial cuts by filling in source cuts
+
+"""
+
+import os
+import moby2
+from todloop import TODLoop
+
+from cutslib.routines.tod import LoadTOD, CheckTODLength, TransformTOD
+from cutslib.routines.cuts import CutMCE, FillCuts, CutPlanets, \
+    RemoveSyncPickup, CutPartial
+from cutslib.routines.misc import FindRebiasTime
+from cutslib.routines.report import PathologyReport
+
+import argparse
+
+# define command line options
+parser = argparse.ArgumentParser()
+parser.add_argument("param", help="cutparam")
+parser.add_argument("-s", "--start", help="start", type=int, default=0)
+parser.add_argument("-e", "--end", help="end", type=int, default=None)
+parser.add_argument("-n", "--nworkers", help="number of workers",
+                    type=int, default=1)
+parser.add_argument("-i", "--index", help="index for fake mpi",
+                    type=int, default=0)
+parser.add_argument("-m", "--mpi", help="use mpi",
+                    action="store_true")
+parser.add_argument("-f", "--fmpi", help="use fake mpi",
+                    action="store_true")
+args = parser.parse_args()
+
+# load parameters from cutparam file
+# general cut parameter file
+cutparam_file = args.param
+cutparam = moby2.util.MobyDict.from_file(cutparam_file)
+# specific cut parameter file
+cutParam_file = cutparam.get('cutParams')
+cutParam = moby2.util.MobyDict.from_file(cutParam_file)
+
+# get useful parameters
+pathop = cutParam['pathologyParams']
+no_noise = not(cutParam.get("fillWithNoise", True))
+depot = cutparam['depot']
+src_mask_params = cutParam.get_deep(('source_cuts','mask_params'),{})
+src_shift_params = cutParam.get_deep(('source_cuts', 'mask_shift_generator'))
+planet_mask_params = cutParam.get_deep(('planet_cuts','mask_params'),{})
+planet_shift_params = cutParam.get_deep(('planet_cuts', 'mask_shift_generator'))
+
+# initialize loop
+loop = TODLoop()
+
+# add list of tod
+loop.add_tod_list(cutparam.get('source_scans'))
+outdir = cutparam.get('outdir')
+loop.set_output_dir(outdir)
+if cutparam.get('skipDone', True):
+    loop.add_done_list(os.path.join(outdir, cutparam.get('report')+".db"))
+if cutparam.get('reject_depot'):
+    loop.add_reject_list(cutparam.get('reject_depot'))
+
+# find rebias time
+config = {
+    'config_file': cutparam.get('manifest_conf'),
+    'offset': cutparam.get('offset', 0),
+    'rebias_wait': cutparam.get('rebias_wait'),
+    'IV_wait': cutparam.get('IV_wait')
+}
+loop.add_routine(FindRebiasTime(**config))
+
+# load tod
+loop.add_routine(LoadTOD())
+
+# check whether the tod satisfy the length requirement
+config = {
+    "fmin": pathop["findPathoParams"]["liveCorrPar"]['freqRange']['fmin'],
+    "min_periods": pathop["findPathoParams"].get("minPeriods", 1.)
+}
+loop.add_routine(CheckTODLength(**config))
+
+# cut mce sources
+loop.add_routine(CutMCE(no_noise=no_noise))
+
+config = {
+    'depot': depot,
+    'tag': cutparam.get('tag_srcmask'),
+    'no_noise': no_noise,
+}
+loop.add_routine(FillCuts(**config))
+
+# cut planets
+config = {
+    'inputs': {
+        'tod': 'tod'
+    },
+    'outputs': {
+        'tod': 'tod'
+    },
+    'depot': depot,
+    'tag_planet': cutparam.get('tag_planet'),
+    'no_noise': no_noise,
+    'pointing_par': cutParam['pointing'],
+    'mask_params': planet_mask_params,
+    'mask_shift_generator': planet_shift_params,
+    'write_depot': True,
+    'force_planet': cutparam.get('forcePlanet', False)
+}
+loop.add_routine(CutPlanets(**config))
+
+# remove sync pickup
+config = {
+    'inputs': {
+        'tod': 'tod'
+    },
+    'outputs': {
+        'tod': 'tod'
+    },
+    'remove_sync': cutparam.get('removeSync', False),
+    'force_sync': cutparam.get('forceSync', False),
+    'tag_sync': cutparam.get('tag_sync'),
+    'depot': depot,
+    'write_depot': True
+}
+loop.add_routine(RemoveSyncPickup(**config))
+
+# partial cuts
+config = {
+    'inputs': {
+        'tod': 'tod'
+    },
+    'outputs': {
+        'tod': 'tod'
+    },
+    'tag_partial': cutparam.get('tag_partial'),
+    'force_partial': cutparam.get('forcePartial'),
+    'glitchp': cutParam.get('glitchParams'),
+    'include_mce': True,
+    'depot': depot,
+    'no_noise': no_noise,
+    'write_depot': True,
+    'force_partial': True,
+}
+loop.add_routine(CutPartial(**config))
+
+# run loop
+if args.mpi:
+    loop.run_parallel(args.start,args.end,args.nworkers)
+elif args.fmpi:
+    loop.run_fparallel(args.start,args.end,args.nworkers,args.index)
+else:
+    loop.run(args.start, args.end)
