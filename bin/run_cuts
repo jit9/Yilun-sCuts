@@ -9,7 +9,7 @@ from todloop import TODLoop
 
 from cutslib.routines.tod import LoadTOD, CheckTODLength, TransformTOD
 from cutslib.routines.cuts import CutMCE, CutSources, CutPlanets, \
-    RemoveSyncPickup, CutPartial, FindPathologies
+    RemoveSyncPickup, CutPartial, FindPathologies, FillCuts
 from cutslib.routines.misc import FindRebiasTime
 from cutslib.routines.report import PathologyReport
 
@@ -82,24 +82,33 @@ loop.add_routine(CheckTODLength(**config))
 loop.add_routine(CutMCE(no_noise=no_noise))
 
 # cut sources
-config = {
-    'inputs': {
-        'tod': 'tod'
-    },
-    'outputs': {
-        'tod': 'tod'
-    },
-    'depot': depot,
-    'tag_source': cutparam.get('tag_source'),
-    'source_list': cutParam['source_cuts'].get('source_list', None),
-    'hdf_source_cuts': cutparam.get('hdf_source_cuts', None),
-    'no_noise': no_noise,
-    'pointing_par': cutParam['pointing'],
-    'mask_params': src_mask_params,
-    'mask_shift_generator': src_shift_params,
-    'write_depot': True,
-}
-loop.add_routine(CutSources(**config))
+if cutparam.get('tag_source', None) is not None:
+    config = {
+        'inputs': {
+            'tod': 'tod'
+        },
+        'outputs': {
+            'tod': 'tod'
+        },
+        'depot': depot,
+        'tag_source': cutparam.get('tag_source'),
+        'source_list': cutParam['source_cuts'].get('source_list', None),
+        'hdf_source_cuts': cutparam.get('hdf_source_cuts', None),
+        'no_noise': no_noise,
+        'pointing_par': cutParam['pointing'],
+        'mask_params': src_mask_params,
+        'mask_shift_generator': src_shift_params,
+        'write_depot': True,
+    }
+    loop.add_routine(CutSources(**config))
+
+if cutparam.get('tag_srcmask',None) is not None:
+    config = {
+        'depot': depot,
+        'tag': cutparam.get('tag_srcmask'),
+        'no_noise': no_noise,
+    }
+    loop.add_routine(FillCuts(**config))
 
 # cut planets
 config = {
@@ -173,7 +182,6 @@ loop.add_routine(TransformTOD(**config))
 config = {
     'depot': depot,
     'tag_patho': cutparam.get('tag_patho'),
-    'skip_partial': False,
     'force_patho': cutparam.get('forcePatho', False),
     'pathop': pathop
 }
