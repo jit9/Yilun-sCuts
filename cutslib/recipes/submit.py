@@ -9,6 +9,12 @@ def run_tiger(cutparam):
 def run_della(cutparam):
     submit_command("run_cuts", cutparam, cluster='della')
 
+def run_tiger_cmd(cutparam, cmd):
+    submit_command(cmd, cutparam, cluster='tiger')
+
+def run_della_cmd(cutparam, cmd):
+    submit_command(cmd, cutparam, cluster='della')
+
 ####################
 # utility function #
 ####################
