@@ -1,0 +1,67 @@
+#!/bin/env python
+"""convenient script to submit slurm jobs"""
+
+import argparse, os
+parser = argparse.ArgumentParser()
+parser.add_argument("commands", help="commands to submit", nargs="+")
+parser.add_argument("-j","--jobname", default='slurmjob')
+parser.add_argument("-n","--nnode", type=int, default=1)
+parser.add_argument("-t","--time",type=str,help="in format like 1h or 30m", default="1h")
+parser.add_argument("-q","--qos",type=str, default="short")
+parser.add_argument("-p","--tpn",type=int,default=40)
+parser.add_argument("--mod",type=str,help="modules to load prior to running", default="bashrc,myenv,so_stack,intel,my_enki")
+parser.add_argument("--tmpfile",type=str,default=".ssub.tmp.sh")
+parser.add_argument("-o","--omp",type=int,default=0)  # 0 means no restriction
+parser.add_argument("--mpi",action="store_true", default=False)
+parser.add_argument("--dry",action="store_true", default=False)
+args = parser.parse_args()
+
+MODULES = {
+    'bashrc': 'source ~/.bashrc',
+    'myenv': 'source activate myenv',
+    'my_enki': 'load_enki',
+}
+
+def parse_mod(expr):
+    """parse modules from expression given in args.mod"""
+    lines = []
+    mods = expr.split(',')
+    for m in mods:
+        if m in MODULES: lines.append(MODULES[m])
+        else: lines.append(f"module load {m}")
+    return lines
+
+def parse_time(expr):
+    """parse time from expression like 5h,30m"""
+    # first deal with hour
+    hsp = expr.lower().split('h')
+    if len(hsp) > 1: h = int(hsp[0])
+    else: h = 0
+    # now hour is out of the way
+    expr = hsp[-1]
+    msp = expr.lower().split('m')
+    if len(msp) > 1: m = int(msp[0])
+    else: m = 0
+    return f"{h:02d}:{m:02d}:00"
+
+
+with open(args.tmpfile, "w") as f:
+    # preambles
+    f.write("#!/bin/bash\n")
+    f.write(f"#SBATCH -N {args.nnode}\n")
+    f.write(f"#SBATCH --ntasks-per-node {args.tpn}\n")
+    f.write(f"#SBATCH -J {args.jobname}\n")
+    f.write(f"#SBATCH -t {parse_time(args.time)}\n")
+    f.write(f"#SBATCH --qos {args.qos}\n")
+    # add modules
+    mod_lines = parse_mod(args.mod)
+    for l in mod_lines: f.write(l+'\n')
+    # add commands
+    commands = args.commands
+    tpn = args.tpn if args.omp == 0 else args.tpn // args.omp
+    if args.mpi: commands = [f'mpirun -n {tpn}'] + commands
+    if args.omp > 0: commands = [f'OMP_NUM_THREADS={args.omp}'] + commands
+    f.write(' '.join(commands)+'\n')
+
+# submit job
+if not args.dry: os.system(f"sbatch {args.tmpfile}")
