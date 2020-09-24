@@ -3,7 +3,7 @@
 """This script aims to take a input mask based on a fits file and project
 the mask into TODCuts objects and store them under a given tag"""
 
-import numpy as np, sys, os
+import numpy as np, sys, os, os.path as op
 from enlib import enmap, config, log, pmat, mpi, utils, errors, scan as enscan
 from enact import actscan, filedb, files, actdata
 import moby2
@@ -20,13 +20,23 @@ parser.add_argument("--buffer", type=int, default=10)
 parser.add_argument("--widen", type=int, default=0, help="widen the mask by the specified arcmin")
 parser.add_argument("--depot", help="depot to store the output file", required=True)
 parser.add_argument("--tag", help="tag under which the cuts will be stored", required=True)
+parser.add_argument("--fmpi", help="whether to use fake mpi (no communication)", action='store_true')
+parser.add_argument("--fsize", help="size for fake mpi", type=int, default=1)
+parser.add_argument("--frank", help="rank for fake mpi", type=int, default=0)
+parser.add_argument("--force", help="overwrite existing file", action='store_true')
+parser.add_argument("--logfile", help="log file name to use", default="log")
 parser.add_argument("prefix",nargs="?")
 args = parser.parse_args()
 
+import ipdb; ipdb.set_trace()
 filedb.init()
 ids = filedb.scans[args.sel]
 
 comm  = mpi.COMM_WORLD
+# if we have used fake mpi, supply the fake size and rank as specified
+if args.fmpi:
+    comm.size = args.fsize
+    comm.rank = args.frank
 dtype = np.float64
 
 # Load input mask
@@ -45,16 +55,23 @@ depot = moby2.util.Depot(args.depot)
 root='./'
 # Set up logging
 utils.mkdir(root + "log")
-logfile   = root + "log/log%03d.txt" % comm.rank
+logfile   = root + "log/%s_%03d.txt" % (args.logfile, comm.rank)
 log_level = log.verbosity2level(config.get("verbosity"))
 L = log.init(level=log_level, file=logfile, rank=comm.rank)
 L.info("Initialized")
 
 # Loop through each scan
 myinds = np.arange(comm.rank, len(ids), comm.size)
+import ipdb; ipdb.set_trace()
 for ind in myinds:
     id = ids[ind]
     entry = filedb.data[id]
+    # check whether output exists
+    ofile = depot.get_full_path(TODCuts, tag=args.tag, tod=entry.id)
+    if op.exists(ofile):
+        if not args.force:
+            L.info(f"Skip existing: {entry.id}")
+            continue
     try:
         d = actdata.read(entry, ["point_offsets","boresight","site","array_info"])
         d = actdata.calibrate(d, exclude=["autocut", "fftlen"])
