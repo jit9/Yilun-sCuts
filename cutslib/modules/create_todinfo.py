@@ -17,6 +17,7 @@ class Module:
         if self.od_noncmb: self.od_noncmb = self.od_noncmb.split()
         else: self.od_noncmb = []
         self.outfile = config.get("outfile", "todinfo.txt")
+        self.season = config.get("season",None)
 
     def run(self, p):
         cr = self.cut_release
@@ -33,6 +34,8 @@ class Module:
         cmb_entries = []
         for field in od_cmb:
             for tag in tags:
+                if self.season is not None:
+                    if self.season not in tag: continue
                 # get tod list corresponding to the field and tag
                 name = p.depot.get_deep(('SelectedTODs',
                                          release['tags'][tag]['tag_out'],
@@ -50,6 +53,8 @@ class Module:
         noncmb_entries = []
         for field in od_noncmb:
             for tag in tags:
+                if self.season is not None:
+                    if self.season not in tag: continue
                 # get tod list corresponding to the field and tag
                 name = p.depot.get_deep(('SelectedTODs',
                                          release['tags'][tag]['tag_out'],
