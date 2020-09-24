@@ -58,8 +58,9 @@ with open(args.tmpfile, "w") as f:
     for l in mod_lines: f.write(l+'\n')
     # add commands
     commands = args.commands
-    tpn = args.tpn if args.omp == 0 else args.tpn // args.omp
-    if args.mpi: commands = [f'mpirun -n {tpn}'] + commands
+    ntasks = args.tnp * args.nnode
+    ntasks //= args.omp if args.omp > 0 else 1
+    if args.mpi: commands = [f'mpirun -n {ntasks}'] + commands
     if args.omp > 0: commands = [f'OMP_NUM_THREADS={args.omp}'] + commands
     f.write(' '.join(commands)+'\n')
 
