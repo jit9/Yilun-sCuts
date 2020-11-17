@@ -253,7 +253,7 @@ def dets_affected_in_cv(cuts, cv, dets):
     return slices_map(get_dets, pcuts2mask(cuts), cv2slices(cv))
 
 class PixelReader:
-    def __init__(self, season='2016', array='AR3', mask=None):
+    def __init__(self, season='2016', array='AR3', mask=None, adj=False):
         """Utility class to find information about each pixel (feedhorn), migrated
         from todloop.util.pixels.PixelReader to manage internally"""
         self._array_info = {
@@ -266,7 +266,7 @@ class PixelReader:
         self._pixel_dict = self.generate_pixel_dict()
         self._mask = mask
         self.calibrate_array(season=self._array_info['season'])
-        self.get_adjacent_detectors = self.adjacent_detector_generator()
+        if adj: self.get_adjacent_detectors = self.adjacent_detector_generator()
 
     def generate_pixel_dict(self):
         """Generate pixel dictionary that tells which detectors correspond

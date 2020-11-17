@@ -155,7 +155,7 @@ class SeasonStats:
                                                  f'{tag}.csv'))
             if op.exists(planet_file):
                 self.planet = pd.read_csv(planet_file)
-                if verbose: print("planet measurements loaded ss.planet")
+                if verbose: print("planet measurements loaded ss.planet:", planet_file)
         # load absolute calibration if that's what we want
         if abscal:
             abscal_file = SharedDepot().get_deep(('TODAbsCal',f'abscal_{abscal}.h5'))
@@ -163,7 +163,7 @@ class SeasonStats:
             with h5py.File(abscal_file, "r") as f:
                 abscal_data = f['abscal'][:]
                 # choose only one freq
-                bmask = abscal_data['band_id'].astype(str) == f"f{self.freq}"
+                bmask = abscal_data['band_id'].astype(str) == f"f{self.freq:03d}"
                 tod_id = abscal_data['tod_id'].astype(str)[bmask]
                 cal = abscal_data['cal'][bmask]
                 del abscal_data, bmask
