@@ -36,7 +36,7 @@ def tags(*tags):
             'tag_cal': cpar.get('tag_cal'),
             'tag_partial': cpar.get('tag_partial'),
             'tag_planet': cpar.get('tag_planet'),
-            'tag_source': cpar.get('tag_source'),
+            'tag_source': cpar.get('tag_srcmask'),
             'tag_cmb': cpar.get('tag_cmb'),
         }
         # find report

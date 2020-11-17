@@ -290,9 +290,9 @@ pathologyParams = {
          'rms'                  : {
                 'selType'            :                   'absolute',
                 'relSigma'           :                         5.0 ,
-                'absCrit'            :                   [1e-3, 1e1],
-                'normalize'          :                       False ,
-                'apply'              :                       True
+                'absCrit'            :                  [1e-3, 1e1],
+                'normalize'          :                        False,
+                'apply'              :                         True,
                                   }
         },
     'otherParams'      : {

@@ -28,7 +28,6 @@ parser.add_argument("--logfile", help="log file name to use", default="log")
 parser.add_argument("prefix",nargs="?")
 args = parser.parse_args()
 
-import ipdb; ipdb.set_trace()
 filedb.init()
 ids = filedb.scans[args.sel]
 
@@ -62,7 +61,6 @@ L.info("Initialized")
 
 # Loop through each scan
 myinds = np.arange(comm.rank, len(ids), comm.size)
-import ipdb; ipdb.set_trace()
 for ind in myinds:
     id = ids[ind]
     entry = filedb.data[id]

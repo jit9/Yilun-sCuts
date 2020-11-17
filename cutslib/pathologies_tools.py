@@ -1175,9 +1175,9 @@ def compute_calibration(gains, ff, resp, sel,
     if "min_sel" not in kwargs: kwargs["min_sel"] = 100
     if "min_stable" not in kwargs: kwargs["min_stable"] = 40
 
-    if level_type is "good":
+    if level_type == "good":
         weights = None
-    elif level_type is "stable":
+    elif level_type == "stable":
         weights = resp*ff
     else:
         raise ValueError("Error: Unknown level_type (should be either good or stable)")

@@ -49,7 +49,6 @@ output_dir = params.get("output_dir", ".")
 
 # load catalog of tods and convert to pandas dataframe
 catalog = Catalog().data
-import pdb;pdb.set_trace()
 
 # select tods based on the specified criteria
 # 1st iteration

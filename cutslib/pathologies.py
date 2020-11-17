@@ -1541,16 +1541,16 @@ def lowFreqAnal(fdata, sel, frange, df, nsamps, scan_freq, par,
     # Get initial detectors
     if respSel is None:
         respSel = np.ones(sel.shape,dtype=bool)
-    if par.get("presel",{}).get("method","median") is "median":
+    if par.get("presel",{}).get("method","median") == "median":
         sl = presel_by_median(cc,sel=normSel[sel],
                               forceSel=respSel[sel],**par.get("presel",{}))
         # res["groups"] = None
-    elif par.get("presel",{}).get("method") is "groups":
+    elif par.get("presel",{}).get("method") == "groups":
         G, ind, ld, smap = group_detectors(cc, sel=normSel[sel], **par.get("presel",{}))
         sl = np.zeros(cc.shape[1],dtype=bool)
         sl[ld] = True
         # res["groups"] = {"G": G, "ind": ind, "ld": ld, "smap": smap}
-    elif par.get("presel",{}).get("method") is "none":
+    elif par.get("presel",{}).get("method") == "none":
         # if for some reason we want to skip the presel and select everything
         sl = np.ones(cc.shape[1],dtype=bool)
     else:
