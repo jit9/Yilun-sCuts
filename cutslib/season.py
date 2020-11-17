@@ -1,17 +1,15 @@
 """Interactive with season stats."""
 
 # general dependency
-import numpy as np, pickle, copy, os.path as op
+import numpy as np, pickle, copy, os.path as op, pandas as pd
+import h5py, moby2
 from matplotlib import pyplot as plt
-import pandas as pd
 from functools import reduce
 from tqdm import tqdm
-import h5py
 from scipy.signal import savgol_filter
-import moby2
 
 # cutslib dependency
-from .depot import Depot
+from .depot import Depot, SharedDepot
 from .util import update_if_not_exist, get_rundir, tag_to_afsv, deep_merge
 from .util import get_cutParam
 from .pathologyReport import pathoReport, pathoList
@@ -20,13 +18,15 @@ from .catalog import Catalog
 
 
 class SeasonStats:
-    def __init__(self, tag, calibrate=False, use_theta2=False, sort=False):
+    def __init__(self, tag, depot=None, calibrate=False, abscal='201026',
+                 use_theta2=False, sort=False, verbose=False, planet=True, rundb=True):
         """Show the season stats using the collected pickle
         file containing all pathological parameters
 
         Parameters
         ----------
         tag: tag associated with cuts run
+        depot: depot to load pickle file
 
         """
         # store metadata
@@ -93,8 +93,8 @@ class SeasonStats:
         for k, v in self.style.items():
             update_if_not_exist(v, common_style)
         # load pickle file
-        pickle_file = Depot().get_deep(('Postprocess', tag,
-                                        f'{tag}_results.pickle'))
+        pickle_file = Depot(depot).get_deep(('Postprocess', tag,
+                                             f'{tag}_results.pickle'))
         with open(pickle_file, "rb") as f:
             data = pickle.load(f)
         if calibrate:
@@ -116,23 +116,24 @@ class SeasonStats:
                 'type': 'percentile',
             })
         self.stats = data
-        print(f"stats loaded with {len(data['name'])} tods in ss.stats")
+        if verbose: print(f"stats loaded with {len(data['name'])} tods in ss.stats")
         # save an empty sel for future restriction work
         self.sel = np.ones_like(data['sel'], dtype=bool)
         # load db file from the run that contains some cuts stats
-        run_dir = get_rundir(tag)
-        db = op.join(run_dir, f"{tag}.db")
-        if op.exists(db):
-            self.db = pathoReport(db)
-            self.db.addPWV()
-            print("patho report loaded in ss.db")
-            # get catalog merged in with patho db
-            cat = Catalog().narrow_down(list(self.stats['name']))
-            self.db.data = self.db.data.merge(cat.data,left_on='todName',right_on='tod_name')
-            print("catalog merged in ss.db")
-            # get patholist
-            self.pl = pathoList(db)
-            print("pathoList loaded in ss.pl")
+        if rundb:
+            run_dir = get_rundir(tag)
+            db = op.join(run_dir, f"{tag}.db")
+            if op.exists(db):
+                self.db = pathoReport(db)
+                self.db.addPWV()
+                print("patho report loaded in ss.db")
+                # get catalog merged in with patho db
+                cat = Catalog().narrow_down(list(self.stats['name']))
+                self.db.data = self.db.data.merge(cat.data,left_on='todName',right_on='tod_name')
+                if verbose: print("catalog merged in ss.db")
+                # get patholist
+                self.pl = pathoList(db)
+                if verbose: print("pathoList loaded in ss.pl")
         # load cutparam
         self.cutParam = moby2.util.MobyDict.from_file(get_cutParam(tag))
         # populate cuts crit applied
@@ -147,13 +148,34 @@ class SeasonStats:
             crit[0] = 2*(1-crit[0])
             crit[1] = 2*(1-crit[1])
             self.style['corrLive']['crit'] = crit
-        print("cuts thresholds loaded in ss.styles[*]['crit']")
+        if verbose: print("cuts thresholds loaded in ss.styles[*]['crit']")
         # try to load planet calibration dataframe
-        planet_file = Depot().get_deep(('Postprocess', tag, 'calibration',
-                                        f'{tag}.csv'))
-        if op.exists(planet_file):
-            self.planet = pd.read_csv(planet_file)
-            print("planet measurements loaded ss.planet")
+        if planet:
+            planet_file = Depot(depot).get_deep(('Postprocess', tag, 'calibration',
+                                                 f'{tag}.csv'))
+            if op.exists(planet_file):
+                self.planet = pd.read_csv(planet_file)
+                if verbose: print("planet measurements loaded ss.planet")
+        # load absolute calibration if that's what we want
+        if abscal:
+            abscal_file = SharedDepot().get_deep(('TODAbsCal',f'abscal_{abscal}.h5'))
+            if verbose: print("Loading abscal:", abscal_file)
+            with h5py.File(abscal_file, "r") as f:
+                abscal_data = f['abscal'][:]
+                # choose only one freq
+                bmask = abscal_data['band_id'].astype(str) == f"f{self.freq}"
+                tod_id = abscal_data['tod_id'].astype(str)[bmask]
+                cal = abscal_data['cal'][bmask]
+                del abscal_data, bmask
+            # next we want to get the abscal for the tods we have
+            # this method below is okay but too slow
+            # idx = np.array([np.where(tod_id == n)[0] for n in self.name])
+            # here is a slightly faster approach
+            inc_idx = np.where(np.isin(tod_id, self.name))[0]
+            mat_idx = [np.where(self.name==tod_id[i])[0][0] for i in inc_idx]
+            idx = inc_idx[np.argsort(mat_idx)]
+            self.abscal = cal[idx]
+
         # sort values if that's what we want
         if sort: self.sort_values()
 
