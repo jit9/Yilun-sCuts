@@ -1,4 +1,11 @@
-"""This module matches the bias-step to TODs"""
+"""This module matches the bias-step to TODs
+
+Parameters
+----------
+bs_dir: directory where bias step files are stored, by default
+  we'll load from depot unless specified here
+
+"""
 
 class Module:
     def __init__(self, config):
@@ -6,6 +13,7 @@ class Module:
         self.tag = config.get("tag")
         self.tag_out = config.get("tag_out", None)
         self.bs_ver = config.get("bs_ver", "171110")
+        self.bs_dir = config.get("bs_dir", None)
 
     def run(self, p):
         filename = self.filename
@@ -24,7 +32,11 @@ class Module:
         cat.load_acqs(season=season,array=array,version=bs_ver)
         # start copying files
         for i,r in cat.data.iterrows():
-            fin = os.path.join(p.depot, 'biasstep', p.i.season, tag) + \
+            if self.bs_dir:
+                din = self.bs_dir
+            else:
+                din = os.path.join(p.depot, 'biasstep')
+            fin = os.path.join(din, p.i.season, tag) + \
                   "/" + r['bs_tag']+".cal"
             # unless otherwise specified, use tag as tag_out
             if not tag_out:
@@ -37,6 +49,9 @@ class Module:
             # check whether input file exists
             if not os.path.isfile(fin):
                 print("Warning: %s not found" % fin)
+                continue
+            if os.path.exists(fout):
+                print("Calibration exists, skipping...")
                 continue
             # check whether output dir exists
             dout = os.path.dirname(fout)
