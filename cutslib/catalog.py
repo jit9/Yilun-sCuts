@@ -22,7 +22,11 @@ class Catalog():
         npcat = fitsio.read(filename)
         npcat = npcat.byteswap().newbyteorder()
         self.data = pd.DataFrame.from_records(npcat)
-        self.data.index = pd.to_datetime(self.data.date)
+        # legacy handling
+        if isinstance(self.data.date[0], bytes):
+            self.data.index = pd.to_datetime(self.data.date.map(lambda x: x.decode('utf-8')))
+        else:
+            self.data.index = pd.to_datetime(self.data.date)
         self.abuses.update({'data':'loaded'})
         return self
 
