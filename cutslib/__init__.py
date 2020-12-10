@@ -3,6 +3,7 @@ from .catalog import Catalog
 from .load import load_tod, get_tes
 from .season import SeasonStats
 from .glitch import CutsVector
+from .math import *
 
 # short cut for long import
 from moby2.util.database import TODList
