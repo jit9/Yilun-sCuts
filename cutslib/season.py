@@ -18,7 +18,7 @@ from .catalog import Catalog
 
 
 class SeasonStats:
-    def __init__(self, tag, depot=None, calibrate=False, abscal='201026',
+    def __init__(self, tag=None, depot=None, calibrate=False, abscal='201026',
                  use_theta2=False, sort=False, verbose=False, planet=True, rundb=True):
         """Show the season stats using the collected pickle
         file containing all pathological parameters
@@ -118,7 +118,7 @@ class SeasonStats:
         self.stats = data
         if verbose: print(f"stats loaded with {len(data['name'])} tods in ss.stats")
         # save an empty sel for future restriction work
-        self.sel = np.ones_like(data['sel'], dtype=bool)
+        self.select = np.ones_like(data['sel'], dtype=bool)
         # load db file from the run that contains some cuts stats
         if rundb:
             run_dir = get_rundir(tag)
@@ -126,7 +126,7 @@ class SeasonStats:
             if op.exists(db):
                 self.db = pathoReport(db)
                 self.db.addPWV()
-                print("patho report loaded in ss.db")
+                if verbose: print("patho report loaded in ss.db")
                 # get catalog merged in with patho db
                 cat = Catalog().narrow_down(list(self.stats['name']))
                 self.db.data = self.db.data.merge(cat.data,left_on='todName',right_on='tod_name')
@@ -179,6 +179,15 @@ class SeasonStats:
         # sort values if that's what we want
         if sort: self.sort_values()
 
+    def get_subset(self, todlist, verbose=True):
+        match = np.isin(self.name, todlist)
+        if verbose: print(f"match tods: {np.sum(match)}")
+        new_ss = {}
+        for k, v in self.ss.items():
+            if v.shape[-1] == len(self.name):
+                new_ss[k] = v[...,match]
+        return new_ss
+
     def __getattr__(self, item):
         if item in self.__dict__:
             return self.__dict__[item]
@@ -196,7 +205,7 @@ class SeasonStats:
     def sel2hdf(self, filename, sel=None):
         """Save a given sel or the internal sel into a hdf file
         to be later digested by cuts pipeline"""
-        if sel is None: sel = self.sel
+        if sel is None: sel = self.select
         assert sel.shape == self.stats['sel'].shape
         f = h5py.File(filename, "w")
         for i in tqdm(range(sel.shape[-1])):
@@ -209,7 +218,7 @@ class SeasonStats:
     def hdf2sel(self, filename):
         """Load hdf file into a sel"""
         f = h5py.File(filename, "r")
-        sel = np.zeros_like(self.sel)
+        sel = np.zeros_like(self.select)
         for i in range(sel.shape[-1]):
             obs = self.stats['name'][i]
             if obs in f:
@@ -304,7 +313,7 @@ class SeasonStats:
                 axes[i,j].set_ylabel('n matches')
                 axes[i,j].set_ylim(bottom=1)
         plt.tight_layout()
-        self.sel = sel
+        self.select = sel
         return self
 
     def view_sel(self, sel=None):
@@ -327,7 +336,7 @@ class SeasonStats:
         """view individual cuts vs. pwv"""
         fields = [k for k in self.stats if 'sel' in k and \
                   k not in ['psel','kurtLive_sel', 'skewLive_sel']]
-        if not window: window = int(self.sel.shape[-1]/10)
+        if not window: window = int(self.select.shape[-1]/10)
         if window % 2 ==0: window += 1
         plt.figure(figsize=(10,8))
         for f in fields:
@@ -380,7 +389,7 @@ class SeasonStats:
 
     def view_hist(self, field, sel=None, nbins=100, hist_opts={}, **kwargs):
         """View the histogram of a particular criteria field"""
-        if sel is None: sel = self.sel
+        if sel is None: sel = self.select
         # get style
         style = copy.deepcopy(self.style[field])
         style.update(kwargs)
@@ -442,7 +451,7 @@ class SeasonStats:
             ax.set_title(style[f]['name'])
             ax.get_yaxis().set_visible(False)
         if show_sel:
-            axes = self.hist(self.sel, axes=axes, hist_opts={'color':'r'})
+            axes = self.hist(self.select, axes=axes, hist_opts={'color':'r'})
         return axes
 
     def tri(self, figsize=(20, 20), nbins=100, style={}, hist_opts={}, hist2d_opts={},
@@ -522,7 +531,7 @@ class SeasonStats:
 
     def reset(self):
         """reset sel"""
-        self.sel = np.ones_like(self.stats['sel'], dtype=bool)
+        self.select = np.ones_like(self.stats['sel'], dtype=bool)
         return self
 
     def _find_limits(self, d, style):
@@ -546,3 +555,84 @@ class SeasonStats:
             if not lo: lo = np.min(d)
             if not hi: hi = np.max(d)
         return lo, hi
+
+    def report_tods(self, tods):
+        """report the cuts for tods"""
+        match = np.isin(self.db.data.todName, tods)
+        columns = ['todName', 'length', 'liveDets', 'corrLive', 'normLive',
+                   'DELive', 'MFELive', 'rmsLive', 'skewLive', 'kurtLive',
+                   'corrLive_m', 'corrLive_s', 'normLive_m', 'normLive_s', 'DELive_m',
+                   'DELive_s', 'MFELive_m', 'MFELive_s', 'rmsLive_m', 'rmsLive_s',
+                   'skewLive_m', 'skewLive_s', 'kurtLive_m', 'kurtLive_s',
+                   'obs_detail', 'date', 'hour_utc', 'alt', 'loading', 'pwv_source']
+        return self.db.data[columns][match]
+
+    def plot_stats(self, field, dets=None, nrand=10, crange=None,
+                   hour=True, ylim=None, highlights=None, abscal=True, ylabel='',
+                   title='', op=np.abs, dot_alpha=1):
+        """Plot stats as a function of time
+        Parameters
+        ----------
+        dets: detector list of interests
+        nrand: randomly sample a few detectors to look at
+        crange: ctime range of interests i.e. [1555000000, 1556000000]
+        hour: whether to use hour as xaxis for the plot
+        highlights: list of tods to highlight specifically
+
+        """
+        if dets is None:
+            dets = np.where(self.ff_sel * self.tes_sel)[0]
+            if nrand: dets = np.random.choice(dets, nrand, replace=False)
+        # plot calibration with uncut dets
+        if isinstance(field, str):
+            field = np.ma.array(op(getattr(self, field)))
+            field[~self.sel] = np.ma.masked
+        else:
+            field = field.copy()
+        # apply absolute calibration per tod to account for pwv effects
+        if abscal and hasattr(self, 'abscal'): field *= self.abscal[None,:]
+        # xaxis
+        if hour:
+            tfunc = lambda x: (x - self.ctime.min())/3600
+            ctime = tfunc(self.ctime)
+            xlabel = f"hours since {self.ctime.min()} [h]"
+        else:
+            ctime = self.ctime
+            xlabel = "ctime [s]"
+        # unless required to show highlighted only, always plot all
+        lines = plt.plot(ctime, field[dets].T, '.', markersize=1, alpha=dot_alpha)
+        # highlight a list of tods if necessarily
+        if highlights is not None:
+            match = np.isin(self.name, highlights)
+            print(f"match tod: {np.sum(match)}")
+            plt.plot(ctime[match], field[np.ix_(dets, match)].T, 'x')
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        # legend
+        if len(dets)<=20:
+            plt.legend(iter(lines), dets, bbox_to_anchor=(1.1,1),
+                       loc="upper left", ncol=int(np.ceil(len(dets)/10)))
+        if ylim is not None:
+            plt.ylim(ylim)
+        # also plot pwv
+        pwv_ax = plt.gca().twinx()
+        idx = np.argsort(ctime)
+        pwv_ax.plot(ctime[idx], self.pwv[idx], 'k-', alpha=0.2, label='pwv/sin(alt)')
+        pwv_ax.set_ylabel('pwv / sin(alt) [mm]')
+        pwv_ax.set_ylim([0, 6])
+        plt.legend()
+        # ctime range
+        if crange is not None:
+            cstart, cend = crange
+            cstart = max(self.ctime.min(), int(cstart))
+            cend   = min(self.ctime.max(), int(cend))
+            if hour: cstart, cend = tfunc(cstart), tfunc(cend)
+            plt.xlim([cstart, cend])
+        plt.title(title)
+
+    def plot_cal(self, dets=None, nrand=10, crange=None, hour=True,
+                 ylim=None, highlights=None, abscal=True, dot_alpha=1):
+        return self.plot_stats('cal', dets=dets, nrand=nrand, dot_alpha=dot_alpha,
+                               crange=crange, hour=hour, ylim=ylim, highlights=highlights,
+                               abscal=abscal, title='calibration=ff*biasstep*abscal',
+                               ylabel='calibration [uK/DAC]')
