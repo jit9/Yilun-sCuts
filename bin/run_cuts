@@ -5,7 +5,7 @@ without removing the pre-selection. """
 
 import os
 import moby2
-from todloop import TODLoop
+from cutslib.todloop import TODLoop
 
 from cutslib.routines.tod import LoadTOD, CheckTODLength, TransformTOD
 from cutslib.routines.cuts import CutMCE, CutSources, CutPlanets, \
