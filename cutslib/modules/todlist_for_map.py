@@ -29,7 +29,7 @@ class Module:
         self.source_scan = config.getboolean('source_scan', False)
         self.selParams = config.get('selParams', {
             "liveDets": {"gt": 150},
-            "loading": {"lt": 4},
+            "loading": {"lt": 4, "gt": 0},
         })
         # load dict from string if selParams is given by str
         if type(self.selParams) == str:
