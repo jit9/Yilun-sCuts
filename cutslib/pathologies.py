@@ -624,10 +624,15 @@ class Pathologies( object ):
         resp = products.get_calibration(self.params["calibration"]["config"], self.tod.info)
         respSel = (resp.cal != 0.0)
         # Get flatfield
-        self.flatfield_object = moby2.detectors.RelCal.from_dict(flatfield)
+        if '.dict' in flatfield:
+            self.flatfield_object = moby2.detectors.RelCal.from_dict(flatfield)
+        elif '.fits' in flatfield:
+            self.flatfield_object = moby2.detectors.RelCal.from_fits_table(flatfield)
         ffSel, ff = self.flatfield_object.get_property('cal', det_uid=self.dets, default=1.)
         # Default resposibity to median of stable detectors
-        _, stable = self.flatfield_object.get_property( 'stable', det_uid = self.dets, default=False)
+        _, stable = self.flatfield_object.get_property('stable', det_uid = self.dets, default=False)
+        # make sure stable has the right type
+        stable = stable.astype(bool)
         if self.params["calibration"].get("forceNoResp",False):
             rm = np.median(resp.cal[stable*respSel])
             resp.cal[~respSel] = rm
