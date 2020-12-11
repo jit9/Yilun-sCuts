@@ -4,8 +4,8 @@
 import gc, os, os.path as op
 import numpy as np
 import traceback
-from deprecated import deprecated
-from profilehooks import profile
+# from deprecated import deprecated
+# from profilehooks import profile
 import logging
 # internal dependency
 from cutslib import TODList
@@ -48,9 +48,9 @@ class TODLoop:
         # set abspath flag
         self._abspath = abspath
 
-    @deprecated("Use add_reject_list instead")
-    def add_skip_list(self, skip_list):
-        self.add_reject_list(skip_list)
+    # @deprecated("Use add_reject_list instead")
+    # def add_skip_list(self, skip_list):
+    #     self.add_reject_list(skip_list)
 
     def add_reject_list(self, reject_list):
         self._reject_list = TODList.from_file(reject_list)
@@ -79,7 +79,7 @@ class TODLoop:
                 if self.rank == 0:  # not pretty
                     os.makedirs(self._output_dir)
 
-    @profile
+    # @profile
     def execute(self, store):
         """Execute all routines"""
         for routine in self._routines:
