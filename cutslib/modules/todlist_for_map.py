@@ -87,11 +87,15 @@ class Module:
                 sel1 *= (output[k] > selParams[k]['gt']) & ~np.isnan(output[k])
             print("%i passed the %s criteria (and anteriors)" %(sel1.sum(),k))
 
-        include_time = np.loadtxt(include_time, dtype=int )
-        sel2 = np.zeros(len(output), dtype=bool)
-        for start, end in include_time:
-            sel2 += np.logical_and(output.ctime > start, output.ctime < end)
-        print("%i were taken inside the observation times" %(sel2.sum()))
+        if include_time:
+            include_time = np.loadtxt(include_time, dtype=int)
+            sel2 = np.zeros(len(output), dtype=bool)
+            for start, end in include_time:
+                sel2 += np.logical_and(output.ctime > start, output.ctime < end)
+            print("%i were taken inside the observation times" %(sel2.sum()))
+        else:  # if no time are specified, select everything by default
+            sel2 = np.ones(len(output), dtype=bool)
+            print("No observation time specified, select all")
 
         output.flag[sel1*sel2] += 1
         print("%i are good for mapping" %((output.flag==2).sum()))
