@@ -22,7 +22,7 @@ class Module:
         cpar = moby2.util.MobyDict.from_file(p.i.cutparam)
         depot_file = p.i.db
         source_scans = cpar.get("source_scans")
-        catalog = Catalog()
+        catalog = Catalog(filename=p.catalog)
         # narrow down to the source list
         catalog.narrow_down(source_scans)
         base_arr = catalog.data[['tod_name','loading']].values

@@ -18,7 +18,7 @@ class Module:
     def run(self, p):
         # create SeasonStats object from the given tag
         ss = SeasonStats(tag=p.tag, use_theta2=self.use_theta2,
-                         calibrate=self.calibrate)
+                         calibrate=self.calibrate, depot=p.depot)
         # produce resp hist
         ndet_wresp = np.sum(ss.stats['resp_sel']*ss.stats['tes_sel'][:,None],axis=0)
         plt.figure(figsize=(8,6))

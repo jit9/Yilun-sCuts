@@ -55,7 +55,7 @@ class Module:
         keys = ['todName', 'liveDets', 'hour', 'hourAfterSunset', 'hourAfterSunrise']
         PL = pd.DataFrame.from_dict( {k:pl.data[k] for k in keys} )
         # load catalog
-        cat = Catalog()
+        cat = Catalog(filename=p.catalog)
         catalog = cat.data
         # base sel for season, array, etc
         sel = np.logical_and(catalog.obs_type != 'stare',
