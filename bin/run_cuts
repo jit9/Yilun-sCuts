@@ -92,10 +92,10 @@ if cutparam.get('tag_source', None) is not None:
         },
         'depot': depot,
         'tag_source': cutparam.get('tag_source'),
-        'source_list': cutParam['source_cuts'].get('source_list', None),
+        'source_list': cutParam.get_deep(('source_cuts','source_list'), None),
         'hdf_source_cuts': cutparam.get('hdf_source_cuts', None),
         'no_noise': no_noise,
-        'pointing_par': cutParam['pointing'],
+        'pointing_par': cutParam.get('pointing', None),
         'mask_params': src_mask_params,
         'mask_shift_generator': src_shift_params,
         'write_depot': True,
@@ -111,23 +111,24 @@ if cutparam.get('tag_srcmask',None) is not None:
     loop.add_routine(FillCuts(**config))
 
 # cut planets
-config = {
-    'inputs': {
-        'tod': 'tod'
-    },
-    'outputs': {
-        'tod': 'tod'
-    },
-    'depot': depot,
-    'tag_planet': cutparam.get('tag_planet'),
-    'no_noise': no_noise,
-    'pointing_par': cutParam['pointing'],
-    'mask_params': planet_mask_params,
-    'mask_shift_generator': planet_shift_params,
-    'write_depot': True,
-    'force_planet': cutparam.get('forcePlanet', False)
-}
-loop.add_routine(CutPlanets(**config))
+if cutparam.get('tag_planet', None) is not None:
+    config = {
+        'inputs': {
+            'tod': 'tod'
+        },
+        'outputs': {
+            'tod': 'tod'
+        },
+        'depot': depot,
+        'tag_planet': cutparam.get('tag_planet'),
+        'no_noise': no_noise,
+        'pointing_par': cutParam['pointing'],
+        'mask_params': planet_mask_params,
+        'mask_shift_generator': planet_shift_params,
+        'write_depot': True,
+        'force_planet': cutparam.get('forcePlanet', False)
+    }
+    loop.add_routine(CutPlanets(**config))
 
 # remove sync pickup
 config = {
