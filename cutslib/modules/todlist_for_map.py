@@ -25,7 +25,6 @@ class Module:
     def __init__(self, config):
         self.cuts_db = config.get('cuts_db', None)
         self.include_time = config.get('include_time', None)
-        self.outdir = config.get('outdir', ".")
         self.source_scan = config.getboolean('source_scan', False)
         self.selParams = config.get('selParams', {
             "liveDets": {"gt": 150},
@@ -103,7 +102,7 @@ class Module:
         output['mean_az'] = output.az + output.az_throw / 2.
         output['hour2'] = output.index.hour + output.index.minute/60.
 
-        outDir = outdir + "/" + p.tag
+        outDir = os.path.join(p.depot, "SelectedTODs", p.tag)
         if not(os.path.isdir(outDir)): os.makedirs(outDir)
 
         for field in np.unique(output.obs_detail):

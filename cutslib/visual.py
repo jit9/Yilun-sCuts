@@ -1207,7 +1207,7 @@ def get_array_plot_lims(array, season):
     elif array == 'ar5':
         xmin, xmax = 0.2634513877020111, 1.0299899366437952
         ymin, ymax = -0.85103798177410184, 0.03837494139098363
-    elif array == 'ar6':
+    elif array == 'ar6' or array == 'ar7':
         xmin, xmax = -0.34516751588843669, 0.39094596571401696
         ymin, ymax = 0.3670596582454384, 1.3154743040302765
     else:
