@@ -20,14 +20,38 @@ from .catalog import Catalog
 class SeasonStats:
     def __init__(self, tag=None, depot=None, calibrate=False, abscal='201026',
                  use_theta2=False, sort=False, verbose=False, planet=True, rundb=True):
-        """Show the season stats using the collected pickle
-        file containing all pathological parameters
+        """Show the season stats using the collected pickle file containing
+        all pathological parameters. The most important attribute is called
+        style which contains everything a plotting function needs to know such
+        as a reasonable plotting range. It will also contain the cut criteria.
+        The style attr has a structure like the following
+
+        self.style = {'field_name': {
+            'name': 'field name',
+            'limits': [5, 95],    # plotting limits
+            'type': 'percentile', # unit of limits, can be abs or percentile
+            'extend': 3,          # if we want to extend the limits
+            'scale': 'log'        # x-scale for plotting
+            'crit': [lo, hi]      # cut thresholds
+          },
+          ...
+        }
+        Changing the criteria can be done by changing the crit field. The actual pickle
+        parameters are stored inside self.ss.
 
         Parameters
         ----------
         tag: tag associated with cuts run
         depot: depot to load pickle file
-
+        calibrate: whether to calibrate the pickle parameters
+        abscal: if not None, it will attempt to load the abscal with the given tag
+        use_theta2: whether one wants to use theta^2 in place of corrLive which is
+          no thing but cos\theta ~ 1-\theta^2/2
+        sort: whether to sort the loaded pickle file by ctime
+        verbose: verbosity flag
+        planet: if True, it will attempt to load planet calibration data if it exists
+        rundb: if True, it will attempt to load the runtime output file that contains
+          some useful statistics of the cuts run
         """
         # store metadata
         self.tag = tag
@@ -284,7 +308,16 @@ class SeasonStats:
 
     # plotting utilities
     def find_matches(self, *conds, alone=False):
-        """multiple conditions"""
+        """Plot the detector matching multiple conditions against
+        various quantities such as alt, loading, row, col for debugging purpose.
+        It can be called as the following
+        ss.find_matches(cond1, cond2, cond3, ...)
+
+        Parameters
+        ----------
+        conds: list of different conditions
+        alone: if True, it will bypass the original sel
+        """
         if not alone: conds += (self.stats['sel'],)
         sel = reduce(np.logical_and, conds)
         fig, axes = plt.subplots(2,3,figsize=(15,10))
@@ -332,10 +365,17 @@ class SeasonStats:
         axes[2].set_ylabel('# of Live Dets')
         fig.subplots_adjust(hspace=0)
 
-    def view_cuts(self, window=None, **kwargs):
-        """view individual cuts vs. pwv"""
-        fields = [k for k in self.stats if 'sel' in k and \
-                  k not in ['psel','kurtLive_sel', 'skewLive_sel']]
+    def view_cuts(self, window=None, gain=True, mfe=True, jump=True, kurt=False, skew=False, **kwargs):
+        """Plot how individual crit cut changes with pwv.
+
+        """
+        exclude = ['psel']
+        if not kurt: exclude += ['kurtLive_sel']
+        if not skew: exclude += ['skewLive_sel']
+        if not jump: exclude += ['jumpLive_sel']
+        if not gain: exclude += ['gainLive_sel']
+        if not  mfe: exclude += ['MFELive_sel']
+        fields = [k for k in self.stats if 'sel' in k and k not in exclude]
         if not window: window = int(self.select.shape[-1]/10)
         if window % 2 ==0: window += 1
         plt.figure(figsize=(10,8))
