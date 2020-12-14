@@ -534,11 +534,21 @@ One just need to add to the configuration file
 [update_cuts]
 mpi=True
 #+END_SRC
-and include in the =pipeline= section. Run it like =mpirun -n 40 cutspipe post.ini=.
-It's good to remove the previous TODCuts, calibration from depot, though
-i haven't encountered a case where not doing so causes noticable issues. It's good
-to run this in a debug note because this is very quick to run, here is the command
-to launch a debug node with 40 tasks required
+and include in the =pipeline= section. How it works is that it will
+re-run the last step of cuts pipeline to compile the cuts and
+calibration from previous results, so this is what we want for
+updating the cuts and cal with minimum re-running. Note that it will
+look for the run =db= file in the =run_v{}= directory and run through
+those tods that are not in this file. If we want to run through all
+files, there are two ways to do this. First, one can force re-writing
+this =db= file with the option =overwrite=True= in the =post.in=
+config file. The second method is just to delete the =db= file which
+has the equivalent result. Run it like =mpirun -n 40 cutspipe
+post.ini=.  It's good to remove the previous TODCuts, calibration from
+depot, though i haven't encountered a case where not doing so causes
+noticable issues. It's good to run this in a debug note because this
+is very quick to run, here is the command to launch a debug node with
+40 tasks required
 #+BEGIN_SRC
 salloc -pdebug --nodes 1 --ntasks-per-node=40 --time=1:00:00
 #+END_SRC
