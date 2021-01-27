@@ -1,0 +1,19 @@
+#!/bin/env python
+
+# this script gives some basic cuts information from a .cuts file
+
+from cutslib import TODCuts
+
+import argparse, numpy as np
+
+parser = argparse.ArgumentParser()
+parser.add_argument("infiles", help='.cuts files', nargs="+")
+args = parser.parse_args()
+
+for fi, fname in enumerate(args.infiles):
+    print(f"{fi+1}/{len(args.infiles)}: {fname}")
+    # load cuts
+    cuts = TODCuts.read_from_path(fname)
+    print(f"=> live detector: {len(cuts.get_uncut())}")
+
+
