@@ -221,7 +221,7 @@ class Module:
         #######################
         # cut threshold plots #
         #######################
-        cuts_threshold = glob.glob(op.join(p.o.patho.root, "seasoncrit_hist*.png"))[0]
+        cuts_threshold = find_file(op.join(p.o.patho.root, "seasoncrit_hist*.png"))
         res['cuts_threshold'] = cuts_threshold
 
         ########################################
@@ -239,18 +239,18 @@ class Module:
         ##################
         # killed_by_plot #
         ##################
-        killed_by_plot = glob.glob(op.join(p.o.patho.root,"killedbyplot.png"))[0]
+        killed_by_plot = find_file(op.join(p.o.patho.root,"killedbyplot.png"))
         res['killed_by_plot'] = killed_by_plot
 
         ######################
         # live fraction plot #
         ######################
-        res['live_fraction'] = glob.glob(op.join(p.o.root, "live_frac.png"))[0]
+        res['live_fraction'] = find_file(op.join(p.o.root, "live_frac.png"))
 
         ###############
         # rms vs gain #
         ###############
-        res['rms_vs_gain'] = glob.glob(op.join(p.o.root, "rms_gain.png"))[0]
+        res['rms_vs_gain'] = find_file(op.join(p.o.root, "rms_gain.png"))
 
         ##################
         # flatfield plot #
@@ -269,7 +269,7 @@ class Module:
         ###############
         # calibration #
         ###############
-        res['planet_cal'] = glob.glob(op.join(p.o.cal.root, "peak_vs_loading*.png"))[0]
+        res['planet_cal'] = find_file(op.join(p.o.cal.root, "peak_vs_loading*.png"))
 
         ###################
         # generate report #
@@ -295,3 +295,8 @@ def format_changelog(changelog):
         else:
             output_lines += "  " + l + "\n"
     return output_lines
+
+def find_file(selector):
+    results = glob.glob(selector)
+    if len(results) > 0: return results[0]
+    else: return ""
