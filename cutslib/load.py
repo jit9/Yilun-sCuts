@@ -3,20 +3,92 @@
 import numpy as np
 
 import moby2
+from .depot import Depot
 from .environ import CUTS_DEPOT
 from .pathologies import Pathologies, get_pathologies
 from .pathologies_tools import get_pwv
 
+
 glitchp = {'nSig': 10., 'tGlitch' : 0.007, 'minSeparation': 30, \
            'maxGlitch': 50000, 'highPassFc': 6.0, 'buffer': 200 }
 
-def load_tod(todname, tag=None, planet=None, partial=None, rd=True, fs=True, **kwargs):
+def load_tod(todname, tag=None, planet=None, partial=None,
+             release=None, rd=True, fs=True, fcode=None, **kwargs):
+    if ':' in todname: todname, fcode = todname.split(':')
     opts = {'filename': todname, 'repair_pointing':True, 'read_data': rd, 'fix_sign': fs}
     opts.update(kwargs)
     tod = moby2.scripting.get_tod(opts)
     print("tod loaded")
-    # load metadata with tag
-    if tag:
+    # load metadata with release tag
+    if release:
+        import yaml
+        depot = Depot()
+        release_file = depot.get_deep((f'release_{release}', 'release.txt'))
+        with open(release_file, "r") as f:
+            rl = yaml.load(f.read())
+        print(f"Loaded tags from {release_file}")
+        pa = tod.info.array.replace('ar','pa')
+        scode = tod.info.season.replace('20','s')
+        if tag: fcode = tag.split('_')[1]
+        if not fcode: raise ValueError("Missing fcode")
+        key = f"{pa}_{fcode}_{scode}_c11"
+        tags = rl['tags'][key]
+        # try to load cuts
+        try:
+            cuts = moby2.scripting.get_cuts({
+                'depot': CUTS_DEPOT,
+                'tag': tags['tag_out'],
+            }, tod=tod)
+            tod.cuts = cuts
+            print(f"-> cuts loaded in tod.cuts tagged: {tags['tag_out']}")
+        except:
+            print("-> Warning: cuts not loaded successfully")
+        # load planet cuts
+        try:
+            cuts = moby2.scripting.get_cuts({
+                'depot': CUTS_DEPOT,
+                'tag': tags['tag_planet']
+            }, tod=tod)
+            tod.planet = cuts
+            print(f"-> planet cuts loaded in tod.planet tagged: {tags['tag_planet']}")
+        except:
+            print("-> Warning: planet cuts not loaded successfully")
+        # load planet cuts
+        try:
+            cuts = moby2.scripting.get_cuts({
+                'depot': CUTS_DEPOT,
+                'tag': tags['tag_partial']
+            }, tod=tod)
+            tod.partial = cuts
+            print(f"-> partial cuts loaded in tod.partial tagged: {tags['tag_partial']}")
+        except:
+            print("Warning: partial cuts not loaded successfully")
+        # load calibrations
+        try:
+            depot = moby2.util.Depot(CUTS_DEPOT)
+            cal = depot.read_object(moby2.Calibration, tod=tod, tag=tags['tag_cal'])
+            tod.cal = cal
+            print(f"-> cal loaded in tod.cal tagged: {tags['tag_cal']}")
+        except:
+            print("Warning: calibrations not loaded successfully")
+        # load pathologies
+        try:
+            patho = get_pathologies({
+                'depot': CUTS_DEPOT,
+                'tag': tags['tag_out']
+            }, tod=tod)
+            tod.patho = patho
+            print(f"-> patho loaded in tod.patho tagged: {tags['tag_out']}")
+        except:
+            print("Warning: patho not loaded successfully")
+        # get pwv
+        try:
+            pwv = get_pwv([tod.ctime[0]])
+            tod.pwv = pwv[0]
+            print("-> pwv loaded in tod.pwv")
+        except:
+            print("Warning: pwv not loaded successfully")
+    elif tag:
         # try to load cuts
         try:
             cuts = moby2.scripting.get_cuts({
