@@ -59,12 +59,11 @@ def submit_command(command, cutparam, jobname=None, cluster='tiger'):
         f.write('#SBATCH --ntasks-per-node=%d\n' % (ttpn))
         f.write('#SBATCH -J %s%d\n' % (jobname,n))
         f.write('#SBATCH -t %s\n' % runtime)
-        if qos:     f.write('#SBATCH --qos %s\n' % qos)
+        if qos:       f.write('#SBATCH --qos %s\n' % qos)
         if partition: f.write('#SBATCH -p %s\n' % partition)
         f.write('#SBATCH --output=%s/slurmjob.log.%d\n' % (outdir, n))
         f.write('module load gcc\n' )
         f.write('module load openmpi\n' )
-        f.write('source activate %s\n' % CUTS_PYENV )
         f.write('cd %s\n' % basedir)
         start, end = n*tpn, (n+1)*tpn
         for i in range(start, end):
