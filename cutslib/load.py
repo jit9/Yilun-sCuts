@@ -1,9 +1,9 @@
 """convenient functions to load tods"""
 
-import numpy as np
+import numpy as np, h5py
 
 import moby2
-from .depot import Depot
+from .depot import Depot, SharedDepot
 from .environ import CUTS_DEPOT
 from .pathologies import Pathologies, get_pathologies
 from .pathologies_tools import get_pwv
@@ -12,7 +12,7 @@ from .pathologies_tools import get_pwv
 glitchp = {'nSig': 10., 'tGlitch' : 0.007, 'minSeparation': 30, \
            'maxGlitch': 50000, 'highPassFc': 6.0, 'buffer': 200 }
 
-def load_tod(todname, tag=None, planet=None, partial=None,
+def load_tod(todname, tag=None, planet=None, partial=None, depot=None, abscal='201026',
              release=None, rd=True, fs=True, fcode=None, **kwargs):
     if ':' in todname: todname, fcode = todname.split(':')
     opts = {'filename': todname, 'repair_pointing':True, 'read_data': rd, 'fix_sign': fs}
@@ -22,7 +22,7 @@ def load_tod(todname, tag=None, planet=None, partial=None,
     # load metadata with release tag
     if release:
         import yaml
-        depot = Depot()
+        depot = Depot(path=depot)
         release_file = depot.get_deep((f'release_{release}', 'release.txt'))
         with open(release_file, "r") as f:
             rl = yaml.load(f.read())
@@ -36,27 +36,27 @@ def load_tod(todname, tag=None, planet=None, partial=None,
         # try to load cuts
         try:
             cuts = moby2.scripting.get_cuts({
-                'depot': CUTS_DEPOT,
+                'depot': depot.root,
                 'tag': tags['tag_out'],
             }, tod=tod)
             tod.cuts = cuts
             print(f"-> cuts loaded in tod.cuts tagged: {tags['tag_out']}")
         except:
-            print("-> Warning: cuts not loaded successfully")
+            print("Warning: cuts not loaded successfully")
         # load planet cuts
         try:
             cuts = moby2.scripting.get_cuts({
-                'depot': CUTS_DEPOT,
+                'depot': depot.root,
                 'tag': tags['tag_planet']
             }, tod=tod)
             tod.planet = cuts
             print(f"-> planet cuts loaded in tod.planet tagged: {tags['tag_planet']}")
         except:
-            print("-> Warning: planet cuts not loaded successfully")
+            print("Warning: planet cuts not loaded successfully")
         # load planet cuts
         try:
             cuts = moby2.scripting.get_cuts({
-                'depot': CUTS_DEPOT,
+                'depot': depot.root,
                 'tag': tags['tag_partial']
             }, tod=tod)
             tod.partial = cuts
@@ -65,7 +65,6 @@ def load_tod(todname, tag=None, planet=None, partial=None,
             print("Warning: partial cuts not loaded successfully")
         # load calibrations
         try:
-            depot = moby2.util.Depot(CUTS_DEPOT)
             cal = depot.read_object(moby2.Calibration, tod=tod, tag=tags['tag_cal'])
             tod.cal = cal
             print(f"-> cal loaded in tod.cal tagged: {tags['tag_cal']}")
@@ -74,7 +73,7 @@ def load_tod(todname, tag=None, planet=None, partial=None,
         # load pathologies
         try:
             patho = get_pathologies({
-                'depot': CUTS_DEPOT,
+                'depot': depot.root,
                 'tag': tags['tag_out']
             }, tod=tod)
             tod.patho = patho
@@ -88,33 +87,46 @@ def load_tod(todname, tag=None, planet=None, partial=None,
             print("-> pwv loaded in tod.pwv")
         except:
             print("Warning: pwv not loaded successfully")
+        # get abscal
+        try:
+            abscal_file = SharedDepot().get_deep(('TODAbsCal',f'abscal_{abscal}.h5'))
+            with h5py.File(abscal_file, "r") as f:
+                abscal_data = f['abscal'][:]
+                bmask = abscal_data['band_id'].astype(str) == fcode
+                todmask = abscal_data['tod_id'].astype(str) == tod.info.name
+                cal = abscal_data['cal'][bmask*todmask][0]
+                del abscal_data, bmask
+                tod.abscal = cal
+            print(f"-> abscal loaded in tod.abscal tagged: {abscal}")
+        except:
+            print("Warning: abscal not loaded successfully")
     elif tag:
         # try to load cuts
         try:
             cuts = moby2.scripting.get_cuts({
-                'depot': CUTS_DEPOT,
+                'depot': depot.root,
                 'tag': tag,
             }, tod=tod)
             tod.cuts = cuts
             print("-> cuts loaded in tod.cuts")
         except:
-            print("-> Warning: cuts not loaded successfully")
+            print("Warning: cuts not loaded successfully")
         # load planet cuts
         if not planet: planet = tag+'_planet'
         try:
             cuts = moby2.scripting.get_cuts({
-                'depot': CUTS_DEPOT,
+                'depot': depot.root,
                 'tag': planet
             }, tod=tod)
             tod.planet = cuts
             print("-> planet cuts loaded in tod.planet")
         except:
-            print("-> Warning: planet cuts not loaded successfully")
+            print("Warning: planet cuts not loaded successfully")
         # load planet cuts
         if not partial: partial = tag+'_partial'
         try:
             cuts = moby2.scripting.get_cuts({
-                'depot': CUTS_DEPOT,
+                'depot': depot.root,
                 'tag': partial
             }, tod=tod)
             tod.partial = cuts
@@ -123,7 +135,6 @@ def load_tod(todname, tag=None, planet=None, partial=None,
             print("Warning: partial cuts not loaded successfully")
         # load calibrations
         try:
-            depot = moby2.util.Depot(CUTS_DEPOT)
             cal = depot.read_object(moby2.Calibration, tod=tod, tag=tag)
             tod.cal = cal
             print("-> cal loaded in tod.cal")
@@ -132,7 +143,7 @@ def load_tod(todname, tag=None, planet=None, partial=None,
         # load pathologies
         try:
             patho = get_pathologies({
-                'depot': CUTS_DEPOT,
+                'depot': depot.root,
                 'tag': tag
             }, tod=tod)
             tod.patho = patho

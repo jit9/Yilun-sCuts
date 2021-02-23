@@ -45,6 +45,11 @@ class Depot(SharedDepot):
             self.root = os.environ.get("CUTS_DEPOT")
         else:
             self.root = path
+        # compatibility with moby2 depot
+        self.moby2_depot = moby2.util.Depot(self.root)
 
     def __repr__(self):
         return f"Depot(root={self.root})"
+
+    def read_object(self, *args, **kwargs):
+        return self.moby2_depot.read_object(*args, **kwargs)
