@@ -72,7 +72,7 @@ def set_plotstyle(options={}, style='default', tex=None):
         plt.rcParams['text.usetex'] = tex
 
 
-def plot_with_cuts(tod, det, cuts=None, color='r', show_orig=True):
+def plot_with_cuts(tod, det, cuts=None, color='r', show_orig=True, show_cuts=True, alpha=0.5, calpha=1):
     """Plot a tod with cuts marked as red
 
     Parameters
@@ -88,9 +88,8 @@ def plot_with_cuts(tod, det, cuts=None, color='r', show_orig=True):
     for c in cuts.cuts[det]:
         sel[c[0]:c[1]] = False
     t = tod.ctime - tod.ctime[0]
-    if show_orig:
-        plt.plot(t, tod.data[det], "k-", alpha=0.5)
-    plt.plot(t[~sel], tod.data[det][~sel], ".", markersize=4, c=color)
+    if show_orig: plt.plot(t, tod.data[det], "k-", alpha=alpha)
+    if show_cuts: plt.plot(t[~sel], tod.data[det][~sel], ".", markersize=4, c=color, alpha=calpha)
     return plt.gca()
 
 def plot_tod(tod, det=None, ds=10, cuts=None, alpha=0.1):
