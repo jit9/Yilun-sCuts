@@ -2,6 +2,7 @@
 import yaml
 
 from .depot import Depot
+from .util import tod_to_tag, tag_to_afsv, get_tod_fcode
 
 def ver(tag):
     splits = tag.split("_")
@@ -40,3 +41,28 @@ class Release:
         text += 'cut_basic   = "{yilun}/TODCuts/pa{pa}_{freq}_s{season}_c11_{ptag}_partial/{t5}/{id}.cuts"\n'
         text += 'gain        = "{yilun}/Calibration/pa{pa}_{freq}_s{season}_c11_{gtag}/{t5}/{id}.cal"\n'
         return text
+
+    def tags(self, key):
+        return self.release['tags'][key]
+
+    def tod_tags(self, tod):
+        key = tod_to_tag(tod)
+        return self.tags(key)
+
+    def tod_pcuts(self, tod):
+        tag = self.tod_tags(tod)['tag_partial']
+        depot = self.release['depot']
+        tod, _ = get_tod_fcode(tod)
+        return f"{depot}/TODCuts/{tag}/{tod[:5]}/{tod}.cuts"
+
+    def tod_cuts(self, tod):
+        tag = self.tod_tags(tod)['tag_out']
+        depot = self.release['depot']
+        tod, _ = get_tod_fcode(tod)
+        return f"{depot}/TODCuts/{tag}/{tod[:5]}/{tod}.cuts"
+
+    def tod_cal(self, tod):
+        tag = self.tod_tags(tod)['tag_cal']
+        depot = self.release['depot']
+        tod, _ = get_tod_fcode(tod)
+        return f"{depot}/Calibration/{tag}/{tod[:5]}/{tod}.cal"
