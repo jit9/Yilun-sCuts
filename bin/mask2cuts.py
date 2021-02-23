@@ -25,6 +25,8 @@ parser.add_argument("--fsize", help="size for fake mpi", type=int, default=1)
 parser.add_argument("--frank", help="rank for fake mpi", type=int, default=0)
 parser.add_argument("--force", help="overwrite existing file", action='store_true')
 parser.add_argument("--logfile", help="log file name to use", default="log")
+parser.add_argument("--gal", help="whether the mask is in galactic coordinates",
+                    action='store_true', default=False)
 parser.add_argument("prefix",nargs="?")
 args = parser.parse_args()
 
@@ -93,7 +95,8 @@ for ind in myinds:
     # Is the source above the horizon? If not, it doesn't matter how close
     # it is.
     L.debug("Processing %s" % str(id))
-    pmap = pmat.PmatMap(scan, mask)
+    if args.gal: pmap = pmat.PmatMap(scan, mask, sys='gal')
+    else: pmap = pmat.PmatMap(scan, mask)
     tod  = np.zeros([scan.ndet, scan.nsamp], dtype=dtype)
     pmap.forward(tod, mask)
     # cut nonzero
