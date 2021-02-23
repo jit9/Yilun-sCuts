@@ -5,7 +5,7 @@ import moby2
 from toolz.dicttoolz import merge_with
 from . import environ as env
 
-def tag_to_afsv(tag, ar=True):
+def tag_to_afsv(tag, ar=True, scode=False):
     """Parse array(a), freq(f), season(s) and version(v) from tag
     An example tag is pa4_f150_s17_c11_v0
 
@@ -28,6 +28,7 @@ def tag_to_afsv(tag, ar=True):
     else:                # start with pa
         if ar:           # but want ar
             array = 'ar'+array[-1]
+    if scode: season = season.replace('20','s')
     return (array, freq, season, version)
 
 def get_rundir(tag):
@@ -212,7 +213,6 @@ def update_if_not_exist(old, new):
     for k in nonexist_keys: old[k] = new[k]
     return old
 
-
 def deep_merge(*ds):
     def combine(vals):
         if len(vals) == 1 or not all(isinstance(v, dict) for v in vals):
@@ -225,3 +225,26 @@ def dets2sel(dets, ndet):
     sel = np.zeros(ndet, dtype=bool)
     sel[dets] = 1
     return sel
+
+def get_season(tod):
+    ctime = int(tod.split('.')[0])
+    season = int((ctime - 949381200) / 31557600 + 2000)
+    return str(season)
+
+def get_scode(tod):
+    return get_season(tod).replace('20','s')
+
+def get_tod_fcode(tod, sep=None, return_tod=True):
+    """Allowed syntax, todname_fcode or todname:fcode"""
+    if sep is None:
+        if '_f' in tod:   sep = '_'
+        elif ':f' in tod: sep = ':'
+        else: raise ValueError("Unsupported fcode syntax")
+    return tod.split(sep)
+
+def tod_to_tag(tod, cver='c11'):
+    """return tags in form of {pa}_{fcode}_{scode}_{cver}"""
+    scode = get_scode(tod)
+    todname, fcode = get_tod_fcode(tod)
+    pa = todname.split('.')[-1].replace('ar','pa')
+    return f'{pa}_{fcode}_{scode}_{cver}'
