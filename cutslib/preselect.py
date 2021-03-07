@@ -58,13 +58,16 @@ def by_median(corrmat, min_corr=0.6, min_sel=10, min_frac=None, dets=None):
     """
     if dets is None: dets = np.ones(corrmat.shape[0], dtype=bool)
     # select dets with median above `min_corr`
-    sel = np.nanmedian(np.abs(corrmat)[:,dets], axis=1) > min_corr
+    sel = np.nanmedian(np.abs(corrmat)[np.ix_(dets,dets)], axis=1) > min_corr
     # check whether we have enough dets
     if min_frac is None: min_frac=min_sel/corrmat.shape[0]
     min_dets = max(min_sel, round(corrmat.shape[0]*min_frac))
     if np.sum(sel) < min_dets:
         raise PreselectionError(f"sel={np.sum(sel)}, min_dets={min_dets}")
-    return sel
+    # massage index to have the shape of input det numbers
+    presel = np.zeros(corrmat.shape[0], dtype=bool)
+    presel[dets] = sel
+    return presel
 
 @preselector
 def by_mask(corrmat, mask):

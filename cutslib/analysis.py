@@ -66,7 +66,7 @@ def analyze_scan(tod, qlim=1, vlim=0.01, n_smooth=0):
     return scan_params
 
 
-def analyze_common_mode(fdata, nsamps=1, preselector=None, pman=None):
+def analyze_common_mode(fdata, nsamps=1, preselector=None, pman=None, det_uid=None):
     """perform a simple common mode analysis in a given frequency range.
     It requires the fft signal (fsignal) to be available in the tod.
 
@@ -95,10 +95,11 @@ def analyze_common_mode(fdata, nsamps=1, preselector=None, pman=None):
     # svd in scipy is much faster than numpy
     u, s, v = scipy.linalg.svd(fdata[presel], full_matrices=False)
     cm = v[0]
-    # get gains for all data through cm (not limited to pre-selected data)
-    gain = np.abs(fdata @ cm.conj())/s[0]
+    # get gains for all data of interests (specified by det_uid) through cm
+    # (not limited to pre-selected data)
+    gain = np.abs(fdata[det_uid] @ cm.conj())/s[0]
     # get norm
-    fnorm = np.sqrt(np.abs(np.diag(c)))
+    fnorm = np.sqrt(np.abs(np.diag(c)))[det_uid]
     norm = fnorm*np.sqrt(2./nsamps)
     # get correlations
     # note that the s[0] here is from the pre-selected data which
@@ -110,15 +111,18 @@ def analyze_common_mode(fdata, nsamps=1, preselector=None, pman=None):
     cm_params['cc'] = cc
     cm_params['cm'] = cm / s[0]
     cm_params['s'] = s
-    cm_params['gain'] = gain
+    cm_params['gain'] = gain / np.mean(gain[gain!=0])  # normalize gain
     cm_params['norm'] = norm
     cm_params['corr'] = corr
     if pman:
-        for k, v in cm_params.items(): pman.add(k, v)
+        for k, v in cm_params.items():
+            # these three params only computed for det_uid
+            if k in ['gain','norm','corr']: pman.add(k, v, dets=det_uid)
+            else: pman.add(k, v)
     return cm_params
 
 def analyze_detector_noise(fdata, preselector=None, n_deproject=0,
-                           nsamps=1, pman=None):
+                           nsamps=1, pman=None, det_uid=None):
     """Perform a simple analysis of noise property of dets in a given
     frequency range. In particular, we look for noise level (rms) and
     deviation from gaussian statistics (skew, kurt). Results will be
@@ -352,7 +356,7 @@ class CutsManager:
             cuts_ = cuts
         elif isinstance(cuts, np.ndarray):
             cuts_ = TODCuts.for_tod(self.tod)
-            if cuts.dtype == np.bool_:  # if a mask is given
+            if cuts.dtype == np.bool_:  # if a mask is given assuming 1D
                 cuts_.set_always_cut(np.where(cuts==False)[0])
             else:  # assume it's detid
                 cuts_.set_always_cut(cuts)
@@ -363,8 +367,10 @@ class CutsManager:
     def for_tod(cls, tod):
         cm = cls(tod)
         return cm
-    def combine_cuts(self, fields=[], exclude=[]):
-        # default to combine all cuts into 'final'
+    def combine_cuts(self, fields=[], exclude=[], target=None):
+        """combine a list of fields into a TODCuts object.
+        specify target if the result is to be stored under a name
+        """
         final = TODCuts.for_tod(self.tod)
         if len(fields) == 0:
             fields = [k for k in self.cuts.keys()
@@ -378,8 +384,11 @@ class CutsManager:
                 elif isinstance(fcuts, TODCuts):
                     final.merge_tod_cuts(fcuts)
                 else: raise ValueError
+        # optionally store the combined cuts
+        if target: self.add(target, final)
         return final
     def merge(self, other):
+        """Merge with other CutsManager"""
         assert isinstance(other, CutsManager)
         overlap = [k for k in other.cuts if k in self.cuts]
         assert len(overlap) <= 1, f"Naming conflicts, rename {overlap}"
@@ -388,6 +397,7 @@ class CutsManager:
             self.add(k, other.cuts[k])
         return self
     def move(self, name, newname):
+        """rename field name"""
         if name not in self.cuts: return self
         if newname is not None:
             self.cuts[newname] = self.cuts[name].copy()
@@ -408,8 +418,7 @@ class PathologyManager:
         if name in self.patho:
             raise ValueError("naming conflict")
         if dets is not None:
-            patho_ = np.ones_like(self.dets, dtype=np.float)
-            patho_ *= defaut
+            patho_ = np.ones_like(self.tod.det_uid, dtype=np.float)*default
             patho_[np.asarray(dets)] = patho
             patho = patho_
         self.patho[name] = patho
@@ -456,10 +465,12 @@ class PathologyManager:
             if f in self.crits:
                 del self.crits[f]
         return self
-    def apply_crit(self):
-        """apply crit to get a cut"""
+    def apply_crit(self, cman=None, target=None):
+        """apply crit to get a cut, each crit will have a field {}_sel
+        corresponding to its individual cuts. Specify target if one wants
+        the combined sel to be stored under a name"""
         crits = [crit for crit in self.crits if crit in self.patho]
-        cman = CutsManager.for_tod(self.tod)
+        if not cman: cman = CutsManager.for_tod(self.tod)
         for f in crits:
             v = self.patho[f]
             lo, hi = self.crits[f]['lo'], self.crits[f]['hi']
@@ -472,15 +483,11 @@ class PathologyManager:
                 if lo: m *= (v >= lo)  # open
                 if hi: m *= (v < hi)   # close
             # add masks to CutsManager
-            cman.add(f, m)
+            cman.add(f"{f}_sel", m)
         # merge the flags into a cuts field and keep the origin fields
-        combined = cman.combine_cuts(fields=crits)
-        cman.add('all_crits', combined)
+        combined = cman.combine_cuts(fields=[c+'_sel' for c in crits],
+                                     target=target)
         return cman
-    def __getitem__(self, attr):
-        if attr in self.patho:
-            return self.patho[attr]
-        else: raise ValueError
     def write_to_path(self, path):
         with open(path, "wb") as f:
             pickle.dump(self, f)
