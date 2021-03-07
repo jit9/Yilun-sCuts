@@ -71,8 +71,8 @@ def set_plotstyle(options={}, style='default', tex=None):
     if tex is not None:
         plt.rcParams['text.usetex'] = tex
 
-
-def plot_with_cuts(tod, det, cuts=None, color='r', show_orig=True, show_cuts=True, alpha=0.5, calpha=1):
+def plot_with_cuts(tod, det, cuts=None, color='r', show_orig=True,
+                   show_cuts=True, alpha=0.5, calpha=1, xlim=None):
     """Plot a tod with cuts marked as red
 
     Parameters
@@ -82,7 +82,9 @@ def plot_with_cuts(tod, det, cuts=None, color='r', show_orig=True, show_cuts=Tru
     cuts: if a cut object other then tod.cuts is to be used
     """
     if isinstance(det, list) or isinstance(det, np.ndarray):
-        return [plot_with_cuts(tod,d,cuts,color) for d in det]
+        return [plot_with_cuts(tod,d,cuts,color,show_orig,
+                               show_cuts,alpha,calpha,xlim)
+                for d in det]
     sel = np.ones(tod.nsamps, dtype=bool)
     if not cuts: cuts = tod.cuts
     for c in cuts.cuts[det]:
@@ -90,6 +92,11 @@ def plot_with_cuts(tod, det, cuts=None, color='r', show_orig=True, show_cuts=Tru
     t = tod.ctime - tod.ctime[0]
     if show_orig: plt.plot(t, tod.data[det], "k-", alpha=alpha)
     if show_cuts: plt.plot(t[~sel], tod.data[det][~sel], ".", markersize=4, c=color, alpha=calpha)
+    if xlim is not None:
+        plt.gca().set_xlim(xlim)
+        # auto update ylim: a hack from
+        i = np.where((t > xlim[0]) & (t < xlim[1]))[0]
+        plt.gca().set_ylim(tod.data[det][i].min(), tod.data[det][i].max())
     return plt.gca()
 
 def plot_tod(tod, det=None, ds=10, cuts=None, alpha=0.1):
@@ -1300,9 +1307,9 @@ def array_plots_tod(values, dets, tod, vmin=None, vmax=None,
     patchlist = get_patches(pos, color, pol, freq, radius=radius)
     plt.figure(figsize=(12,10))
     ax = create_plot(patchlist, vmin, vmax,
-                       x_lim=[1.2*pos[0].min(), 1.2*pos[0].max()],
-                       y_lim=[1.2*pos[1].min(), 1.2*pos[1].max()],
-                       array_name=tod.info.array, cmap=cmap)
+                     x_lim=[1.2*pos[0].min(), 1.2*pos[0].max()],
+                     y_lim=[1.2*pos[1].min(), 1.2*pos[1].max()],
+                     array_name=tod.info.array, cmap=cmap)
     set_infos(name, unit, title, ax)
     return plt.gcf()
 
