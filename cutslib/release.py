@@ -1,6 +1,6 @@
 """Utility function for working with release file"""
 import yaml
-
+from moby2.util import MobyDict
 from .depot import Depot
 from .util import tod_to_tag, tag_to_afsv, get_tod_fcode, nowarn
 
@@ -63,7 +63,21 @@ class Release:
         return f"{depot}/TODCuts/{tag}/{tod[:5]}/{tod}.cuts"
 
     def tod_cal(self, tod):
+        """Get calibration filepath for a given tod"""
         tag = self.tod_tags(tod)['tag_cal']
         depot = self.release['depot']
         tod, _ = get_tod_fcode(tod)
         return f"{depot}/Calibration/{tag}/{tod[:5]}/{tod}.cal"
+
+    def tod_cutparam(self, tod):
+        """get cutparam as a MobyDict object"""
+        return MobyDict.from_file(self.tod_tags(tod)['params'])
+
+    def tod_cutParam(self, tod):
+        """get cutParam as a MobyDict object"""
+        return MobyDict.from_file(
+            self.tod_tags(tod)['params'].replace("cutp","cutP")
+        )
+    @property
+    def depot(self):
+        return self.release['depot']
