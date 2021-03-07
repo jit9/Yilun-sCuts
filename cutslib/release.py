@@ -2,7 +2,7 @@
 import yaml
 
 from .depot import Depot
-from .util import tod_to_tag, tag_to_afsv, get_tod_fcode
+from .util import tod_to_tag, tag_to_afsv, get_tod_fcode, nowarn
 
 def ver(tag):
     splits = tag.split("_")
@@ -25,8 +25,9 @@ class Release:
         if release_file is None:
             depot = Depot(depot)
             release_file = depot.get_deep((f'release_{tag}', 'release.txt'))
-        with open(release_file, "r") as f:
-            self.release = yaml.load(f.read())
+        with nowarn():
+            with open(release_file, "r") as f:
+                self.release = yaml.load(f.read())
     def tags2filedb(self):
         """Convert tags into strings recognized by filedb"""
         text = "{yilun} = " + f"'{self.release['depot']}'\n"

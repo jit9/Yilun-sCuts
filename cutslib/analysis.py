@@ -3,7 +3,7 @@ import pickle, numpy as np
 import scipy, scipy.stats as stat
 import moby2
 from moby2.tod.cuts import CutsVector
-from cutslib import TODCuts
+from cutslib import TODCuts, util
 from cutslib.glitch import SnippetInfo
 
 
@@ -103,7 +103,8 @@ def analyze_common_mode(fdata, nsamps=1, preselector=None, pman=None):
     # get correlations
     # note that the s[0] here is from the pre-selected data which
     # might be different to the actual s[0] using un-preselected data
-    corr = gain * s[0] / fnorm
+    with util.nowarn():
+        corr = gain * s[0] / fnorm
     cm_params = {}
     cm_params['presel'] = presel
     cm_params['cc'] = cc
@@ -467,8 +468,9 @@ class PathologyManager:
             if method == 'rel':
                 if lo: lo = np.percentile(v[self.dets], lo)
                 if hi: hi = np.percentile(v[self.dets], hi)
-            if lo: m *= (v >= lo)  # open
-            if hi: m *= (v < hi)   # close
+            with util.nowarn():
+                if lo: m *= (v >= lo)  # open
+                if hi: m *= (v < hi)   # close
             # add masks to CutsManager
             cman.add(f, m)
         # merge the flags into a cuts field and keep the origin fields

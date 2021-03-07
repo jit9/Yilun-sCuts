@@ -237,7 +237,7 @@ def get_scode(tod):
 def get_tod_fcode(tod, sep=None, return_tod=True):
     """Allowed syntax, todname_fcode or todname:fcode"""
     if sep is None:
-        if '_f' in tod:   sep = '_'
+        if   '_f' in tod: sep = '_'
         elif ':f' in tod: sep = ':'
         else: raise ValueError("Unsupported fcode syntax")
     return tod.split(sep)
@@ -248,3 +248,14 @@ def tod_to_tag(tod, cver='c11'):
     todname, fcode = get_tod_fcode(tod)
     pa = todname.split('.')[-1].replace('ar','pa')
     return f'{pa}_{fcode}_{scode}_{cver}'
+
+# copied from pixell
+import warnings
+class nowarn:
+    """Use in with block to suppress warnings inside that block."""
+    def __enter__(self):
+        self.filters = list(warnings.filters)
+        warnings.filterwarnings("ignore")
+        return self
+    def __exit__(self, type, value, traceback):
+        warnings.filters = self.filters
