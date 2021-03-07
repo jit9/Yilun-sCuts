@@ -10,8 +10,6 @@ from moby2.tod.cuts import CutsVector
 from cutslib import MobyDict, preselect, analysis as ana, visual as v
 from cutslib.todloop import Routine
 from cutslib.analysis import CutsManager, PathologyManager
-from cutslib.pathologies import get_detector_params
-from cutslib.tools import nextregular
 from cutslib.util import dets2sel
 
 

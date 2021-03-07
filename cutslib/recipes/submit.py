@@ -23,7 +23,6 @@ def submit_command(command, cutparam, jobname=None, cluster='tiger'):
     """submit slurm jobs for given binary script based on todloop"""
     import os
     from moby2.util import MobyDict
-    CUTS_PYENV = os.environ.get("CUTS_PYENV","myenv")
 
     # load base parameters
     par = MobyDict.from_file(cutparam)

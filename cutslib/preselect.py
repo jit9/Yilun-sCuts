@@ -1,7 +1,6 @@
 import numpy as np
 import inspect
-
-class PreselectionError(RuntimeError): pass
+from .errors import PreselectionError
 
 # Decorator for the lazy one: convert preselectors to partial functions
 # without the need to specify the corrmat parameter and give them reasonable

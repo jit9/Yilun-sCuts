@@ -43,7 +43,7 @@ class TODSnippet:
         """Plot det_uid on the array"""
         from cutslib.visual import array_plots
         if values is None: values = np.ones_like(self.det_uid)
-        array_plots(values, det=self.det_uid, season=self.info.season, array=self.info.array)
+        return array_plots(values, det=self.det_uid, season=self.info.season, array=self.info.array)
     def plot_row_col(self, values=None):
         from matplotlib import pyplot as plt
         dets = self.det_uid
@@ -430,13 +430,15 @@ class CutsVector(moby2.tod.cuts.CutsVector):
     def __add__(self, other):
         if isinstance(other, CutsVector) or isinstance(other, moby2.tod.cuts.CutsVector):
             return CutsVector.from_mask(self.get_mask() + other.get_mask())
-        else: return NotImplemented
+        else:
+            return super().__add__(self, other)
     def __radd__(self, other):
         return self.__add__(other)
     def __mul__(self, other):
         if isinstance(other, CutsVector) or isinstance(other, moby2.tod.cuts.CutsVector):
             return CutsVector.from_mask(self.get_mask() * other.get_mask())
-        else: return NotImplemented
+        else:
+            return super().__add__(self, other)
     def __rmul__(self, other):
         return self.__mul__(other)
 

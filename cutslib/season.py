@@ -597,7 +597,8 @@ class SeasonStats:
         return lo, hi
 
     def report_tods(self, tods):
-        """report the cuts for tods"""
+        """report the cuts for a given list of tods"""
+        pd.set_option('display.max_columns', None)
         match = np.isin(self.db.data.todName, tods)
         columns = ['todName', 'length', 'liveDets', 'corrLive', 'normLive',
                    'DELive', 'MFELive', 'rmsLive', 'skewLive', 'kurtLive',
