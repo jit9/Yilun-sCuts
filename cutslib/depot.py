@@ -53,3 +53,14 @@ class Depot(SharedDepot):
 
     def read_object(self, *args, **kwargs):
         return self.moby2_depot.read_object(*args, **kwargs)
+
+    def write_object(self, *args, **kwargs):
+        try:
+            res = self.moby2_depot.write_object(*args, **kwargs)
+        except FileExistsError:  # unlikely but possible race condition
+            kwargs['make_dirs'] = False
+            res = self.moby2_depot.write_object(*args, **kwargs)
+        return res
+
+    def get_full_path(self, *args, **kwargs):
+        return self.moby2_depot.get_full_path(*args, **kwargs)
